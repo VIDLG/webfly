@@ -4,6 +4,8 @@
 
 <div align="center">
 
+<img src="flutter/assets/logo/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
+
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
 [![WebF](https://img.shields.io/badge/WebF-0.24.6-FF6B6B)](https://github.com/openwebf/webf)
@@ -41,6 +43,17 @@ WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运�
 | **设备集成** | ✅ 深度原生集成 | ⚠️ 仅基础功能 |
 | **开发调试** | ✅ 热重载 + 原生调试 | ✅ 仅热重载 |
 | **应用分发** | ✅ 独立 APK/IPA | ⚠️ 需要宿主应用 |
+
+## 📸 应用截图
+
+<div align="center">
+
+### 启动器界面
+<img src="docs/screenshots/homepage.png" alt="启动器" width="300" />
+
+*主启动器：URL 输入、二维码扫描和历史记录*
+
+</div>
 
 ## 🎯 核心特性
 

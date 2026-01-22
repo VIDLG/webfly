@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 <div align="center">
 
+<img src="flutter/assets/logo/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
+
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
 [![WebF](https://img.shields.io/badge/WebF-0.24.6-FF6B6B)](https://github.com/openwebf/webf)
@@ -41,6 +43,17 @@ WebFly isn't just a web viewer - it's a fully-featured native runtime with integ
 | **Device Integration** | ✅ Deep native integration | ⚠️ Basic only |
 | **Development** | ✅ Hot reload + Native debugging | ✅ Hot reload only |
 | **Distribution** | ✅ Standalone APK/IPA | ⚠️ Requires host app |
+
+## 📸 Screenshots
+
+<div align="center">
+
+### Launcher Interface
+<img src="docs/screenshots/homepage.png" alt="Launcher" width="300" />
+
+*Main launcher with URL input, QR scanner, and recent history*
+
+</div>
 
 ## 🎯 Key Features
 
