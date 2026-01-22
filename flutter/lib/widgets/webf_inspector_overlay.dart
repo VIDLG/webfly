@@ -10,7 +10,7 @@ class WebFInspectorOverlay extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showInspector = ref.watch(showWebfInspectorProvider).value ?? false;
+    final showInspector = ref.watch(showWebfInspectorProvider);
     if (!showInspector) {
       return const SizedBox.shrink();
     }

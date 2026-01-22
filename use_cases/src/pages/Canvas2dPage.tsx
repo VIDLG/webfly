@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { WebFListView, useFlutterAttached } from '@openwebf/react-core-ui';
-import { isWebFEnvironment } from '../router';
 
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h2 className="text-lg font-bold text-gray-800 mt-6 mb-3 px-1 border-b border-gray-200 pb-2">{children}</h2>
@@ -45,17 +44,7 @@ const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D
     cancelAnimationFrame(rafId);
   };
 
-  const flutterCanvasRef = useFlutterAttached<HTMLCanvasElement>(onAttached, onDetached);
-  const browserCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (!isWebFEnvironment && browserCanvasRef.current) {
-      return onAttached(browserCanvasRef.current) as (() => void) | undefined;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const canvasRef = isWebFEnvironment ? flutterCanvasRef : browserCanvasRef;
+  const canvasRef = useFlutterAttached<HTMLCanvasElement>(onAttached, onDetached);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-3">

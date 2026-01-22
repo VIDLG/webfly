@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { WebFRouter, WebFRouterLink, useLocation } from '../router';
+import { useNavigate, useLocation } from '@openwebf/react-router';
 import { joinBase, safeJson } from './RouterDemoUtils';
 
 const basePath = '/routing';
 
 export function RouterDemoNotFound() {
+  const { navigate } = useNavigate();
   const location = useLocation();
   const stateJson = useMemo(() => safeJson(location.state), [location.state]);
   const [tryPath, setTryPath] = useState('/routing/does-not-exist');
@@ -34,7 +35,7 @@ export function RouterDemoNotFound() {
           />
           <button
             className="rounded-md bg-blue-500/70 px-4 py-2 text-sm text-white hover:bg-blue-500/80"
-            onClick={() => WebFRouter.replace(tryPath, { from: location.pathname, at: Date.now() })}
+            onClick={() => navigate(tryPath, { replace: true, state: { from: location.pathname, at: Date.now() } })}
           >
             Go
           </button>
@@ -42,18 +43,27 @@ export function RouterDemoNotFound() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <WebFRouterLink path={joinBase(basePath, '/')}>
-          <div className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15">Home</div>
-        </WebFRouterLink>
-        <WebFRouterLink path={joinBase(basePath, '/users/1')}>
-          <div className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15">User #1</div>
-        </WebFRouterLink>
-        <WebFRouterLink path={joinBase(basePath, '/files/docs/getting-started')}>
-          <div className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15">Files</div>
-        </WebFRouterLink>
         <button
           className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15"
-          onClick={() => WebFRouter.maybePop?.() || WebFRouter.back()}
+          onClick={() => navigate(joinBase(basePath, '/'), { state: { from: location.pathname, at: Date.now() } })}
+        >
+          Home
+        </button>
+        <button
+          className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15"
+          onClick={() => navigate(joinBase(basePath, '/users/1'), { state: { from: location.pathname, at: Date.now() } })}
+        >
+          User #1
+        </button>
+        <button
+          className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15"
+          onClick={() => navigate(joinBase(basePath, '/files/docs/getting-started'), { state: { from: location.pathname, at: Date.now() } })}
+        >
+          Files
+        </button>
+        <button
+          className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15"
+          onClick={() => navigate(-1)}
         >
           Back
         </button>

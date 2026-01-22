@@ -6,6 +6,9 @@ const String kUseCasesPath = '/usecases'; // Dedicated route for use cases
 const String kAppRoutePath =
     '/app'; // Hybrid routing uses query params instead of path params
 
+// Asset HTTP Server configuration
+const int kAssetHttpServerPort = 8765; // Fixed port for serving assets
+
 // Query parameter keys (exported for router configuration)
 const String kUrlParam = 'url';
 const String kBaseParam = 'base';

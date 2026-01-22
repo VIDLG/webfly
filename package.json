@@ -5,15 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:use-cases": "cd use_cases && pnpm dev --host",
     "build": "tsc -b && vite build",
     "build:use-cases": "cd use_cases && pnpm install && pnpm build && cd .. && node scripts/copy-use-cases.js",
     "build:all": "pnpm build:use-cases && pnpm build",
     "lint": "eslint .",
     "preview": "vite preview",
     "flutter": "cd flutter && flutter run",
-    "flutter:release": "cd flutter && flutter run --release",
     "flutter:platforms": "rust-script flutter/tools/flutter-gen-platforms.rs --config flutter/app.pkl",
-    "flutter:build-apk": "cd flutter && flutter build apk --verbose",
+    "flutter:build-apk": "cd flutter && flutter build apk",
     "flutter:clean": "cd flutter && flutter clean"
   },
   "dependencies": {

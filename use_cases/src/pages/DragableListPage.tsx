@@ -40,7 +40,7 @@ function DragHandle(props: React.HTMLAttributes<HTMLDivElement>) {
 
 export function DragableListPage() {
   const itemsCount = list.length;
-  const initialWidth = typeof window !== 'undefined' ? window.innerWidth : 750;
+  const initialWidth = window.innerWidth;
   const [itemGap, setItemGap] = useState(() => Math.round((initialWidth * 110) / 750));
 
   const [order, setOrder] = useState<number[]>(() => Array.from({ length: itemsCount }, (_, i) => i));

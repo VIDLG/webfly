@@ -1,5 +1,6 @@
 import React from 'react';
-import { useParams, useLocation, WebFRouter } from '../../router';
+import { useParams, useLocation } from '@openwebf/react-router';
+import { WebFRouter } from '../../router';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 export const ReportDetailsPage: React.FC = () => {

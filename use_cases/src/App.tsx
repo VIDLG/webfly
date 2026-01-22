@@ -98,6 +98,7 @@ import { CupertinoFormSectionPage } from './pages/cupertino/CupertinoFormSection
 import { CupertinoTextFieldPage } from './pages/cupertino/CupertinoTextFieldPage';
 import { CupertinoTextFormFieldRowPage } from './pages/cupertino/CupertinoTextFormFieldRowPage';
 import { CupertinoSearchTextFieldPage } from './pages/cupertino/CupertinoSearchTextFieldPage';
+import { ErrorTestPage } from './pages/ErrorTestPage';
 import { CupertinoAdaptiveTextSelectionToolbarPage } from './pages/cupertino/CupertinoAdaptiveTextSelectionToolbarPage';
 import { CupertinoTextSelectionToolbarPage } from './pages/cupertino/CupertinoTextSelectionToolbarPage';
 import { CupertinoDesktopTextSelectionToolbarPage } from './pages/cupertino/CupertinoDesktopTextSelectionToolbarPage';
@@ -203,6 +204,8 @@ function App() {
         <Route path="/cupertino/checkbox" title="Cupertino CheckBox" theme={'cupertino'} element={<CupertinoCheckBoxPage />} />
         <Route path="/cupertino/radio" title="Cupertino Radio" theme={'cupertino'} element={<CupertinoRadioPage />} />
 
+        {/* Error Testing */}
+        <Route path="/error-test" title="JS Error Test" element={<ErrorTestPage />} />
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
 
@@ -210,9 +213,9 @@ function App() {
         <Route path="/routing/about" title="Routing Demo: About" element={<RoutingAboutPage />} />
         <Route path="/routing/users/:id" title="Routing Demo: User" element={<RoutingUserPage />} />
         <Route path="/routing/files/*" title="Routing Demo: Files" element={<RoutingFilesPage />} />
+        <Route path="/routing-api" title="WebFRouter API Showcase" element={<WebFRouterAPIDemoPage />} />
         <Route path="/routing" title="Routing & Navigation" element={<RoutingPage />} />
         <Route path="/routing/*" title="Routing Demo: Not Found" element={<RoutingNotFoundPage />} />
-        <Route path="/routing-api" title="WebFRouter API Showcase" element={<WebFRouterAPIDemoPage />} />
 
         {/* Dynamic Route Examples */}
         <Route path="/user/:id" title="User Details" element={<UserDetailsPage />} />

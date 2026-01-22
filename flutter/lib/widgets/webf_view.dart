@@ -9,27 +9,43 @@ import '../hooks/use_route_focus.dart';
 import '../services/hybrid_controller_manager.dart';
 import '../router/app_router.dart' show kGoRouterDelegate, kWebfRouteObserver;
 import '../utils/app_logger.dart';
+import 'webfly_loading.dart';
 
 Future<WebFController?> injectWebfBundleAsync({
   required String controllerName,
   required String url,
+  void Function(String)? onJSRuntimeError,
 }) async {
-  appLogger.d(
-    '[WebFView] Injecting bundle for controller: $controllerName\n  URL: $url',
-  );
+  appLogger.d('[WebFView] Injecting: controller=$controllerName, url=$url');
 
   try {
     final controller = await WebFControllerManager.instance.addWithPrerendering(
       name: controllerName,
-      createController: () => WebFController(routeObserver: kWebfRouteObserver),
+      createController: () => WebFController(
+        routeObserver: kWebfRouteObserver,
+        onJSError: (String errorMessage) {
+          // Print full error stack with clear delimiter
+          debugPrint('\n${'=' * 80}');
+          debugPrint('❌ JavaScript Error in: $controllerName');
+          debugPrint('${'=' * 80}');
+          debugPrint(errorMessage);
+          debugPrint('${'=' * 80}\n');
+
+          // Also log to appLogger for production logging
+          appLogger.e('[WebFView] JavaScript Error', error: errorMessage);
+
+          // Update UI state to show the error
+          onJSRuntimeError?.call(errorMessage);
+        },
+      ),
       bundle: WebFBundle.fromUrl(url),
       setup: (controller) {
         controller.hybridHistory.delegate = kGoRouterDelegate;
-        appLogger.i('[WebFView] Controller setup complete');
+        appLogger.d('[WebFView] Controller setup complete');
       },
     );
 
-    appLogger.i('[WebFView] Bundle injection complete');
+    appLogger.d('[WebFView] Bundle injection complete');
     return controller;
   } catch (e, stackTrace) {
     appLogger.e(
@@ -43,15 +59,8 @@ Future<WebFController?> injectWebfBundleAsync({
 
 /// Default loading widget for WebF view
 Widget _defaultLoadingWidget() {
-  return const Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircularProgressIndicator(),
-        SizedBox(height: 16),
-        Text('Initializing WebF...'),
-      ],
-    ),
+  return const WebFlyLoading(
+    message: 'Loading...',
   );
 }
 
@@ -98,6 +107,7 @@ class WebFView extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controllerInstance = useState<WebFController?>(null);
     final initError = useState<Object?>(null);
+    final jsRuntimeError = useState<String?>(null); // JavaScript runtime errors
     final isInitialized = useState(false);
     final isAttached = useState(false);
     final isReady = useState(false);
@@ -114,6 +124,11 @@ class WebFView extends HookConsumerWidget {
         final controller = await injectWebfBundleAsync(
           controllerName: controllerName,
           url: url,
+          onJSRuntimeError: (errorMessage) {
+            if (!cancelled && context.mounted) {
+              jsRuntimeError.value = errorMessage;
+            }
+          },
         );
         if (cancelled) return;
         if (!context.mounted) return;
@@ -206,7 +221,7 @@ class WebFView extends HookConsumerWidget {
         final elapsed = DateTime.now().difference(startTime).inMilliseconds;
 
         if (routerView != null) {
-          appLogger.i(
+          appLogger.d(
             '[WebFView] 🎉 Route ready after $frameCount frames (${elapsed}ms)',
           );
           isReady.value = true;
@@ -239,7 +254,7 @@ class WebFView extends HookConsumerWidget {
     }, [isAttached.value, controllerInstance.value, routePath]);
 
     appLogger.d(
-      '[WebFView] Building:\n  controllerName: $controllerName\n  path: $routePath\n  url: $url',
+      '[WebFView] build: controller=$controllerName, path=$routePath, url=$url',
     );
     if (initError.value != null) {
       appLogger.e('[WebFView] Error: ${initError.value}');
@@ -256,15 +271,74 @@ class WebFView extends HookConsumerWidget {
 
     final controller = controllerInstance.value!;
 
-    return WebFRouterView(
-      controller: controller,
-      path: routePath,
-      defaultViewBuilder: (context) => Center(
-        child: Text(
-          'Route "$routePath" not found. Verify webf-router registration.',
-          textAlign: TextAlign.center,
+    return Stack(
+      children: [
+        WebFRouterView(
+          controller: controller,
+          path: routePath,
+          defaultViewBuilder: (context) => Center(
+            child: Text(
+              'Route "$routePath" not found. Verify webf-router registration.',
+              textAlign: TextAlign.center,
+            ),
+          ),
         ),
-      ),
+
+        // JavaScript runtime error overlay
+        if (jsRuntimeError.value != null)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Material(
+              color: Colors.red.shade900,
+              elevation: 8,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.white),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'JavaScript Runtime Error',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => jsRuntimeError.value = null,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          jsRuntimeError.value!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

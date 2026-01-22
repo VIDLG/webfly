@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../pages/launcher_page.dart';
+import '../pages/launcher/launcher_page.dart';
 import '../pages/scanner_page.dart';
 import '../pages/webf_page.dart';
 import 'go_router_delegate.dart';

@@ -1,5 +1,6 @@
 import React from 'react';
-import { useLocation, WebFRouter } from '../../router';
+import { useLocation } from '@openwebf/react-router';
+import { WebFRouter } from '../../router';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 export const ProfileEditPage: React.FC = () => {
@@ -18,7 +19,7 @@ export const ProfileEditPage: React.FC = () => {
           </p>
         </div>
       </div>
-        
+
       {location.state?.formData && (
         <div className="mb-5">
           <h2 className="text-lg font-semibold mb-3 text-fg-primary">Form Data:</h2>

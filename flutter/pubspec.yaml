@@ -57,6 +57,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -71,6 +73,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/logo/webfly_logo.png
     - assets/use_cases/index.html
     - assets/use_cases/favicon.ico
     - assets/use_cases/assets/
@@ -98,5 +101,24 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
+
+# Configure app launcher icon
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/logo/webfly_logo.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/logo/webfly_logo.png"
+
+# Configure splash screen
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/logo/webfly_logo.png
+  android: true
+  ios: false
+  android_12:
+    color: "#ffffff"
+    image: assets/logo/webfly_logo.png
+
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

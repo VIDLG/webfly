@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { WebFRouter, WebFRouterLink, useLocation, useParams } from '../router';
+import { useLocation, useParams, useNavigate } from '@openwebf/react-router';
+import { WebFRouterLink } from '../router';
 import { joinBase, safeJson } from './RouterDemoUtils';
 
 const basePath = '/routing';
@@ -13,6 +14,7 @@ function inferFilesPath(pathname: string): string {
 export function RouterDemoFiles() {
   const params = useParams();
   const location = useLocation();
+  const { navigate } = useNavigate();
 
   const splat = (params as any)?.['*'] as string | undefined;
   const filePath = splat ?? inferFilesPath(location.pathname);
@@ -49,7 +51,7 @@ export function RouterDemoFiles() {
           <button
             className="rounded-md bg-blue-500/70 px-4 py-2 text-sm text-white hover:bg-blue-500/80"
             onClick={() =>
-              WebFRouter.replace(joinBase(basePath, `/files/${normalized}`), { from: location.pathname, at: Date.now() })
+              navigate(joinBase(basePath, `/files/${normalized}`), { state: { from: location.pathname, at: Date.now() }, replace: true })
             }
           >
             Go
@@ -58,14 +60,14 @@ export function RouterDemoFiles() {
         <div className="grid gap-2 sm:grid-cols-2">
           <button
             className="rounded-md bg-white/10 px-3 py-2 text-sm text-fg hover:bg-white/15 text-left"
-            onClick={() => WebFRouter.replace(joinBase(basePath, '/files/docs'), { from: location.pathname, at: Date.now() })}
+            onClick={() => navigate(joinBase(basePath, '/files/docs'), { state: { from: location.pathname, at: Date.now() }, replace: true })}
           >
             /files/docs
           </button>
           <button
             className="rounded-md bg-white/10 px-3 py-2 text-sm text-fg hover:bg-white/15 text-left"
             onClick={() =>
-              WebFRouter.replace(joinBase(basePath, '/files/docs/getting-started'), { from: location.pathname, at: Date.now() })
+              navigate(joinBase(basePath, '/files/docs/getting-started'), { state: { from: location.pathname, at: Date.now() }, replace: true })
             }
           >
             /files/docs/getting-started
@@ -73,14 +75,14 @@ export function RouterDemoFiles() {
           <button
             className="rounded-md bg-white/10 px-3 py-2 text-sm text-fg hover:bg-white/15 text-left"
             onClick={() =>
-              WebFRouter.replace(joinBase(basePath, '/files/assets/icons/app.png'), { from: location.pathname, at: Date.now() })
+              navigate(joinBase(basePath, '/files/assets/icons/app.png'), { state: { from: location.pathname, at: Date.now() }, replace: true })
             }
           >
             /files/assets/icons/app.png
           </button>
           <button
             className="rounded-md bg-white/10 px-3 py-2 text-sm text-fg hover:bg-white/15 text-left"
-            onClick={() => WebFRouter.replace(joinBase(basePath, '/files/'), { from: location.pathname, at: Date.now() })}
+            onClick={() => navigate(joinBase(basePath, '/files/'), { state: { from: location.pathname, at: Date.now() }, replace: true })}
           >
             /files/
           </button>
@@ -98,7 +100,7 @@ export function RouterDemoFiles() {
         </WebFRouterLink>
         <button
           className="rounded-lg bg-white/10 px-4 py-2 text-sm text-fg hover:bg-white/15"
-          onClick={() => WebFRouter.maybePop?.() || WebFRouter.back()}
+          onClick={() => navigate(-1)}
         >
           Back
         </button>

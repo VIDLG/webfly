@@ -25,8 +25,15 @@ class ScannerPage extends HookConsumerWidget {
 
       if (isValidHttpUrl(rawValue)) {
         controller.stop();
-        ref.read(urlHistoryProvider.notifier).addUrl(rawValue);
-        Navigator.of(context).pop(rawValue);
+
+        // Parse URL to separate base URL and path
+        final uri = Uri.parse(rawValue);
+        final baseUrl =
+            '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
+        final path = uri.path.isEmpty || uri.path == '/' ? '/' : uri.path;
+
+        ref.read(urlHistoryProvider.notifier).addEntry(baseUrl, path);
+        Navigator.of(context).pop({'url': baseUrl, 'path': path});
       }
     }
 

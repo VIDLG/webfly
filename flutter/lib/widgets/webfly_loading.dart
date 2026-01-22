@@ -1,0 +1,40 @@
+import 'package:flutter/material.dart';
+
+/// WebFly loading indicator with logo
+class WebFlyLoading extends StatelessWidget {
+  final String? message;
+
+  const WebFlyLoading({
+    super.key,
+    this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            'assets/logo/webfly_logo.png',
+            width: 80,
+            height: 80,
+          ),
+          const SizedBox(height: 24),
+          const CircularProgressIndicator(),
+          if (message != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              message!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

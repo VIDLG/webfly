@@ -1,10 +1,29 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart'
-    show AsyncNotifier, AsyncNotifierProvider, AsyncValue;
+    show AsyncNotifier, AsyncNotifierProvider, AsyncValue, Provider;
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferences;
 
+/// App settings data class
+class AppSettings {
+  final bool showWebfInspector;
+  final bool cacheControllers;
+
+  const AppSettings({
+    required this.showWebfInspector,
+    required this.cacheControllers,
+  });
+
+  AppSettings copyWith({bool? showWebfInspector, bool? cacheControllers}) {
+    return AppSettings(
+      showWebfInspector: showWebfInspector ?? this.showWebfInspector,
+      cacheControllers: cacheControllers ?? this.cacheControllers,
+    );
+  }
+}
+
 class AppSettingsStorage {
   static const _showInspectorKey = 'show_webf_inspector';
+  static const _cacheControllersKey = 'cache_controllers';
 
   final SharedPreferences _prefs;
 
@@ -15,24 +34,30 @@ class AppSettingsStorage {
     return AppSettingsStorage._(prefs);
   }
 
-  bool getShowWebfInspector() {
-    return _prefs.getBool(_showInspectorKey) ?? false;
+  AppSettings loadSettings() {
+    return AppSettings(
+      showWebfInspector: _prefs.getBool(_showInspectorKey) ?? false,
+      cacheControllers: _prefs.getBool(_cacheControllersKey) ?? false,
+    );
   }
 
-  Future<void> setShowWebfInspector(bool value) async {
-    await _prefs.setBool(_showInspectorKey, value);
+  Future<void> saveSettings(AppSettings settings) async {
+    await Future.wait([
+      _prefs.setBool(_showInspectorKey, settings.showWebfInspector),
+      _prefs.setBool(_cacheControllersKey, settings.cacheControllers),
+    ]);
   }
 }
 
-// Show WebF Inspector Provider
-class ShowWebfInspectorNotifier extends AsyncNotifier<bool> {
+// Unified App Settings Provider
+class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
   final Future<AppSettingsStorage> _storageFuture = AppSettingsStorage.create();
   AppSettingsStorage? _storage;
 
   @override
-  Future<bool> build() async {
+  Future<AppSettings> build() async {
     final storage = await _ensureStorage();
-    return storage.getShowWebfInspector();
+    return storage.loadSettings();
   }
 
   Future<AppSettingsStorage> _ensureStorage() async {
@@ -45,14 +70,35 @@ class ShowWebfInspectorNotifier extends AsyncNotifier<bool> {
     return storage;
   }
 
-  Future<void> setShowWebfInspector(bool value) async {
+  Future<void> updateSettings(AppSettings settings) async {
     final storage = await _ensureStorage();
-    await storage.setShowWebfInspector(value);
-    state = AsyncValue.data(value);
+    await storage.saveSettings(settings);
+    state = AsyncValue.data(settings);
+  }
+
+  Future<void> setShowWebfInspector(bool value) async {
+    final current = state.value;
+    if (current == null) return;
+    await updateSettings(current.copyWith(showWebfInspector: value));
+  }
+
+  Future<void> setCacheControllers(bool value) async {
+    final current = state.value;
+    if (current == null) return;
+    await updateSettings(current.copyWith(cacheControllers: value));
   }
 }
 
-final showWebfInspectorProvider =
-    AsyncNotifierProvider<ShowWebfInspectorNotifier, bool>(
-      () => ShowWebfInspectorNotifier(),
+final appSettingsProvider =
+    AsyncNotifierProvider<AppSettingsNotifier, AppSettings>(
+      () => AppSettingsNotifier(),
     );
+
+// Convenience providers for individual settings
+final showWebfInspectorProvider = Provider<bool>((ref) {
+  return ref.watch(appSettingsProvider).value?.showWebfInspector ?? false;
+});
+
+final cacheControllersProvider = Provider<bool>((ref) {
+  return ref.watch(appSettingsProvider).value?.cacheControllers ?? false;
+});

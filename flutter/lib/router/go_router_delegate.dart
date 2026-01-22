@@ -16,18 +16,9 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
 
   /// Prepare navigation: build route URL from path
   String _prepareNavigation(String path, BuildContext context) {
-    appLogger.d('[GoRouterDelegate] _prepareNavigation');
-    appLogger.d('[GoRouterDelegate]   path: $path');
-
-    // Get url and base from current page's GoRouterState
     final state = GoRouterState.of(context);
     final url = state.uri.queryParameters['url'];
     final base = state.uri.queryParameters['base'];
-
-    appLogger.d('[GoRouterDelegate]   Current page URI: ${state.uri}');
-    appLogger.d('[GoRouterDelegate]   Current page path: ${state.uri.path}');
-    appLogger.d('[GoRouterDelegate]   url: $url');
-    appLogger.d('[GoRouterDelegate]   base: $base');
 
     if (url == null || base == null) {
       throw StateError(
@@ -35,29 +26,21 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
       );
     }
 
-    // Build route URL using current page's route
-    final routeUrl = buildWebFRouteUrl(
+    return buildWebFRouteUrl(
       url: url,
       route: state.uri.path,
       path: path,
       base: base,
     );
-
-    appLogger.d('[GoRouterDelegate]   generated routeUrl: $routeUrl');
-
-    return routeUrl;
   }
 
   @override
   void pop(BuildContext context) {
-    appLogger.d('[GoRouterDelegate] pop called');
-    appLogger.d('[GoRouterDelegate]   router.canPop(): ${router.canPop()}');
-
     if (router.canPop()) {
-      appLogger.d('[GoRouterDelegate]   Calling router.pop()');
+      appLogger.i('[GoRouter] pop: canPop=true');
       router.pop();
     } else {
-      appLogger.d('[GoRouterDelegate]   Cannot pop - at root');
+      appLogger.i('[GoRouter] pop: canPop=false (at root)');
     }
   }
 
@@ -102,20 +85,14 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
   @override
   void pushNamed(BuildContext context, String routeName, {Object? arguments}) {
     final routeUrl = _prepareNavigation(routeName, context);
-    appLogger.d(
-      '[GoRouterDelegate] pushNamed: $routeUrl with arguments: $arguments',
-    );
-
-    // Push to Flutter router - WebF and Flutter share the same stack
+    appLogger.i('[GoRouter] pushNamed: url=$routeUrl, arguments=$arguments');
     router.push(routeUrl, extra: arguments);
   }
 
   @override
   void replaceState(BuildContext context, Object? state, String name) {
     final routeUrl = _prepareNavigation(name, context);
-    appLogger.d(
-      '[GoRouterDelegate] replaceState: $routeUrl with state: $state',
-    );
+    appLogger.i('[GoRouter] replaceState: url=$routeUrl, state=$state');
     router.replace(routeUrl, extra: state);
   }
 
@@ -126,7 +103,9 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     TO? result,
     Object? arguments,
   }) {
-    appLogger.d('[GoRouterDelegate] restorablePopAndPushNamed: $routeName');
+    appLogger.i(
+      '[GoRouter] restorablePopAndPush: routeName=$routeName, result=$result, arguments=$arguments, canPop=${router.canPop()}',
+    );
     if (router.canPop()) {
       router.pop();
     }
@@ -154,6 +133,9 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     BuildContext context, [
     T? result,
   ]) async {
+    appLogger.i(
+      '[GoRouter] maybePop: canPop=${router.canPop()}, result=$result',
+    );
     if (router.canPop()) {
       router.pop();
       return true;
@@ -167,7 +149,9 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     String routeName, {
     Object? arguments,
   }) {
-    appLogger.d('[GoRouterDelegate] popAndPushNamed: $routeName');
+    appLogger.i(
+      '[GoRouter] popAndPushNamed: routeName=$routeName, arguments=$arguments, canPop=${router.canPop()}',
+    );
     if (router.canPop()) {
       router.pop();
     }
@@ -181,6 +165,9 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     RoutePredicate predicate, {
     Object? arguments,
   }) {
+    appLogger.i(
+      '[GoRouter] pushNamedAndRemoveUntil: newRouteName=$newRouteName, arguments=$arguments',
+    );
     popUntil(context, predicate);
     pushNamed(context, newRouteName, arguments: arguments);
   }

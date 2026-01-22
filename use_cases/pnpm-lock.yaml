@@ -10,31 +10,31 @@ importers:
     dependencies:
       '@openwebf/react-camera':
         specifier: ^1.0.0
-        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/react-core-ui':
         specifier: ^0.2.13
-        version: 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/react-cupertino-ui':
         specifier: ^0.3.35
-        version: 0.3.35(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 0.3.35(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/react-router':
         specifier: ^0.24.0
-        version: 0.24.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 0.24.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
-        version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 0.1.0-beta.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/react-video-player':
         specifier: ^1.0.0
-        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/webf-bluetooth':
         specifier: ^1.0.0
-        version: 1.0.0(react@19.2.0)
+        version: 1.0.0(react@19.2.3)
       '@openwebf/webf-share':
         specifier: ^1.0.0
-        version: 1.0.1(react@19.2.0)
+        version: 1.0.1(react@19.2.3)
       '@openwebf/webf-sqflite':
         specifier: ^1.0.1
-        version: 1.0.1(react@19.2.0)
+        version: 1.0.1(react@19.2.3)
       '@testing-library/dom':
         specifier: ^10.4.0
         version: 10.4.1
@@ -43,7 +43,7 @@ importers:
         version: 6.9.1
       '@testing-library/react':
         specifier: ^16.3.0
-        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@testing-library/user-event':
         specifier: ^13.5.0
         version: 13.5.0(@testing-library/dom@10.4.1)
@@ -64,19 +64,19 @@ importers:
         version: 5.6.0
       qrcode.react:
         specifier: ^4.2.0
-        version: 4.2.0(react@19.2.0)
+        version: 4.2.0(react@19.2.3)
       react:
-        specifier: ^19.1.0
-        version: 19.2.0
+        specifier: ^19.2.3
+        version: 19.2.3
       react-dom:
-        specifier: ^19.1.0
-        version: 19.2.0(react@19.2.0)
+        specifier: ^19.2.3
+        version: 19.2.3(react@19.2.3)
       react-hook-form:
         specifier: ^7.58.1
-        version: 7.66.0(react@19.2.0)
+        version: 7.66.0(react@19.2.3)
       react-router-dom:
         specifier: ^6.26.2
-        version: 6.30.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 6.30.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       typescript:
         specifier: ^4.9.5
         version: 4.9.5
@@ -98,13 +98,16 @@ importers:
         version: 8.5.6
       react-scripts:
         specifier: 5.0.1
-        version: 5.0.1(@babel/plugin-syntax-flow@7.27.1(@babel/core@7.28.5))(@babel/plugin-transform-react-jsx@7.27.1(@babel/core@7.28.5))(@types/babel__core@7.20.5)(eslint@8.57.1)(react@19.2.0)(type-fest@0.21.3)(typescript@4.9.5)
+        version: 5.0.1(@babel/plugin-syntax-flow@7.27.1(@babel/core@7.28.5))(@babel/plugin-transform-react-jsx@7.27.1(@babel/core@7.28.5))(@types/babel__core@7.20.5)(eslint@8.57.1)(react@19.2.3)(type-fest@0.21.3)(typescript@4.9.5)
       tailwindcss:
         specifier: ^3.4.14
         version: 3.4.18
       vite:
         specifier: ^5.4.10
         version: 5.4.21(@types/node@20.19.27)(terser@5.44.1)
+      vite-plugin-qrcode:
+        specifier: ^0.3.0
+        version: 0.3.0(vite@5.4.21(@types/node@20.19.27)(terser@5.44.1))
 
 packages:
 
@@ -1369,56 +1372,67 @@ packages:
     resolution: {integrity: sha512-9tS4QyfU5NF5CdUugEi7kWbcGD7pbu6Fm8SunuePH6beeQgtcRZ9K9KVwKHEgfBHeeyrr5OvfV1qWs7PMDOf5w==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.53.0':
     resolution: {integrity: sha512-U+0ovxGU9bVJIHfW+oALpHd0ho1YDwhj0yHASDzIj+bOeo+VzEpNtHxcjhFab0YcHUorIMoqyxckC98+81oTJw==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.53.0':
     resolution: {integrity: sha512-Cp/TQ+wLjRTqTuiVwLz4XPZMo3ROl7EJYMF8HhMp8Uf+9kOOATB3/p4gGZPpuQ4BP7qEXG29ET24u9+F0ERYkQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.53.0':
     resolution: {integrity: sha512-SuGoAwhsSonrSTEZTiQOGC3+XZfq7rc/qAdAOBrYYIp8pu+Wh4EFFXl6+QYYNbNrHL3DnVoWACLwnfwlTa0neA==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loong64-gnu@4.53.0':
     resolution: {integrity: sha512-EOKej1x0WoePnJWfg7ZbnUqiuiQunshzsKZSIfTHFDiCY9pnsr3Weit1GjcpGnun7H5HuRREqkT2c9CcKxNwSg==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-gnu@4.53.0':
     resolution: {integrity: sha512-YAvv2aMFlfiawJ97lutomuehG2Yowd4YgsAqI85XNiMK9eBA1vEMZHt3BShg8cUvak71BM+VFRHddqc+OrRdVA==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.53.0':
     resolution: {integrity: sha512-DxZe/sMVaqN+s5kVk3Iq619Rgyl1JCTob7xOLSNC84mbzg3NYTSheqqrtVllYjLYo4wm9YyqjVS57miuzNyXbQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.53.0':
     resolution: {integrity: sha512-N7+iZ0jEhwLY1FEsjbCR9lAxIZP0k+3Cghx9vSQWn+rcW8SgN8VcCmwJDoPDaGKTzWWB791U1s79BSLnEhUa0Q==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.53.0':
     resolution: {integrity: sha512-MA/NVneZyIskjvXdh2NR9YcPi7eHWBlQOWP2X8OymzyeUEB0JfUpmbKQZngHmOlyleV2IoR5nHIgMSRjLskOnA==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.53.0':
     resolution: {integrity: sha512-iYEYzYpfaSCkunVD0LOYrD9OMc357be7+rBuCxW1qvsjCGl+95iWnYAFfyEoxAm6koasNN3tFxFYze5MKl5S3A==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.53.0':
     resolution: {integrity: sha512-FoRekOqhRUKbJMsB5LvhQchDeFeNlS6UGUwi0p3860sxE4zE+lp07FnkuR+yQH0rSn6iLXsnr44jnorgl8mGlQ==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openharmony-arm64@4.53.0':
     resolution: {integrity: sha512-mEN2k1zKO5PUzW8W15hKpLh+zZI2by1onX2GfI93OekGbKN5aTjWGo7yAjwRZLjhAgs2UQcXmEWbIw0R5B4RnQ==}
@@ -1542,24 +1556,28 @@ packages:
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-arm64-musl@1.15.0':
     resolution: {integrity: sha512-Q5ldc2bzriuzYEoAuqJ9Vr3FyZhakk5hiwDbniZ8tlEXpbjBhbOleGf9/gkhLaouDnkNUEazFW9mtqwUTRdh7Q==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-linux-x64-gnu@1.15.0':
     resolution: {integrity: sha512-pY4is+jEpOxlYCSnI+7N8Oxbap9TmTz5YT84tUvRTlOlTBwFAUlWFCX0FRwWJlsfP0TxbqhIe8dNNzlsEmJbXQ==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-x64-musl@1.15.0':
     resolution: {integrity: sha512-zYEt5eT8y8RUpoe7t5pjpoOdGu+/gSTExj8PV86efhj6ugB3bPlj3Y85ogdW3WMVXr4NvwqvzdaYGCZfXzSyVg==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-win32-arm64-msvc@1.15.0':
     resolution: {integrity: sha512-zC1rmOgFH5v2BCbByOazEqs0aRNpTdLRchDExfcCfgKgeaD+IdpUOqp7i3VG1YzkcnbuZjMlXfM0ugpt+CddoA==}
@@ -4966,6 +4984,10 @@ packages:
 
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
 
+  qrcode-terminal@0.12.0:
+    resolution: {integrity: sha512-EXtzRZmC+YGmGlDFbXKxQiMZNwCLEO6BANKXG4iCtSIM0yqc/pappSx3RIKr4r0uh5JsBckOXeKrB3Iz7mdQpQ==}
+    hasBin: true
+
   qrcode.react@4.2.0:
     resolution: {integrity: sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==}
     peerDependencies:
@@ -5009,10 +5031,10 @@ packages:
       typescript:
         optional: true
 
-  react-dom@19.2.0:
-    resolution: {integrity: sha512-UlbRu4cAiGaIewkPyiRGJk0imDN2T3JjieT6spoL2UeSf5od4n5LB/mQ4ejmxhCFT1tYe8IvaFulzynWovsEFQ==}
+  react-dom@19.2.3:
+    resolution: {integrity: sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg==}
     peerDependencies:
-      react: ^19.2.0
+      react: ^19.2.3
 
   react-error-overlay@6.1.0:
     resolution: {integrity: sha512-SN/U6Ytxf1QGkw/9ve5Y+NxBbZM6Ht95tuXNMKs8EJyFa/Vy/+Co3stop3KBHARfn/giv+Lj1uUnTfOJ3moFEQ==}
@@ -5064,8 +5086,8 @@ packages:
       typescript:
         optional: true
 
-  react@19.2.0:
-    resolution: {integrity: sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ==}
+  react@19.2.3:
+    resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
     engines: {node: '>=0.10.0'}
 
   read-cache@1.0.0:
@@ -5845,6 +5867,12 @@ packages:
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
+
+  vite-plugin-qrcode@0.3.0:
+    resolution: {integrity: sha512-tCsN3ckHmFs9vRyFwdNdmlMzzt8iX7hZQrMMOhIIpu8SchfHgA78TIGBfeRnXARBo71qBPC7+O2rgMqPsOdCzg==}
+    engines: {node: ^14.13.1 || ^16.0.0 || >=18}
+    peerDependencies:
+      vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
 
   vite@5.4.21:
     resolution: {integrity: sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==}
@@ -7466,68 +7494,68 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@openwebf/react-camera@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-camera@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
-  '@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-core-ui@0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
-  '@openwebf/react-cupertino-ui@0.3.35(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-cupertino-ui@0.3.35(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
-  '@openwebf/react-router@0.24.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-router@0.24.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
+      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.3)
       '@types/event-emitter': 0.3.5
       '@types/lodash-es': 4.17.12
-      ahooks: 3.9.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      ahooks: 3.9.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       event-emitter: 0.3.5
       lodash-es: 4.17.22
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
-  '@openwebf/react-ui-kit@0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-ui-kit@0.1.0-beta.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
-  '@openwebf/react-video-player@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-video-player@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
-  '@openwebf/webf-bluetooth@1.0.0(react@19.2.0)':
+  '@openwebf/webf-bluetooth@1.0.0(react@19.2.3)':
     dependencies:
-      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
+      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.3)
     transitivePeerDependencies:
       - react
 
   '@openwebf/webf-enterprise-typings@0.21.2': {}
 
-  '@openwebf/webf-enterprise-typings@0.23.7(react@19.2.0)':
+  '@openwebf/webf-enterprise-typings@0.23.7(react@19.2.3)':
     optionalDependencies:
-      react: 19.2.0
+      react: 19.2.3
 
-  '@openwebf/webf-share@1.0.1(react@19.2.0)':
+  '@openwebf/webf-share@1.0.1(react@19.2.3)':
     dependencies:
-      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
+      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.3)
     transitivePeerDependencies:
       - react
 
-  '@openwebf/webf-sqflite@1.0.1(react@19.2.0)':
+  '@openwebf/webf-sqflite@1.0.1(react@19.2.3)':
     dependencies:
-      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
+      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.3)
     transitivePeerDependencies:
       - react
 
@@ -7813,12 +7841,12 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@testing-library/react@16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
       '@babel/runtime': 7.28.4
       '@testing-library/dom': 10.4.1
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
     optionalDependencies:
       '@types/react': 19.2.2
       '@types/react-dom': 19.2.2(@types/react@19.2.2)
@@ -8252,7 +8280,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ahooks@3.9.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  ahooks@3.9.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       '@babel/runtime': 7.28.4
       '@types/js-cookie': 3.0.6
@@ -8260,8 +8288,8 @@ snapshots:
       intersection-observer: 0.12.2
       js-cookie: 3.0.5
       lodash: 4.17.21
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
       react-fast-compare: 3.2.2
       resize-observer-polyfill: 1.5.1
       screenfull: 5.2.0
@@ -11770,9 +11798,11 @@ snapshots:
 
   q@1.5.1: {}
 
-  qrcode.react@4.2.0(react@19.2.0):
+  qrcode-terminal@0.12.0: {}
+
+  qrcode.react@4.2.0(react@19.2.3):
     dependencies:
-      react: 19.2.0
+      react: 19.2.3
 
   qs@6.13.0:
     dependencies:
@@ -11842,18 +11872,18 @@ snapshots:
       - supports-color
       - vue-template-compiler
 
-  react-dom@19.2.0(react@19.2.0):
+  react-dom@19.2.3(react@19.2.3):
     dependencies:
-      react: 19.2.0
+      react: 19.2.3
       scheduler: 0.27.0
 
   react-error-overlay@6.1.0: {}
 
   react-fast-compare@3.2.2: {}
 
-  react-hook-form@7.66.0(react@19.2.0):
+  react-hook-form@7.66.0(react@19.2.3):
     dependencies:
-      react: 19.2.0
+      react: 19.2.3
 
   react-is@16.13.1: {}
 
@@ -11863,19 +11893,19 @@ snapshots:
 
   react-refresh@0.11.0: {}
 
-  react-router-dom@6.30.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  react-router-dom@6.30.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       '@remix-run/router': 1.23.1
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
-      react-router: 6.30.2(react@19.2.0)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+      react-router: 6.30.2(react@19.2.3)
 
-  react-router@6.30.2(react@19.2.0):
+  react-router@6.30.2(react@19.2.3):
     dependencies:
       '@remix-run/router': 1.23.1
-      react: 19.2.0
+      react: 19.2.3
 
-  react-scripts@5.0.1(@babel/plugin-syntax-flow@7.27.1(@babel/core@7.28.5))(@babel/plugin-transform-react-jsx@7.27.1(@babel/core@7.28.5))(@types/babel__core@7.20.5)(eslint@8.57.1)(react@19.2.0)(type-fest@0.21.3)(typescript@4.9.5):
+  react-scripts@5.0.1(@babel/plugin-syntax-flow@7.27.1(@babel/core@7.28.5))(@babel/plugin-transform-react-jsx@7.27.1(@babel/core@7.28.5))(@types/babel__core@7.20.5)(eslint@8.57.1)(react@19.2.3)(type-fest@0.21.3)(typescript@4.9.5):
     dependencies:
       '@babel/core': 7.28.5
       '@pmmmwh/react-refresh-webpack-plugin': 0.5.17(react-refresh@0.11.0)(type-fest@0.21.3)(webpack-dev-server@4.15.2(webpack@5.102.1))(webpack@5.102.1)
@@ -11909,7 +11939,7 @@ snapshots:
       postcss-normalize: 10.0.1(browserslist@4.27.0)(postcss@8.5.6)
       postcss-preset-env: 7.8.3(postcss@8.5.6)
       prompts: 2.4.2
-      react: 19.2.0
+      react: 19.2.3
       react-app-polyfill: 3.0.0
       react-dev-utils: 12.0.1(eslint@8.57.1)(typescript@4.9.5)(webpack@5.102.1)
       react-refresh: 0.11.0
@@ -11964,7 +11994,7 @@ snapshots:
       - webpack-plugin-serve
       - yaml
 
-  react@19.2.0: {}
+  react@19.2.3: {}
 
   read-cache@1.0.0:
     dependencies:
@@ -12859,6 +12889,11 @@ snapshots:
       source-map: 0.7.6
 
   vary@1.1.2: {}
+
+  vite-plugin-qrcode@0.3.0(vite@5.4.21(@types/node@20.19.27)(terser@5.44.1)):
+    dependencies:
+      qrcode-terminal: 0.12.0
+      vite: 5.4.21(@types/node@20.19.27)(terser@5.44.1)
 
   vite@5.4.21(@types/node@20.19.27)(terser@5.44.1):
     dependencies:

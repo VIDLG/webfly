@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:logger/logger.dart';
+import '../router/config.dart' show kAssetHttpServerPort;
 
 /// HTTP server that serves embedded assets
 /// Allows WebF to load assets via http://localhost:port/
@@ -25,7 +26,7 @@ class AssetHttpServer {
   String? get baseUrl => _port != null ? 'http://localhost:$_port' : null;
 
   /// Start the HTTP server
-  Future<void> start({int port = 0}) async {
+  Future<void> start({int port = kAssetHttpServerPort}) async {
     if (_server != null) {
       _logger.i('Asset HTTP server already running on port $_port');
       return;
