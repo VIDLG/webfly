@@ -73,6 +73,20 @@ class LauncherSettingsButton extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   visualDensity: VisualDensity.compact,
                 ),
+                const SizedBox(height: 8),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Theme',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _ThemeModeSelector(themeMode: settings.themeMode),
               ],
             ),
             actions: [
@@ -92,6 +106,56 @@ class LauncherSettingsButton extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _ThemeModeSelector extends ConsumerWidget {
+  final ThemeMode themeMode;
+
+  const _ThemeModeSelector({required this.themeMode});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        RadioListTile<ThemeMode>(
+          value: ThemeMode.system,
+          groupValue: themeMode,
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(appSettingsProvider.notifier).setThemeMode(value);
+            }
+          },
+          title: const Text('Follow System', style: TextStyle(fontSize: 13)),
+          contentPadding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+        ),
+        RadioListTile<ThemeMode>(
+          value: ThemeMode.light,
+          groupValue: themeMode,
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(appSettingsProvider.notifier).setThemeMode(value);
+            }
+          },
+          title: const Text('Light', style: TextStyle(fontSize: 13)),
+          contentPadding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+        ),
+        RadioListTile<ThemeMode>(
+          value: ThemeMode.dark,
+          groupValue: themeMode,
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(appSettingsProvider.notifier).setThemeMode(value);
+            }
+          },
+          title: const Text('Dark', style: TextStyle(fontSize: 13)),
+          contentPadding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
     );
   }
 }

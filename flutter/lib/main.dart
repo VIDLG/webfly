@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart' show ProviderScope;
+import 'package:hooks_riverpod/hooks_riverpod.dart'
+    show ProviderScope, ConsumerWidget, WidgetRef;
 import 'package:webf/launcher.dart'
     show WebFControllerManager, WebFControllerManagerConfig;
 import 'package:webf/webf.dart' show WebF;
@@ -8,6 +9,7 @@ import 'package:webf_share/webf_share.dart' show ShareModule;
 import 'package:webf_sqflite/webf_sqflite.dart' show SQFliteModule;
 import 'router/app_router.dart' show kGoRouter;
 import 'services/asset_http_server.dart';
+import 'services/app_settings_service.dart' show themeModeProvider;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,15 +38,17 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp.router(
       title: 'WebFly',
       routerConfig: kGoRouter,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.indigo,

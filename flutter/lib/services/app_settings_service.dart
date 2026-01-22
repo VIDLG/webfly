@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:hooks_riverpod/hooks_riverpod.dart'
     show AsyncNotifier, AsyncNotifierProvider, AsyncValue, Provider;
 import 'package:shared_preferences/shared_preferences.dart'
@@ -7,16 +8,23 @@ import 'package:shared_preferences/shared_preferences.dart'
 class AppSettings {
   final bool showWebfInspector;
   final bool cacheControllers;
+  final ThemeMode themeMode;
 
   const AppSettings({
     required this.showWebfInspector,
     required this.cacheControllers,
+    required this.themeMode,
   });
 
-  AppSettings copyWith({bool? showWebfInspector, bool? cacheControllers}) {
+  AppSettings copyWith({
+    bool? showWebfInspector,
+    bool? cacheControllers,
+    ThemeMode? themeMode,
+  }) {
     return AppSettings(
       showWebfInspector: showWebfInspector ?? this.showWebfInspector,
       cacheControllers: cacheControllers ?? this.cacheControllers,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 }
@@ -24,6 +32,7 @@ class AppSettings {
 class AppSettingsStorage {
   static const _showInspectorKey = 'show_webf_inspector';
   static const _cacheControllersKey = 'cache_controllers';
+  static const _themeModeKey = 'theme_mode';
 
   final SharedPreferences _prefs;
 
@@ -35,9 +44,11 @@ class AppSettingsStorage {
   }
 
   AppSettings loadSettings() {
+    final themeModeIndex = _prefs.getInt(_themeModeKey) ?? 0;
     return AppSettings(
       showWebfInspector: _prefs.getBool(_showInspectorKey) ?? false,
       cacheControllers: _prefs.getBool(_cacheControllersKey) ?? false,
+      themeMode: ThemeMode.values[themeModeIndex],
     );
   }
 
@@ -45,6 +56,7 @@ class AppSettingsStorage {
     await Future.wait([
       _prefs.setBool(_showInspectorKey, settings.showWebfInspector),
       _prefs.setBool(_cacheControllersKey, settings.cacheControllers),
+      _prefs.setInt(_themeModeKey, settings.themeMode.index),
     ]);
   }
 }
@@ -87,6 +99,12 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
     if (current == null) return;
     await updateSettings(current.copyWith(cacheControllers: value));
   }
+
+  Future<void> setThemeMode(ThemeMode value) async {
+    final current = state.value;
+    if (current == null) return;
+    await updateSettings(current.copyWith(themeMode: value));
+  }
 }
 
 final appSettingsProvider =
@@ -101,4 +119,8 @@ final showWebfInspectorProvider = Provider<bool>((ref) {
 
 final cacheControllersProvider = Provider<bool>((ref) {
   return ref.watch(appSettingsProvider).value?.cacheControllers ?? false;
+});
+
+final themeModeProvider = Provider<ThemeMode>((ref) {
+  return ref.watch(appSettingsProvider).value?.themeMode ?? ThemeMode.system;
 });
