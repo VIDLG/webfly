@@ -32,10 +32,7 @@ class LauncherSettingsButton extends ConsumerWidget {
             titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
             actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            title: const Text(
-              'Settings',
-              style: TextStyle(fontSize: 18),
-            ),
+            title: const Text('Settings', style: TextStyle(fontSize: 18)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -82,7 +79,10 @@ class LauncherSettingsButton extends ConsumerWidget {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   minimumSize: const Size(60, 32),
                   textStyle: const TextStyle(fontSize: 13),
                 ),

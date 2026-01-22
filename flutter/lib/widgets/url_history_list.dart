@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart' show useState, useEffect;
+import 'package:flutter_hooks/flutter_hooks.dart' show useState;
 import 'package:hooks_riverpod/hooks_riverpod.dart'
     show HookConsumerWidget, WidgetRef;
-import '../../../services/url_history_service.dart';
-import 'history_card.dart';
+import '../services/url_history_service.dart';
 
 class UrlHistoryList extends HookConsumerWidget {
   final void Function(String url, String path) onOpen;
   final void Function(String url, String path) onTap;
   final void Function(String url, String path) onLongPress;
   final void Function(bool isEditMode)? onEditModeChanged;
-  final ValueNotifier<bool>? editModeNotifier;
 
   const UrlHistoryList({
     super.key,
@@ -18,7 +16,6 @@ class UrlHistoryList extends HookConsumerWidget {
     required this.onTap,
     required this.onLongPress,
     this.onEditModeChanged,
-    this.editModeNotifier,
   });
 
   @override
@@ -27,24 +24,7 @@ class UrlHistoryList extends HookConsumerWidget {
     final isEditMode = useState(false);
     final selectedEntries = useState<Set<UrlHistoryEntry>>({});
     final isDragging = useState(false);
-
-    // Listen to external edit mode changes
-    useEffect(() {
-      if (editModeNotifier != null) {
-        void listener() {
-          if (!editModeNotifier!.value && isEditMode.value) {
-            // External request to exit edit mode
-            isEditMode.value = false;
-            selectedEntries.value = {};
-            onEditModeChanged?.call(false);
-          }
-        }
-
-        editModeNotifier!.addListener(listener);
-        return () => editModeNotifier!.removeListener(listener);
-      }
-      return null;
-    }, [editModeNotifier]);
+    final selectedForDelete = useState<UrlHistoryEntry?>(null);
 
     if (urls == null) {
       return const SizedBox.shrink();
@@ -281,7 +261,7 @@ class UrlHistoryList extends HookConsumerWidget {
               return Padding(
                 key: ValueKey('${entry.url}_${entry.path}'),
                 padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                child: HistoryCard(
+                child: _HistoryCard(
                   entry: entry,
                   index: index,
                   isLatest: index == 0,
@@ -304,10 +284,13 @@ class UrlHistoryList extends HookConsumerWidget {
             itemBuilder: (context, index) {
               final entry = urls[index];
               final isLast = index == urls.length - 1;
+              final isSelected = selectedForDelete.value == entry;
 
               return Dismissible(
                 key: ValueKey('${entry.url}_${entry.path}_dismissible'),
-                direction: DismissDirection.startToEnd,
+                direction: isSelected
+                    ? DismissDirection.startToEnd
+                    : DismissDirection.none,
                 background: Container(
                   margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
                   alignment: Alignment.centerLeft,
@@ -324,19 +307,25 @@ class UrlHistoryList extends HookConsumerWidget {
                 ),
                 confirmDismiss: (direction) async {
                   handleDelete(entry);
+                  selectedForDelete.value = null;
                   return true;
                 },
                 child: Padding(
                   padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                  child: HistoryCard(
+                  child: _HistoryCard(
                     entry: entry,
                     index: index,
                     isLatest: index == 0,
                     isEditMode: false,
-                    isSelected: false,
+                    isSelected: isSelected,
                     onOpen: () => onOpen(entry.url, entry.path),
-                    onTap: () => onTap(entry.url, entry.path),
-                    onLongPress: () => onLongPress(entry.url, entry.path),
+                    onTap: () {
+                      selectedForDelete.value = null;
+                      onTap(entry.url, entry.path);
+                    },
+                    onLongPress: () {
+                      selectedForDelete.value = entry;
+                    },
                     onDelete: () => handleDelete(entry),
                     onToggleSelect: () {},
                   ),
@@ -346,6 +335,155 @@ class UrlHistoryList extends HookConsumerWidget {
           ),
       ],
     );
+  }
+}
+
+class _HistoryCard extends StatelessWidget {
+  final UrlHistoryEntry entry;
+  final int index;
+  final bool isLatest;
+  final bool isEditMode;
+  final bool isSelected;
+  final VoidCallback onOpen;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleSelect;
+
+  const _HistoryCard({
+    required this.entry,
+    required this.index,
+    required this.isLatest,
+    required this.isEditMode,
+    required this.isSelected,
+    required this.onOpen,
+    required this.onTap,
+    required this.onLongPress,
+    required this.onDelete,
+    required this.onToggleSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final cardContent = Card(
+      margin: EdgeInsets.zero,
+      color: isEditMode && isSelected
+          ? theme.colorScheme.primaryContainer.withOpacity(0.3)
+          : isSelected
+          ? theme.colorScheme.errorContainer.withOpacity(0.3)
+          : null,
+      child: InkWell(
+        onTap: isEditMode ? onToggleSelect : onTap,
+        onLongPress: isEditMode ? null : onLongPress,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              if (isEditMode)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Checkbox(
+                    value: isSelected,
+                    onChanged: (_) => onToggleSelect(),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.errorContainer
+                          : theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      isSelected
+                          ? Icons.delete_outline
+                          : (isLatest ? Icons.history : Icons.link),
+                      color: isSelected
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.primary,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isLatest && !isEditMode)
+                      Text(
+                        'Last visited',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    Text(
+                      entry.url,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: isLatest && !isEditMode
+                            ? FontWeight.w500
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    if (entry.path != '/')
+                      Text(
+                        entry.path,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (isEditMode)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      onPressed: onDelete,
+                      color: theme.colorScheme.error,
+                      tooltip: 'Delete',
+                    ),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Icon(
+                          Icons.drag_handle,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward, size: 20),
+                  onPressed: onOpen,
+                  color: theme.colorScheme.primary,
+                  tooltip: 'Open',
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return cardContent;
   }
 }
 

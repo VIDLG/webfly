@@ -59,9 +59,7 @@ Future<WebFController?> injectWebfBundleAsync({
 
 /// Default loading widget for WebF view
 Widget _defaultLoadingWidget() {
-  return const WebFlyLoading(
-    message: 'Loading...',
-  );
+  return const WebFlyLoading(message: 'Loading...');
 }
 
 /// Default error widget for WebF view

@@ -37,8 +37,8 @@ class HistoryCard extends StatelessWidget {
       color: isEditMode && isSelected
           ? theme.colorScheme.primaryContainer.withOpacity(0.3)
           : isSelected
-              ? theme.colorScheme.errorContainer.withOpacity(0.3)
-              : null,
+          ? theme.colorScheme.errorContainer.withOpacity(0.3)
+          : null,
       child: InkWell(
         onTap: isEditMode ? onToggleSelect : onTap,
         onLongPress: isEditMode ? null : onLongPress,

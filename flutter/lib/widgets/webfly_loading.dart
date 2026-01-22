@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 class WebFlyLoading extends StatelessWidget {
   final String? message;
 
-  const WebFlyLoading({
-    super.key,
-    this.message,
-  });
+  const WebFlyLoading({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -16,11 +13,7 @@ class WebFlyLoading extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.asset(
-            'assets/logo/webfly_logo.png',
-            width: 80,
-            height: 80,
-          ),
+          Image.asset('assets/logo/webfly_logo.png', width: 80, height: 80),
           const SizedBox(height: 24),
           const CircularProgressIndicator(),
           if (message != null) ...[
