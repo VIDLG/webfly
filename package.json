@@ -11,9 +11,12 @@
     "build:all": "pnpm build:use-cases && pnpm build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "flutter": "cd flutter && flutter run",
+    "flutter": "cd flutter && flutter",
+    "flutter:run": "cd flutter && rust-script tools/cmd-run.rs --log=../flutter-run.log flutter run",
     "flutter:platforms": "rust-script flutter/tools/flutter-gen-platforms.rs --config flutter/app.pkl",
-    "flutter:build-apk": "cd flutter && flutter build apk",
+    "flutter:logo": "cd flutter && rust-script tools\\gen-logo.rs",
+    "flutter:kill-android": "rust-script flutter/tools/kill-file-handles.rs flutter/android",
+    "flutter:build-apk": "cd flutter && rust-script tools/cmd-run.rs --log=../flutter-build.log flutter build apk --verbose --release --obfuscate --split-debug-info=build/app/outputs/symbols",
     "flutter:clean": "cd flutter && flutter clean"
   },
   "dependencies": {

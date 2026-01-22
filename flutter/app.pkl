@@ -7,6 +7,11 @@ typealias Org = String(matches(Regex(#"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0
 project_name: ProjectName = "webfly"
 org: Org = "org.vidlg"
 description: String(length > 0) = "webfly is like webf go / expo go, focused on rendering target web pages"
+output_file_name_pattern: String = "\(project_name)-v{version}-${name}.apk"
+
+tools {
+  gen_logo_script = "tools/gen-logo.rs"
+}
 
 create {
   platforms = List("android")
@@ -22,6 +27,10 @@ android {
     build {
       application_id = "\(org).\(project_name)"
       namespace = "\(org).\(project_name)"
+      // output_file_name will be auto-generated from pubspec.yaml version
+      abi_filters = List("armeabi-v7a", "arm64-v8a")
+      // 禁用 Kotlin 增量编译以避免跨盘符路径问题
+      kotlin_incremental = false
     }
 
     manifest {

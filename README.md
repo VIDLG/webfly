@@ -177,6 +177,10 @@ webfly/
 │   │   ├── services/       # Business logic
 │   │   ├── widgets/        # Reusable components
 │   │   └── router/         # Navigation setup
+│   ├── tools/              # Build automation tools
+│   │   ├── flutter-gen-platforms.rs  # Platform generation with icons/splash
+│   │   ├── cmd-run.rs                # Generic command wrapper with logging
+│   │   └── kill-file-handles.rs      # Process cleanup utility
 │   ├── assets/             # Images, logos
 │   └── pubspec.yaml        # Flutter dependencies
 │
@@ -187,16 +191,75 @@ webfly/
     └── webf/               # WebF engine source
 ```
 
+### Development Tools
+
+WebFly includes custom Rust-based tools for enhanced development workflow:
+
+**flutter-gen-platforms.rs**
+- Generates Flutter platform directories from Pkl/TOML configuration
+- Automatically generates app icons using `flutter_launcher_icons`
+- Creates splash screens via `flutter_native_splash`
+- Integrated into `pnpm flutter:platforms` command
+
+**cmd-run.rs**
+- Generic command wrapper with logging capabilities
+- Supports custom working directories via `--cwd`
+- Captures command output to log files
+- Used by `pnpm flutter:run` and `pnpm flutter:build-apk`
+
+**kill-file-handles.rs**
+- Finds processes locking files or directories
+- Useful for cleaning up build artifacts during development
+- Supports `--list-only` mode to preview without killing
+- Uses Windows Sysinternals `handle.exe` for accurate detection
+
+### NPM Scripts
+
+WebFly includes convenient npm scripts for common development tasks:
+
+**Flutter Commands**
+```bash
+# Run Flutter app with logging
+pnpm flutter:run
+
+# Generate platform directories with icons and splash screens
+pnpm flutter:platforms
+
+# Build release APK with obfuscation and debug symbols
+pnpm flutter:build-apk
+
+# Clean Flutter build artifacts
+pnpm flutter:clean
+
+# Direct Flutter command access
+pnpm flutter <command>
+```
+
+**Web Development**
+```bash
+# Start Vite dev server
+pnpm dev
+
+# Build web app
+pnpm build
+
+# Build use cases
+pnpm build:use-cases
+```
+
 ### Building from Source
 
 **Android APK**
 ```bash
+pnpm flutter:build-apk
+# Or manually:
 cd flutter
-flutter build apk --release
+flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
 ```
 
 **Android App Bundle**
 ```bash
+cd flutter
 flutter build appbundle --release
 ```
 

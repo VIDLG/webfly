@@ -6,6 +6,7 @@
 //! java-properties = "1.4"
 //! serde_json = "1.0"
 //! serde = { version = "1.0", features = ["derive"] }
+//! serde_yaml = "0.9"
 //! toml = "0.8"
 //! xmltree = "0.10"
 //! walkdir = "2.5"
@@ -36,9 +37,21 @@ struct Config {
     #[serde(default)]
     description: Option<String>,
     #[serde(default)]
+    version: Option<String>,
+    #[serde(default)]
+    output_file_name_pattern: Option<String>,
+    #[serde(default)]
+    tools: ToolsConfig,
+    #[serde(default)]
     create: FlutterCreateConfig,
     android: AndroidConfig,
     ios: Option<IosConfig>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct ToolsConfig {
+    #[serde(default)]
+    gen_logo_script: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -90,6 +103,12 @@ struct AndroidAppBuildConfig {
     namespace: String,
     #[serde(default)]
     application_id: String,
+    #[serde(default)]
+    output_file_name: Option<String>,
+    #[serde(default)]
+    abi_filters: Option<Vec<String>>,
+    #[serde(default)]
+    kotlin_incremental: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -105,6 +124,7 @@ struct AndroidManifestConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 struct AndroidUsesPermission {
     name: String,
     #[serde(default)]
@@ -144,7 +164,6 @@ fn main() -> Result<()> {
     }
 
     let mut cfg = load_config(&config_path)?;
-    expand_config(&mut cfg)?;
 
     let project_dir = project_dir.unwrap_or_else(|| {
         config_path
@@ -152,6 +171,36 @@ fn main() -> Result<()> {
             .unwrap_or_else(|| Path::new("."))
             .to_path_buf()
     });
+
+    // Read version from pubspec.yaml if not set in config
+    if cfg.version.is_none() {
+        let pubspec_path = project_dir.join("pubspec.yaml");
+        if pubspec_path.exists() {
+            cfg.version = read_pubspec_version(&pubspec_path)?;
+            if let Some(version) = &cfg.version {
+                println!("Using version from pubspec.yaml: {}", version);
+            }
+        }
+    }
+
+    // Set output_file_name if version is available
+    if cfg.android.app.build.output_file_name.is_none() {
+        if let Some(version) = &cfg.version {
+            // Use pattern from config or default pattern
+            let pattern = cfg.output_file_name_pattern.as_deref()
+                .unwrap_or("{project_name}-v{version}-${name}.apk");
+
+            // Replace {version} and {project_name} placeholders
+            let output_pattern = pattern
+                .replace("{version}", version)
+                .replace("{project_name}", &cfg.project_name);
+
+            cfg.android.app.build.output_file_name = Some(output_pattern);
+        }
+    }
+
+    expand_config(&mut cfg)?;
+
     let output_dir = project_dir.join("android");
 
     if output_dir.exists() {
@@ -202,6 +251,9 @@ fn main() -> Result<()> {
         &output_dir.join("app/build.gradle.kts"),
         &cfg.android.app.build.namespace,
         &cfg.android.app.build.application_id,
+        cfg.android.app.build.output_file_name.as_deref(),
+        cfg.android.app.build.abi_filters.as_deref(),
+        cfg.android.app.build.kotlin_incremental,
     )?;
     apply_manifest(
         &output_dir.join("app/src/main/AndroidManifest.xml"),
@@ -221,6 +273,15 @@ fn main() -> Result<()> {
     }
 
     println!("Android directory generated at: {}", output_dir.display());
+
+    if let Some(gen_logo_script) = cfg.tools.gen_logo_script.as_deref() {
+        println!("Generating logo variants...");
+        run_gen_logo(&project_dir, gen_logo_script)?;
+    }
+
+    println!("Generating launcher icons and splash screen...");
+    run_flutter_pub_run(&project_dir, &flutter_cmd, &["flutter_launcher_icons"])?;
+    run_flutter_pub_run(&project_dir, &flutter_cmd, &["flutter_native_splash:create"])?;
 
     run_flutter_clean(&project_dir, &flutter_cmd)?;
     run_flutter_pub_get(&project_dir, &flutter_cmd)?;
@@ -268,6 +329,24 @@ fn run_pkl_eval(pkl_cmd: &Path, path: &Path, format_args: [&str; 2]) -> Result<V
     }
 
     Ok(output.stdout)
+}
+
+fn read_pubspec_version(path: &Path) -> Result<Option<String>> {
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("Failed to read pubspec.yaml: {}", path.display()))?;
+
+    let yaml: serde_json::Value = serde_yaml::from_str(&content)
+        .with_context(|| format!("Failed to parse pubspec.yaml: {}", path.display()))?;
+
+    if let Some(version_value) = yaml.get("version") {
+        if let Some(version_str) = version_value.as_str() {
+            // Extract just the version number (before +build_number)
+            let version = version_str.split('+').next().unwrap_or(version_str);
+            return Ok(Some(version.to_string()));
+        }
+    }
+
+    Ok(None)
 }
 
 fn expand_config(cfg: &mut Config) -> Result<()> {
@@ -483,6 +562,39 @@ fn run_flutter_pub_get(path: &Path, flutter_cmd: &Path) -> Result<()> {
     Ok(())
 }
 
+fn run_flutter_pub_run(path: &Path, flutter_cmd: &Path, args: &[&str]) -> Result<()> {
+    let mut command = Command::new(flutter_cmd);
+    command
+        .arg("pub")
+        .arg("run")
+        .current_dir(path);
+    for arg in args {
+        command.arg(arg);
+    }
+    let status = command
+        .status()
+        .context("Failed to run flutter pub run")?;
+    if !status.success() {
+        bail!("flutter pub run failed with status: {status}");
+    }
+    Ok(())
+}
+
+fn run_gen_logo(path: &Path, script_path: &str) -> Result<()> {
+    let status = Command::new("rust-script")
+        .arg(script_path)
+        .arg("--pubspec")
+        .arg("pubspec.yaml")
+        .arg("--no-apply")
+        .current_dir(path)
+        .status()
+        .context("Failed to run gen-logo.rs")?;
+    if !status.success() {
+        bail!("gen-logo.rs failed with status: {status}");
+    }
+    Ok(())
+}
+
 fn run_flutter_clean(path: &Path, flutter_cmd: &Path) -> Result<()> {
     let status = Command::new(flutter_cmd)
         .arg("clean")
@@ -589,10 +701,17 @@ fn apply_plugin_repositories(path: &Path, repos: &[String]) -> Result<()> {
     Ok(())
 }
 
-fn apply_app_gradle(path: &Path, namespace: &str, application_id: &str) -> Result<()> {
+fn apply_app_gradle(path: &Path, namespace: &str, application_id: &str, output_file_name: Option<&str>, abi_filters: Option<&[String]>, kotlin_incremental: Option<bool>) -> Result<()> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("Failed to read file: {}", path.display()))?;
     let mut out = Vec::new();
+    let mut in_build_types = false;
+    let mut in_default_config = false;
+    let mut in_kotlin_options = false;
+    let mut added_output_config = false;
+    let mut added_abi_filters = false;
+    let mut added_kotlin_incremental = false;
+
     for line in content.lines() {
         if line.trim_start().starts_with("namespace = ") {
             out.push(format!("    namespace = \"{}\"", namespace));
@@ -600,6 +719,64 @@ fn apply_app_gradle(path: &Path, namespace: &str, application_id: &str) -> Resul
             out.push(format!("        applicationId = \"{}\"", application_id));
         } else {
             out.push(line.to_string());
+        }
+
+        // Track when we enter kotlinOptions block
+        if line.trim().starts_with("kotlinOptions {") {
+            in_kotlin_options = true;
+        }
+
+        // Add Kotlin incremental config after kotlinOptions block closes
+        if in_kotlin_options && line.trim() == "}" && !added_kotlin_incremental {
+            in_kotlin_options = false;
+            if let Some(false) = kotlin_incremental {
+                out.push(String::new());
+                out.push("    // 禁用 Kotlin 增量编译以避免跨盘符路径问题".to_string());
+                out.push("    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {".to_string());
+                out.push("        incremental = false".to_string());
+                out.push("    }".to_string());
+                added_kotlin_incremental = true;
+            }
+        }
+
+        // Track when we enter defaultConfig block
+        if line.trim().starts_with("defaultConfig {") {
+            in_default_config = true;
+        }
+
+        // Add ABI filters at the end of defaultConfig block
+        if in_default_config && line.trim() == "}" && !added_abi_filters {
+            if let Some(abis) = abi_filters {
+                if !abis.is_empty() {
+                    out.insert(out.len() - 1, format!("        ndk {{"));
+                    for abi in abis {
+                        out.insert(out.len() - 1, format!("            abiFilters.add(\"{}\")", abi));
+                    }
+                    out.insert(out.len() - 1, format!("        }}"));
+                }
+            }
+            in_default_config = false;
+            added_abi_filters = true;
+        }
+
+        // Track when we enter buildTypes block
+        if line.trim().starts_with("buildTypes {") {
+            in_build_types = true;
+        }
+
+        // Add output config after buildTypes block closes
+        if in_build_types && line.trim() == "}" && !added_output_config {
+            in_build_types = false;
+            if let Some(filename_pattern) = output_file_name {
+                out.push(String::new());
+                out.push("    applicationVariants.all {".to_string());
+                out.push("        outputs.all {".to_string());
+                out.push("            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl".to_string());
+                out.push(format!("            output.outputFileName = \"{}\"", filename_pattern));
+                out.push("        }".to_string());
+                out.push("    }".to_string());
+                added_output_config = true;
+            }
         }
     }
     fs::write(path, out.join("\n") + "\n")
@@ -705,6 +882,7 @@ fn finalize_manifest_xml(xml: &str, enable_on_back_invoked_callback: bool) -> Re
         .write_document_declaration(true);
     root.write_with_config(&mut out, config)
         .context("Failed to write AndroidManifest.xml")?;
+
     Ok(String::from_utf8(out).context("Failed to encode AndroidManifest.xml")?)
 }
 

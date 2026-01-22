@@ -177,6 +177,10 @@ webfly/
 │   │   ├── services/       # 业务逻辑
 │   │   ├── widgets/        # 可复用组件
 │   │   └── router/         # 导航配置
+│   ├── tools/              # 构建自动化工具
+│   │   ├── flutter-gen-platforms.rs  # 平台生成（含图标/启动画面）
+│   │   ├── cmd-run.rs                # 通用命令包装器（带日志）
+│   │   └── kill-file-handles.rs      # 进程清理工具
 │   ├── assets/             # 图片、Logo
 │   └── pubspec.yaml        # Flutter 依赖
 │
@@ -187,16 +191,75 @@ webfly/
     └── webf/               # WebF 引擎源码
 ```
 
+### 开发工具
+
+WebFly 包含了基于 Rust 的自定义工具，用于增强开发工作流：
+
+**flutter-gen-platforms.rs**
+- 从 Pkl/TOML 配置生成 Flutter 平台目录
+- 自动使用 `flutter_launcher_icons` 生成应用图标
+- 通过 `flutter_native_splash` 创建启动画面
+- 集成到 `pnpm flutter:platforms` 命令中
+
+**cmd-run.rs**
+- 带日志功能的通用命令包装器
+- 支持通过 `--cwd` 指定工作目录
+- 捕获命令输出到日志文件
+- 用于 `pnpm flutter:run` 和 `pnpm flutter:build-apk`
+
+**kill-file-handles.rs**
+- 查找锁定文件或目录的进程
+- 在开发过程中清理构建产物时很有用
+- 支持 `--list-only` 模式，仅预览不终止
+- 使用 Windows Sysinternals `handle.exe` 进行精确检测
+
+### NPM 脚本
+
+WebFly 提供了便捷的 npm 脚本用于常见开发任务：
+
+**Flutter 命令**
+```bash
+# 运行 Flutter 应用并记录日志
+pnpm flutter:run
+
+# 生成平台目录，包含图标和启动画面
+pnpm flutter:platforms
+
+# 构建发布版 APK，包含代码混淆和调试符号
+pnpm flutter:build-apk
+
+# 清理 Flutter 构建产物
+pnpm flutter:clean
+
+# 直接执行 Flutter 命令
+pnpm flutter <命令>
+```
+
+**Web 开发**
+```bash
+# 启动 Vite 开发服务器
+pnpm dev
+
+# 构建 Web 应用
+pnpm build
+
+# 构建用例
+pnpm build:use-cases
+```
+
 ### 从源码构建
 
 **Android APK**
 ```bash
+pnpm flutter:build-apk
+# 或手动执行：
 cd flutter
-flutter build apk --release
+flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
 ```
 
 **Android App Bundle**
 ```bash
+cd flutter
 flutter build appbundle --release
 ```
 

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 0.1.0
 
 environment:
   sdk: ^3.10.7
@@ -102,23 +102,45 @@ flutter:
   #         weight: 700
   #
 
+# WebFly custom configuration
+webfly:
+  logo:
+    source: assets/logo/webfly_logo.png
+    light_variant: assets/logo/webfly_logo_light.png
+    dark_variant: assets/logo/webfly_logo_dark.png
+
 # Configure app launcher icon
+# Original logo source: assets/logo/webfly_logo.png (use gen-logo.rs to generate variants)
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/logo/webfly_logo.png"
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/logo/webfly_logo.png"
+  # Dark theme as default (for dark system theme)
+  image_path: "assets/logo/webfly_logo_dark.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/logo/webfly_logo_dark.png"
+  # Light theme variant
+  image_path_android_light: "assets/logo/webfly_logo_light.png"
+  adaptive_icon_background_light: "#ffffff"
+  adaptive_icon_foreground_light: "assets/logo/webfly_logo_light.png"
 
 # Configure splash screen
+# Original logo source: assets/logo/webfly_logo.png (use gen-logo.rs to generate variants)
 flutter_native_splash:
+  # Light theme
   color: "#ffffff"
-  image: assets/logo/webfly_logo.png
+  image: assets/logo/webfly_logo_light.png
+  # Dark theme
+  color_dark: "#000000"
+  image_dark: assets/logo/webfly_logo_dark.png
   android: true
   ios: false
   android_12:
+    # Light theme
     color: "#ffffff"
-    image: assets/logo/webfly_logo.png
+    image: assets/logo/webfly_logo_light.png
+    # Dark theme
+    color_dark: "#000000"
+    image_dark: assets/logo/webfly_logo_dark.png
 
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
