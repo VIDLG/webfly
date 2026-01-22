@@ -1,5 +1,7 @@
 # WebFly 🚀
 
+English | [简体中文](README.zh-CN.md)
+
 **WebFly** is a powerful Flutter-based launcher and runtime for web applications with native capabilities. Unlike traditional web containers like Expo Go or WebF Go, WebFly provides deep integration with native device features while maintaining the flexibility of web development.
 
 ## 🌟 Why WebFly?
