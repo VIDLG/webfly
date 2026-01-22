@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "flutter": "cd flutter && flutter run",
+    "flutter:release": "cd flutter && flutter run --release",
     "flutter:platforms": "rust-script flutter/tools/flutter-gen-platforms.rs --config flutter/app.pkl",
     "flutter:build-apk": "cd flutter && flutter build apk --verbose",
     "flutter:clean": "cd flutter && flutter clean"

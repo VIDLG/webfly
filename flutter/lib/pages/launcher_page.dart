@@ -3,13 +3,16 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../hooks/use_route_focus.dart';
 import '../services/app_settings_service.dart';
 import '../services/url_history_service.dart';
 import '../services/asset_http_server.dart';
+import '../services/hybrid_controller_manager.dart';
 import '../utils/validators.dart';
 import '../widgets/url_history_list.dart';
 import '../widgets/webf_inspector_overlay.dart';
-import '../router/config.dart' show kScannerPath, buildWebFRouteUrl;
+import '../router/config.dart'
+    show kScannerPath, kUseCasesPath, kAppRoutePath, buildWebFRouteUrl;
 
 class LauncherPage extends HookConsumerWidget {
   const LauncherPage({super.key});
@@ -29,12 +32,27 @@ class LauncherPage extends HookConsumerWidget {
       return null;
     }, [urls, urlController]);
 
+    // Monitor route focus and clean up controllers when returning to launcher
+    final isRouteFocused = useRouteFocus();
+    useEffect(() {
+      if (isRouteFocused.value) {
+        // Dispose all controllers when this page regains focus
+        // This ensures clean state when returning from WebF pages
+        HybridControllerManager.instance.disposeAll();
+      }
+      return null;
+    }, [isRouteFocused.value]);
+
     void openWebF(String url) {
       ref.read(urlHistoryProvider.notifier).addUrl(url);
       errorMessage.value = null;
 
       // Always use hybrid routing mode (shared controller)
-      final routeUrl = buildWebFRouteUrl(path: '/', url: url);
+      final routeUrl = buildWebFRouteUrl(
+        url: url,
+        route: kAppRoutePath,
+        path: '/',
+      );
       print('[LauncherPage] Navigating to hybrid route: $routeUrl');
       context.push(routeUrl, extra: {'initial': true, 'url': url});
     }
@@ -100,38 +118,15 @@ class LauncherPage extends HookConsumerWidget {
                   child: Column(
                     children: [
                       const SizedBox(height: 8),
-                      Icon(
-                        Icons.qr_code_scanner,
-                        size: 64,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Enter a URL or scan a QR code to launch',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      _HeaderSection(),
                       const SizedBox(height: 20),
-                      TextField(
+                      _UrlInputField(
                         controller: urlController,
-                        decoration: InputDecoration(
-                          labelText: 'WebF Bundle URL',
-                          hintText: 'https://example.com/bundle.js',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.link),
-                          errorText: errorMessage.value,
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              urlController.clear();
-                              errorMessage.value = null;
-                            },
-                          ),
-                        ),
-                        keyboardType: TextInputType.url,
-                        textInputAction: TextInputAction.go,
+                        errorMessage: errorMessage.value,
+                        onClear: () {
+                          urlController.clear();
+                          errorMessage.value = null;
+                        },
                         onSubmitted: (_) => applyManualUrl(),
                       ),
                       const SizedBox(height: 12),
@@ -150,108 +145,12 @@ class LauncherPage extends HookConsumerWidget {
                         contentPadding: EdgeInsets.zero,
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: applyManualUrl,
-                              icon: const Icon(Icons.rocket_launch),
-                              label: const Text('Launch'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          FilledButton.tonalIcon(
-                            onPressed: openScanner,
-                            icon: const Icon(Icons.qr_code_scanner),
-                            label: const Text('Scan'),
-                          ),
-                        ],
+                      _ActionButtons(
+                        onLaunch: applyManualUrl,
+                        onScan: openScanner,
                       ),
                       const SizedBox(height: 24),
-                      Card(
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () {
-                            // Open showcases from local HTTP server
-                            final server = AssetHttpServer();
-                            if (!server.isRunning) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Asset server not running'),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final showcaseUrl = '${server.baseUrl}/';
-                            ref
-                                .read(urlHistoryProvider.notifier)
-                                .addUrl(showcaseUrl);
-                            final routeUrl = buildWebFRouteUrl(
-                              path: '/',
-                              url: showcaseUrl,
-                              title: 'Show Cases',
-                            );
-                            print(
-                              '[LauncherPage] Opening showcases: $routeUrl',
-                            );
-                            context.push(
-                              routeUrl,
-                              extra: {'initial': true, 'url': showcaseUrl},
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    Icons.dashboard,
-                                    size: 32,
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Show Cases',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'React examples powered by WebF',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      const _UseCasesCard(),
                       const SizedBox(height: 24),
                       if (urls != null && urls.isNotEmpty)
                         UrlHistoryList(onUrlTap: openWebF),
@@ -262,6 +161,175 @@ class LauncherPage extends HookConsumerWidget {
             ),
             if (showInspector) const WebFInspectorOverlay(),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// Private widget: Header section with icon and description
+class _HeaderSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Icon(Icons.qr_code_scanner, size: 64, color: theme.colorScheme.primary),
+        const SizedBox(height: 12),
+        Text(
+          'Enter a URL or scan a QR code to launch',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+// Private widget: URL input field
+class _UrlInputField extends StatelessWidget {
+  const _UrlInputField({
+    required this.controller,
+    required this.errorMessage,
+    required this.onClear,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String? errorMessage;
+  final VoidCallback onClear;
+  final ValueChanged<String> onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: 'WebF Bundle URL',
+        hintText: 'https://example.com/bundle.js',
+        border: const OutlineInputBorder(),
+        prefixIcon: const Icon(Icons.link),
+        errorText: errorMessage,
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: onClear,
+        ),
+      ),
+      keyboardType: TextInputType.url,
+      textInputAction: TextInputAction.go,
+      onSubmitted: onSubmitted,
+    );
+  }
+}
+
+// Private widget: Action buttons (Launch & Scan)
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({required this.onLaunch, required this.onScan});
+
+  final VoidCallback onLaunch;
+  final VoidCallback onScan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: onLaunch,
+            icon: const Icon(Icons.rocket_launch),
+            label: const Text('Launch'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FilledButton.tonalIcon(
+          onPressed: onScan,
+          icon: const Icon(Icons.qr_code_scanner),
+          label: const Text('Scan'),
+        ),
+      ],
+    );
+  }
+}
+
+// Private widget: Use Cases card
+class _UseCasesCard extends ConsumerWidget {
+  const _UseCasesCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    void onTap() {
+      // Open use cases from local HTTP server
+      final server = AssetHttpServer();
+      if (!server.isRunning) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Asset server not running')),
+        );
+        return;
+      }
+
+      final useCaseUrl = '${server.baseUrl}/';
+      ref.read(urlHistoryProvider.notifier).addUrl(useCaseUrl);
+      final routeUrl = buildWebFRouteUrl(
+        url: useCaseUrl,
+        route: kUseCasesPath,
+        path: '/',
+      );
+      print('[LauncherPage] Opening use cases: $routeUrl');
+      context.push(routeUrl, extra: {'initial': true, 'url': useCaseUrl});
+    }
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.dashboard,
+                  size: 32,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Use Cases',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'React examples powered by WebF',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );

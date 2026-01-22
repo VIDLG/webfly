@@ -2,6 +2,7 @@
 const String kLauncherPath = '/';
 const String kScannerPath = '/scanner';
 const String kWebfRoutePath = '/webf';
+const String kUseCasesPath = '/usecases'; // Dedicated route for use cases
 const String kAppRoutePath =
     '/app'; // Hybrid routing uses query params instead of path params
 
@@ -29,8 +30,9 @@ String buildWebFUrl(String url) {
 
 /// Build WebF Hybrid Routing URL
 String buildWebFRouteUrl({
-  required String path,
   required String url,
+  required String route,
+  required String path,
   String? base,
   String? title,
 }) {
@@ -41,7 +43,8 @@ String buildWebFRouteUrl({
     base ?? generateDefaultControllerName(url),
   );
   final encodedPath = Uri.encodeComponent(path);
-  var result = '$kAppRoutePath?$kUrlParam=$encodedUrl&$kBaseParam=$encodedBase&$kPathParam=$encodedPath';
+  var result =
+      '$route?$kUrlParam=$encodedUrl&$kBaseParam=$encodedBase&$kPathParam=$encodedPath';
   if (title != null) {
     final encodedTitle = Uri.encodeComponent(title);
     result += '&$kTitleParam=$encodedTitle';
@@ -50,10 +53,14 @@ String buildWebFRouteUrl({
 }
 
 /// Build WebF Hybrid Routing URL from current URI
-String buildWebFRouteUrlFromUri({required String path, required Uri uri}) {
+String buildWebFRouteUrlFromUri({
+  required Uri uri,
+  required String route,
+  required String path,
+}) {
   assert(path.isNotEmpty, 'path cannot be empty');
   final url = uri.queryParameters[kUrlParam];
   assert(url != null && url.isNotEmpty, 'url parameter missing in URI');
   final base = uri.queryParameters[kBaseParam];
-  return buildWebFRouteUrl(path: path, url: url!, base: base);
+  return buildWebFRouteUrl(url: url!, route: route, path: path, base: base);
 }

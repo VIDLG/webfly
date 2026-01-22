@@ -101,9 +101,18 @@ struct AndroidManifestConfig {
     #[serde(default)]
     enable_on_back_invoked_callback: Option<bool>,
     #[serde(default)]
-    permissions: Option<Vec<String>>,
+    permissions: Option<Vec<AndroidUsesPermission>>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct AndroidUsesPermission {
+    name: String,
     #[serde(default)]
-    read_external_storage_max_sdk: Option<u32>,
+    max_sdk_version: Option<u32>,
+    #[serde(default)]
+    uses_permission_flags: Option<String>,
+    #[serde(default)]
+    target_api: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -128,6 +137,11 @@ fn main() -> Result<()> {
     let config_path = args.config;
     let flutter_cmd = args.flutter_cmd;
     let project_dir = args.project_dir;
+    let dry_run = args.dry_run;
+
+    if dry_run {
+        println!("[DRY RUN] Preview mode - no files will be modified\n");
+    }
 
     let mut cfg = load_config(&config_path)?;
     expand_config(&mut cfg)?;
@@ -141,18 +155,36 @@ fn main() -> Result<()> {
     let output_dir = project_dir.join("android");
 
     if output_dir.exists() {
-        remove_dir_all_with_retry(&output_dir, 10)?;
+        if dry_run {
+            println!("[DRY RUN] Would remove directory: {}", output_dir.display());
+        } else {
+            remove_dir_all_with_retry(&output_dir, 10)?;
+        }
     }
 
     let flutter_cmd = resolve_cmd(&flutter_cmd)?;
-    run_flutter_create(
-        &project_dir,
-        &flutter_cmd,
-        &cfg.project_name,
-        cfg.org.as_deref(),
-        cfg.description.as_deref(),
-        &cfg.create,
-    )?;
+    if !dry_run {
+        run_flutter_create(
+            &project_dir,
+            &flutter_cmd,
+            &cfg.project_name,
+            cfg.org.as_deref(),
+            cfg.description.as_deref(),
+            &cfg.create,
+        )?;
+    } else {
+        println!("[DRY RUN] Would run flutter create with:");
+        println!("  project_name: {}", cfg.project_name);
+        if let Some(org) = &cfg.org {
+            println!("  org: {}", org);
+        }
+        if let Some(desc) = &cfg.description {
+            println!("  description: {}", desc);
+        }
+        println!("  platforms: {:?}", cfg.create.platforms);
+        println!("  android_language: {:?}\n", cfg.create.android_language);
+        return Ok(()); // Exit early in dry run since we can't preview without actual files
+    }
 
     if !output_dir.exists() {
         bail!("Generated android directory not found at: {}", output_dir.display());
@@ -275,14 +307,9 @@ fn expand_android_config(cfg: &mut AndroidConfig) -> Result<()> {
     if let Some(value) = cfg.gradle_wrapper.distribution_url.as_ref() {
         cfg.gradle_wrapper.distribution_url = Some(expand_env_vars(value)?);
     }
-    if let Some(perms) = cfg.app.manifest.main.permissions.as_ref() {
-        cfg.app.manifest.main.permissions = Some(
-            perms
-                .iter()
-                .map(|value| expand_env_vars(value))
-                .collect::<Result<Vec<_>>>()?,
-        );
-    }
+    expand_manifest_override(Some(&mut cfg.app.manifest.main))?;
+    expand_manifest_override(cfg.app.manifest.debug.as_mut())?;
+    expand_manifest_override(cfg.app.manifest.profile.as_mut())?;
     cfg.build.allprojects.repositories = cfg
         .build
         .allprojects
@@ -328,13 +355,10 @@ fn expand_manifest_override(override_cfg: Option<&mut AndroidManifestConfig>) ->
     if let Some(value) = cfg.application_label.as_ref() {
         cfg.application_label = Some(expand_env_vars(value)?);
     }
-    if let Some(perms) = cfg.permissions.as_ref() {
-        cfg.permissions = Some(
-            perms
-                .iter()
-                .map(|value| expand_env_vars(value))
-                .collect::<Result<Vec<_>>>()?,
-        );
+    if let Some(perms) = cfg.permissions.as_mut() {
+        for perm in perms.iter_mut() {
+            perm.name = expand_env_vars(&perm.name)?;
+        }
     }
     Ok(())
 }
@@ -393,6 +417,9 @@ struct Args {
 
     #[arg(long, value_name = "DIR")]
     project_dir: Option<PathBuf>,
+
+    #[arg(long, help = "Preview changes without writing files")]
+    dry_run: bool,
 }
 
 fn resolve_cmd(command: &str) -> Result<PathBuf> {
@@ -598,22 +625,21 @@ fn apply_manifest(path: &Path, cfg: &AndroidManifestConfig) -> Result<()> {
         }
     }
 
-    let mut permissions: Vec<String> = Vec::new();
-    if let Some(perms) = cfg.permissions.as_ref() {
-        permissions.extend(perms.iter().cloned());
-    }
+    let permissions: Vec<AndroidUsesPermission> = cfg.permissions.clone().unwrap_or_default();
 
-    let max_sdk = cfg.read_external_storage_max_sdk;
-
-    for perm in permissions {
-        if existing_permissions.contains(&perm) {
+    for perm_cfg in permissions {
+        if existing_permissions.contains(&perm_cfg.name) {
             continue;
         }
         let mut permission = UsesPermission::default();
-        permission.name = Some(perm.clone());
-        if perm == "android.permission.READ_EXTERNAL_STORAGE" {
-            permission.max_sdk_version = max_sdk;
-        }
+        permission.name = Some(perm_cfg.name.clone());
+        permission.max_sdk_version = perm_cfg.max_sdk_version;
+
+        // Note: The android_manifest crate doesn't support:
+        // - android:usesPermissionFlags attribute
+        // - tools:targetApi attribute
+        // These would need to be added manually or the crate extended
+
         manifest.uses_permission.push(permission);
     }
 

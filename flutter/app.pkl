@@ -29,26 +29,25 @@ android {
         application_label = project_name
         uses_cleartext_traffic = true
         enable_on_back_invoked_callback = true
-        permissions = List(
-          "android.permission.CAMERA",
-          "android.permission.RECORD_AUDIO",
-          "android.permission.INTERNET",
-          "android.permission.READ_MEDIA_IMAGES",
-          "android.permission.READ_MEDIA_VIDEO",
-          "android.permission.READ_MEDIA_AUDIO",
-          "android.permission.READ_EXTERNAL_STORAGE",
-          "android.permission.WRITE_EXTERNAL_STORAGE",
+        permissions = new Listing {
+          new { name = "android.permission.CAMERA" }
+          new { name = "android.permission.RECORD_AUDIO" }
+          new { name = "android.permission.INTERNET" }
+          new { name = "android.permission.READ_MEDIA_IMAGES" }
+          new { name = "android.permission.READ_MEDIA_VIDEO" }
+          new { name = "android.permission.READ_MEDIA_AUDIO" }
+          new { name = "android.permission.READ_EXTERNAL_STORAGE"; max_sdk_version = 32 }
+          new { name = "android.permission.WRITE_EXTERNAL_STORAGE"; max_sdk_version = 28 }
           // Bluetooth permissions (legacy for API <= 30)
-          "android.permission.BLUETOOTH",
-          "android.permission.BLUETOOTH_ADMIN",
+          new { name = "android.permission.BLUETOOTH"; max_sdk_version = 30 }
+          new { name = "android.permission.BLUETOOTH_ADMIN"; max_sdk_version = 30 }
           // Bluetooth permissions (API >= 31)
-          "android.permission.BLUETOOTH_SCAN",
-          "android.permission.BLUETOOTH_CONNECT",
+          new { name = "android.permission.BLUETOOTH_SCAN"; uses_permission_flags = "neverForLocation"; target_api = "s" }
+          new { name = "android.permission.BLUETOOTH_CONNECT" }
           // Location permissions for Bluetooth (API <= 30)
-          "android.permission.ACCESS_FINE_LOCATION",
-          "android.permission.ACCESS_COARSE_LOCATION"
-        )
-        read_external_storage_max_sdk = 32
+          new { name = "android.permission.ACCESS_FINE_LOCATION"; max_sdk_version = 30 }
+          new { name = "android.permission.ACCESS_COARSE_LOCATION"; max_sdk_version = 30 }
+        }
       }
 
       debug = null

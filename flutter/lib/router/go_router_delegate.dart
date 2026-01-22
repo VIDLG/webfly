@@ -2,6 +2,7 @@ import 'dart:convert' show jsonEncode;
 import 'package:flutter/material.dart' show BuildContext, RoutePredicate;
 import 'package:go_router/go_router.dart';
 import 'package:webf/webf.dart' show HybridHistoryDelegate;
+import 'package:webfly/utils/app_logger.dart';
 import 'config.dart';
 
 /// HybridHistoryDelegate for go_router
@@ -15,17 +16,18 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
 
   /// Prepare navigation: build route URL from path
   String _prepareNavigation(String path, BuildContext context) {
-    print('[GoRouterDelegate] _prepareNavigation');
-    print('[GoRouterDelegate]   path: $path');
+    appLogger.d('[GoRouterDelegate] _prepareNavigation');
+    appLogger.d('[GoRouterDelegate]   path: $path');
 
     // Get url and base from current page's GoRouterState
     final state = GoRouterState.of(context);
     final url = state.uri.queryParameters['url'];
     final base = state.uri.queryParameters['base'];
 
-    print('[GoRouterDelegate]   Current page URI: ${state.uri}');
-    print('[GoRouterDelegate]   url: $url');
-    print('[GoRouterDelegate]   base: $base');
+    appLogger.d('[GoRouterDelegate]   Current page URI: ${state.uri}');
+    appLogger.d('[GoRouterDelegate]   Current page path: ${state.uri.path}');
+    appLogger.d('[GoRouterDelegate]   url: $url');
+    appLogger.d('[GoRouterDelegate]   base: $base');
 
     if (url == null || base == null) {
       throw StateError(
@@ -33,24 +35,29 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
       );
     }
 
-    // Build route URL
-    final routeUrl = buildWebFRouteUrl(path: path, url: url, base: base);
+    // Build route URL using current page's route
+    final routeUrl = buildWebFRouteUrl(
+      url: url,
+      route: state.uri.path,
+      path: path,
+      base: base,
+    );
 
-    print('[GoRouterDelegate]   generated routeUrl: $routeUrl');
+    appLogger.d('[GoRouterDelegate]   generated routeUrl: $routeUrl');
 
     return routeUrl;
   }
 
   @override
   void pop(BuildContext context) {
-    print('[GoRouterDelegate] pop called');
-    print('[GoRouterDelegate]   router.canPop(): ${router.canPop()}');
+    appLogger.d('[GoRouterDelegate] pop called');
+    appLogger.d('[GoRouterDelegate]   router.canPop(): ${router.canPop()}');
 
     if (router.canPop()) {
-      print('[GoRouterDelegate]   Calling router.pop()');
+      appLogger.d('[GoRouterDelegate]   Calling router.pop()');
       router.pop();
     } else {
-      print('[GoRouterDelegate]   Cannot pop - at root');
+      appLogger.d('[GoRouterDelegate]   Cannot pop - at root');
     }
   }
 
@@ -62,7 +69,7 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
         // Get path from query parameter
         return state.uri.queryParameters['path'] ?? '/';
       } catch (e) {
-        print('[GoRouterDelegate] Failed to get path from context: $e');
+        appLogger.e('[GoRouterDelegate] Failed to get path from context: $e');
       }
     }
     // Fallback to initialRoute or root
@@ -84,7 +91,7 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
           return jsonEncode(params);
         }
       } catch (e) {
-        print('[GoRouterDelegate] Failed to get GoRouterState: $e');
+        appLogger.e('[GoRouterDelegate] Failed to get GoRouterState: $e');
       }
     }
 
@@ -95,7 +102,9 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
   @override
   void pushNamed(BuildContext context, String routeName, {Object? arguments}) {
     final routeUrl = _prepareNavigation(routeName, context);
-    print('[GoRouterDelegate] pushNamed: $routeUrl with arguments: $arguments');
+    appLogger.d(
+      '[GoRouterDelegate] pushNamed: $routeUrl with arguments: $arguments',
+    );
 
     // Push to Flutter router - WebF and Flutter share the same stack
     router.push(routeUrl, extra: arguments);
@@ -104,7 +113,9 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
   @override
   void replaceState(BuildContext context, Object? state, String name) {
     final routeUrl = _prepareNavigation(name, context);
-    print('[GoRouterDelegate] replaceState: $routeUrl with state: $state');
+    appLogger.d(
+      '[GoRouterDelegate] replaceState: $routeUrl with state: $state',
+    );
     router.replace(routeUrl, extra: state);
   }
 
@@ -115,7 +126,7 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     TO? result,
     Object? arguments,
   }) {
-    print('[GoRouterDelegate] restorablePopAndPushNamed: $routeName');
+    appLogger.d('[GoRouterDelegate] restorablePopAndPushNamed: $routeName');
     if (router.canPop()) {
       router.pop();
     }
@@ -156,7 +167,7 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     String routeName, {
     Object? arguments,
   }) {
-    print('[GoRouterDelegate] popAndPushNamed: $routeName');
+    appLogger.d('[GoRouterDelegate] popAndPushNamed: $routeName');
     if (router.canPop()) {
       router.pop();
     }

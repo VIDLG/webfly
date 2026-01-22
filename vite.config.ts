@@ -22,14 +22,4 @@ export default defineConfig({
       ],
     },
   },
-  server: {
-    proxy: {
-      // Proxy use_cases during development
-      '/use-cases': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/use-cases/, ''),
-      },
-    },
-  },
 })

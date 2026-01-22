@@ -32,6 +32,30 @@ final kGoRouter = GoRouter(
       builder: (context, state) => const ScannerPage(),
     ),
 
+    // Use Cases page with fixed title
+    GoRoute(
+      path: kUseCasesPath,
+      redirect: (context, state) {
+        final url = state.uri.queryParameters[kUrlParam];
+        return (url == null || url.isEmpty) ? kLauncherPath : null;
+      },
+      builder: (context, state) {
+        final url = state.uri.queryParameters[kUrlParam]!;
+        final path = state.uri.queryParameters[kPathParam] ?? '/';
+        final base =
+            state.uri.queryParameters[kBaseParam] ??
+            generateDefaultControllerName(url);
+        final controllerName = base;
+
+        return WebFPage(
+          url: url,
+          controllerName: controllerName,
+          routePath: path,
+          title: 'Use Cases',
+        );
+      },
+    ),
+
     // WebF page (single URL)
     GoRoute(
       path: kWebfRoutePath,

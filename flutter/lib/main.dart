@@ -30,7 +30,7 @@ void main() async {
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
 
-  // Start asset HTTP server for serving showcase files
+  // Start asset HTTP server for serving use case files
   await AssetHttpServer().start();
 
   runApp(const ProviderScope(child: MyApp()));
