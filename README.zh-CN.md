@@ -2,6 +2,21 @@
 
 [English](README.md) | 简体中文
 
+<div align="center">
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
+[![WebF](https://img.shields.io/badge/WebF-0.24.6-FF6B6B)](https://github.com/openwebf/webf)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+**⭐ 如果觉得 WebFly 有用，请给个 Star 支持一下！⭐**
+
+*原生能力与 Web 灵活性的完美结合 - 终极混合运行时*
+
+</div>
+
+---
+
 **WebFly** 是一个强大的基于 Flutter 的 Web 应用启动器和运行时环境，具有原生设备能力。与传统的 Web 容器（如 Expo Go 或 WebF Go）不同，WebFly 提供了与原生设备功能的深度集成，同时保持了 Web 开发的灵活性。
 
 ## 🌟 为什么选择 WebFly？

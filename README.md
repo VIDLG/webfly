@@ -2,6 +2,21 @@
 
 English | [简体中文](README.zh-CN.md)
 
+<div align="center">
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
+[![WebF](https://img.shields.io/badge/WebF-0.24.6-FF6B6B)](https://github.com/openwebf/webf)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+**⭐ If you find WebFly useful, please consider giving it a star! ⭐**
+
+*Native capabilities meet web flexibility - The ultimate hybrid runtime*
+
+</div>
+
+---
+
 **WebFly** is a powerful Flutter-based launcher and runtime for web applications with native capabilities. Unlike traditional web containers like Expo Go or WebF Go, WebFly provides deep integration with native device features while maintaining the flexibility of web development.
 
 ## 🌟 Why WebFly?
