@@ -50,3 +50,9 @@ app.*.map.json
 /android/
 
 assets/use_cases
+
+# Python / uv
+.venv/
+__pycache__/
+*.egg-info/
+uv.lock

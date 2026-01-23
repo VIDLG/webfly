@@ -1,0 +1,44 @@
+# Flutter Project Tasks
+
+# Use sh as the shell
+set shell := ["sh", "-c"]
+
+# List all available commands
+default:
+    @just --list
+
+# Run in release mode
+release:
+    rust-script tools/cmd-run.rs --log=../logs/flutter-release.log flutter run --release --verbose
+
+# Run in debug mode
+debug:
+    rust-script tools/cmd-run.rs --log=../logs/flutter-debug.log flutter run --debug --verbose
+
+# Generate platform directories (Android)
+platforms:
+    rust-script tools/flutter-gen-platforms.rs --config app.pkl
+
+# Generate logo variants
+logo:
+    scripts/gen_logo.py
+
+# Kill processes locking Android directory
+kill-android:
+    tools/kill-file-handles.rs android
+
+# Build APK (release)
+build-apk:
+    tools/cmd-run.rs --log=../logs/flutter-build.log flutter build apk --verbose --release --obfuscate --split-debug-info=build/app/outputs/symbols
+
+# Clean build artifacts
+clean:
+    flutter clean
+
+# Get dependencies
+pub-get:
+    flutter pub get
+
+# Run pub upgrade
+pub-upgrade:
+    flutter pub upgrade

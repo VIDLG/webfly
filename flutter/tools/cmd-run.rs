@@ -103,6 +103,7 @@ fn main() -> Result<()> {
     // Spawn command process
     let mut child = Command::new(&resolved_command)
         .args(&cmd_args)
+        .stdin(Stdio::inherit())  // Allow stdin to be inherited for interactive commands
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()

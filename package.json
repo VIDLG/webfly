@@ -10,15 +10,7 @@
     "build:use-cases": "cd use_cases && pnpm install && pnpm build && cd .. && node scripts/copy-use-cases.js",
     "build:all": "pnpm build:use-cases && pnpm build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "flutter": "cd flutter && flutter",
-    "flutter:release": "cd flutter && rust-script tools/cmd-run.rs --log=../flutter-run.log flutter run --release --verbose",
-    "flutter:debug": "cd flutter && rust-script tools/cmd-run.rs --log=../flutter-debug.log flutter run --debug --verbose",
-    "flutter:platforms": "rust-script flutter/tools/flutter-gen-platforms.rs --config flutter/app.pkl",
-    "flutter:logo": "cd flutter && rust-script tools\\gen-logo.rs",
-    "flutter:kill-android": "rust-script flutter/tools/kill-file-handles.rs flutter/android",
-    "flutter:build-apk": "cd flutter && rust-script tools/cmd-run.rs --log=../flutter-build.log flutter build apk --verbose --release --obfuscate --split-debug-info=build/app/outputs/symbols",
-    "flutter:clean": "cd flutter && flutter clean"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@openwebf/react-router": "^0.24.2",

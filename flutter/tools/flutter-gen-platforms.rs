@@ -1,3 +1,4 @@
+#!/usr/bin/env rust-script
 //! ```cargo
 //! [dependencies]
 //! anyhow = "1.0"
@@ -581,16 +582,18 @@ fn run_flutter_pub_run(path: &Path, flutter_cmd: &Path, args: &[&str]) -> Result
 }
 
 fn run_gen_logo(path: &Path, script_path: &str) -> Result<()> {
-    let status = Command::new("rust-script")
+    // Use sh to execute script, relying on shebang
+    let status = Command::new("sh")
         .arg(script_path)
         .arg("--pubspec")
         .arg("pubspec.yaml")
         .arg("--no-apply")
         .current_dir(path)
         .status()
-        .context("Failed to run gen-logo.rs")?;
+        .context("Failed to run gen-logo script with sh")?;
+
     if !status.success() {
-        bail!("gen-logo.rs failed with status: {status}");
+        bail!("gen-logo script failed with status: {status}");
     }
     Ok(())
 }

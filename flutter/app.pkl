@@ -10,7 +10,7 @@ description: String(length > 0) = "webfly is like webf go / expo go, focused on 
 output_file_name_pattern: String = "\(project_name)-v{version}-${name}.apk"
 
 tools {
-  gen_logo_script = "tools/gen-logo.rs"
+  gen_logo_script = "scripts/gen_logo.py"
 }
 
 create {

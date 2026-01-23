@@ -33,6 +33,7 @@ class LauncherPage extends HookConsumerWidget {
     final isUrlHighlighted = useState(false);
     final historyListEditMode = useState(false);
     final historyListKey = useMemoized(() => GlobalKey());
+    final urlInputKey = useMemoized(() => GlobalKey());
 
     useEffect(() {
       if (urls == null || urls.isEmpty) return null;
@@ -83,6 +84,19 @@ class LauncherPage extends HookConsumerWidget {
       isUrlHighlighted.value = true;
       Future.delayed(const Duration(milliseconds: 800), () {
         isUrlHighlighted.value = false;
+      });
+
+      // Scroll to input field
+      Future.delayed(const Duration(milliseconds: 50), () {
+        final context = urlInputKey.currentContext;
+        if (context != null) {
+          Scrollable.ensureVisible(
+            context,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.1,
+          );
+        }
       });
     }
 
@@ -210,6 +224,7 @@ class LauncherPage extends HookConsumerWidget {
                         const LauncherHeader(),
                         const SizedBox(height: 20),
                         LauncherUrlInputSection(
+                          key: urlInputKey,
                           urlController: urlController,
                           pathController: pathController,
                           errorMessage: errorMessage.value,
