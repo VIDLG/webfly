@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../widgets/webf_view.dart';
 import '../widgets/webf_inspector_overlay.dart';
 
@@ -7,7 +6,7 @@ import '../widgets/webf_inspector_overlay.dart';
 ///
 /// This is a convenience wrapper around WebFView that provides a standard
 /// page structure with an app bar and title.
-class WebFPage extends ConsumerWidget {
+class WebFPage extends StatelessWidget {
   const WebFPage({
     super.key,
     required this.url,
@@ -30,7 +29,7 @@ class WebFPage extends ConsumerWidget {
   final Widget Function(BuildContext, Object?)? errorBuilder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 48,

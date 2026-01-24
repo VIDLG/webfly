@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart' show useState, useEffect;
-import 'package:hooks_riverpod/hooks_riverpod.dart'
-    show HookConsumerWidget, WidgetRef;
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 import '../../../services/url_history_service.dart';
 import 'history_card.dart';
 
-class UrlHistoryList extends HookConsumerWidget {
+class UrlHistoryList extends HookWidget {
   final void Function(String url, String path) onOpen;
   final void Function(String url, String path) onTap;
   final void Function(String url, String path) onLongPress;
@@ -22,8 +21,8 @@ class UrlHistoryList extends HookConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final urls = ref.watch(urlHistoryProvider).value;
+  Widget build(BuildContext context) {
+    final urls = urlHistorySignal.watch(context);
     final isEditMode = useState(false);
     final selectedEntries = useState<Set<UrlHistoryEntry>>({});
     final isDragging = useState(false);
@@ -46,9 +45,6 @@ class UrlHistoryList extends HookConsumerWidget {
       return null;
     }, [editModeNotifier]);
 
-    if (urls == null) {
-      return const SizedBox.shrink();
-    }
     if (urls.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -57,14 +53,14 @@ class UrlHistoryList extends HookConsumerWidget {
       final confirmed = await _showClearHistoryDialog(context);
 
       if (confirmed == true) {
-        await ref.read(urlHistoryProvider.notifier).clearHistory();
+        await UrlHistoryOperations.clearHistory();
         isEditMode.value = false;
         selectedEntries.value = {};
       }
     }
 
     void handleDelete(UrlHistoryEntry entry) {
-      ref.read(urlHistoryProvider.notifier).removeEntry(entry);
+      UrlHistoryOperations.removeEntry(entry);
       selectedEntries.value = {...selectedEntries.value}..remove(entry);
     }
 
@@ -77,14 +73,14 @@ class UrlHistoryList extends HookConsumerWidget {
       );
       if (confirmed == true) {
         for (final entry in selectedEntries.value) {
-          await ref.read(urlHistoryProvider.notifier).removeEntry(entry);
+          await UrlHistoryOperations.removeEntry(entry);
         }
         selectedEntries.value = {};
       }
     }
 
     void handleReorder(int oldIndex, int newIndex) {
-      ref.read(urlHistoryProvider.notifier).reorderEntries(oldIndex, newIndex);
+      UrlHistoryOperations.reorderEntries(oldIndex, newIndex);
     }
 
     void toggleSelection(UrlHistoryEntry entry) {
@@ -116,9 +112,9 @@ class UrlHistoryList extends HookConsumerWidget {
         // Drag target for deletion
         if (isDragging.value)
           DragTarget<UrlHistoryEntry>(
-            onWillAccept: (data) => true,
-            onAccept: (entry) {
-              handleDelete(entry);
+            onWillAcceptWithDetails: (details) => true,
+            onAcceptWithDetails: (details) {
+              handleDelete(details.data);
               isDragging.value = false;
             },
             builder: (context, candidateData, rejectedData) {
@@ -129,13 +125,13 @@ class UrlHistoryList extends HookConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: isHovering
-                      ? theme.colorScheme.error.withOpacity(0.2)
-                      : theme.colorScheme.errorContainer.withOpacity(0.1),
+                      ? theme.colorScheme.error.withValues(alpha: 0.2)
+                      : theme.colorScheme.errorContainer.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isHovering
                         ? theme.colorScheme.error
-                        : theme.colorScheme.outline.withOpacity(0.3),
+                        : theme.colorScheme.outline.withValues(alpha: 0.3),
                     width: 2,
                     strokeAlign: BorderSide.strokeAlignInside,
                   ),

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:webf/launcher.dart' show WebFController, WebFControllerManager;
+import '../utils/app_logger.dart';
 
 /// Manages WebF controller attachment/detachment in hybrid routing scenarios.
 ///
@@ -100,8 +101,9 @@ class HybridControllerManager {
       );
       return true;
     } catch (error) {
-      debugPrint(
-        'HybridControllerManager: Failed to dispose $controllerName: $error',
+      appLogger.e(
+        'HybridControllerManager: Failed to dispose $controllerName',
+        error: error,
       );
       return false;
     }

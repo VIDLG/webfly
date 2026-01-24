@@ -2,41 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 import '../../hooks/use_route_focus.dart';
 import '../../services/app_settings_service.dart';
 import '../../services/url_history_service.dart';
-import '../../services/asset_http_server.dart';
 import '../../services/hybrid_controller_manager.dart';
-import '../../utils/validators.dart';
+import '../../utils/app_logger.dart';
 import 'widgets/history_list.dart';
 import '../../widgets/webf_inspector_overlay.dart';
-import 'widgets/settings_button.dart';
+import 'widgets/settings.dart';
 import 'widgets/launcher_header.dart';
 import 'widgets/launcher_inputs.dart';
 import 'widgets/launch_button.dart';
 import 'widgets/use_cases_card.dart';
 import '../../router/config.dart'
-    show kScannerPath, kUseCasesPath, kAppRoutePath, buildWebFRouteUrl;
+    show kScannerPath, kAppRoutePath, buildWebFRouteUrl;
 
-class LauncherPage extends HookConsumerWidget {
+class LauncherPage extends HookWidget {
   const LauncherPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final urlController = useTextEditingController();
     final pathController = useTextEditingController(text: '/');
     final errorMessage = useState<String?>(null);
-    final showInspector = ref.watch(showWebfInspectorProvider);
-    final cacheControllers = ref.watch(cacheControllersProvider);
-    final urls = ref.watch(urlHistoryProvider).value;
+    final cacheControllers = cacheControllersSignal.watch(context);
+    final urls = urlHistorySignal.watch(context);
     final isUrlHighlighted = useState(false);
     final historyListEditMode = useState(false);
     final historyListKey = useMemoized(() => GlobalKey());
     final urlInputKey = useMemoized(() => GlobalKey());
 
     useEffect(() {
-      if (urls == null || urls.isEmpty) return null;
+      if (urls.isEmpty) return null;
       if (urlController.text.isEmpty) {
         // Fill with full URL (url + path)
         final firstEntry = urls.first;
@@ -65,7 +63,7 @@ class LauncherPage extends HookConsumerWidget {
           : url;
       final path = customPath ?? '/';
 
-      ref.read(urlHistoryProvider.notifier).addEntry(normalizedUrl, path);
+      UrlHistoryOperations.addEntry(normalizedUrl, path);
       errorMessage.value = null;
 
       // Always use hybrid routing mode (shared controller)
@@ -74,7 +72,7 @@ class LauncherPage extends HookConsumerWidget {
         route: kAppRoutePath,
         path: path,
       );
-      print(
+      appLogger.d(
         '[LauncherPage] Navigating to hybrid route: $routeUrl (path: $path)',
       );
       context.push(routeUrl, extra: {'initial': true, 'url': normalizedUrl});
@@ -86,15 +84,15 @@ class LauncherPage extends HookConsumerWidget {
         isUrlHighlighted.value = false;
       });
 
-      // Scroll to input field
+      // Scroll to input field and center it
       Future.delayed(const Duration(milliseconds: 50), () {
         final context = urlInputKey.currentContext;
-        if (context != null) {
+        if (context != null && context.mounted) {
           Scrollable.ensureVisible(
             context,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            alignment: 0.1,
+            alignment: 0.3, // Center the input field (30% from top)
           );
         }
       });
@@ -105,7 +103,7 @@ class LauncherPage extends HookConsumerWidget {
       if (editMode) {
         Future.delayed(const Duration(milliseconds: 100), () {
           final context = historyListKey.currentContext;
-          if (context != null) {
+          if (context != null && context.mounted) {
             Scrollable.ensureVisible(
               context,
               duration: const Duration(milliseconds: 300),
@@ -163,8 +161,6 @@ class LauncherPage extends HookConsumerWidget {
         errorMessage.value = 'Please enter a valid URL';
       }
     }
-
-    final theme = Theme.of(context);
 
     return PopScope(
       canPop: false,
@@ -242,7 +238,7 @@ class LauncherPage extends HookConsumerWidget {
                         const SizedBox(height: 24),
                         const LauncherUseCasesCard(),
                         const SizedBox(height: 24),
-                        if (urls != null && urls.isNotEmpty)
+                        if (urls.isNotEmpty)
                           UrlHistoryList(
                             key: historyListKey,
                             onOpen: (url, path) => openWebF(url, path),

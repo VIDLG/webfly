@@ -1,20 +1,32 @@
 // App native generation config
 // Run: rust-script flutter/tools/flutter-gen-platforms.rs --config flutter/app.pkl
 
+import "pkl:yaml"
+
 typealias ProjectName = String(matches(Regex(#"^[A-Za-z][A-Za-z0-9_]*$"#)))
 typealias Org = String(matches(Regex(#"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)*$"#)))
 
-project_name: ProjectName = "webfly"
+local pubspecYaml = read("pubspec.yaml")
+local pubspecData = new yaml.Parser { useMapping = true }.parse(pubspecYaml)
+
+project_name: ProjectName = pubspecData["name"] as String
 org: Org = "org.vidlg"
 description: String(length > 0) = "webfly is like webf go / expo go, focused on rendering target web pages"
 output_file_name_pattern: String = "\(project_name)-v{version}-${name}.apk"
+
+pubspec {
+  name = pubspecData["name"] as String
+  description = pubspecData["description"] as String
+  version = pubspecData["version"] as String
+  homepage = pubspecData["homepage"] as String
+}
 
 tools {
   gen_logo_script = "scripts/gen_logo.py"
 }
 
 create {
-  platforms = List("android")
+  platforms = List("android", "windows")
   android_language = "kotlin"
 }
 
@@ -84,6 +96,11 @@ android {
       )
     }
   }
+}
+
+windows {
+  // Windows platform configuration (minimal - using defaults from flutter create)
+  enabled = true
 }
 
 ios = null

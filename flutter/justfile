@@ -1,23 +1,31 @@
 # Flutter Project Tasks
 
-# Use sh as the shell
+# Use sh as the shell (from Git Bash or similar)
 set shell := ["sh", "-c"]
+set windows-shell := ["sh", "-c"]
 
 # List all available commands
 default:
     @just --list
 
-# Run in release mode
-release:
-    rust-script tools/cmd-run.rs --log=../logs/flutter-release.log flutter run --release --verbose
+# Run on Android device (auto-detects first Android device)
+# Usage: just android [debug|release] [--verbose]
+android MODE='debug' *FLAGS:
+    rust-script tools/cmd-run.rs --log=logs/flutter-android-{{MODE}}.log flutter run -d 29H0223315019143 --{{MODE}} {{FLAGS}}
 
-# Run in debug mode
-debug:
-    rust-script tools/cmd-run.rs --log=../logs/flutter-debug.log flutter run --debug --verbose
+# Run on Windows
+# Usage: just windows [debug|release] [--verbose]
+windows MODE='debug' *FLAGS:
+    rust-script tools/cmd-run.rs --log=logs/flutter-windows-{{MODE}}.log flutter run -d windows --{{MODE}} {{FLAGS}}
 
-# Generate platform directories (Android)
+# Generate platform directories (Android, Windows)
 platforms:
-    rust-script tools/flutter-gen-platforms.rs --config app.pkl
+    cargo run --manifest-path tools/flutter-gen-platforms/Cargo.toml -- --config app.pkl
+    scripts/gen_logo.py --pubspec pubspec.yaml --no-apply
+    flutter pub run flutter_launcher_icons
+    flutter pub run flutter_native_splash:create
+    flutter clean
+    flutter pub get
 
 # Generate logo variants
 logo:
@@ -28,8 +36,33 @@ kill-android:
     tools/kill-file-handles.rs android
 
 # Build APK (release)
-build-apk:
-    tools/cmd-run.rs --log=../logs/flutter-build.log flutter build apk --verbose --release --obfuscate --split-debug-info=build/app/outputs/symbols
+# Usage: just build-apk [--verbose]
+build-apk *FLAGS:
+    tools/cmd-run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{FLAGS}}
+
+# Analyze Dart code for syntax and semantic issues
+analyze PATH='lib test' *ARGS:
+    flutter analyze {{PATH}} {{ARGS}}
+
+# Check Flutter development environment and accept Android licenses
+doctor *ARGS:
+    yes | flutter doctor --android-licenses {{ARGS}}
+
+# List all connected devices
+devices *ARGS:
+    flutter devices {{ARGS}}
+
+# Run tests
+test *ARGS:
+    flutter test {{ARGS}}
+
+# Format Dart code
+format *ARGS:
+    flutter format {{ARGS}} lib test
+
+# Upgrade Flutter SDK
+upgrade *ARGS:
+    flutter upgrade {{ARGS}}
 
 # Clean build artifacts
 clean:

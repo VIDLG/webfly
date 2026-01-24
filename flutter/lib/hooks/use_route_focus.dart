@@ -4,7 +4,7 @@ import '../router/app_router.dart' show kWebfRouteObserver;
 
 /// A hook that monitors when the current route gains or loses focus.
 ///
-/// Returns a ValueNotifier<bool> that is true when the route is current/focused,
+/// Returns a ValueNotifier\<bool\> that is true when the route is current/focused,
 /// and false when another route is pushed on top or this route is popped.
 ///
 /// This is useful for triggering effects only when a page is visible to the user.

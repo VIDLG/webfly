@@ -1,6 +1,5 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
-import 'package:hooks_riverpod/hooks_riverpod.dart'
-    show AsyncNotifier, AsyncNotifierProvider, AsyncValue;
+import 'package:signals_flutter/signals_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferences;
 
@@ -120,62 +119,47 @@ class UrlHistoryStorage {
   }
 }
 
-/// Notifier that manages URL history state
-class UrlHistoryNotifier extends AsyncNotifier<List<UrlHistoryEntry>> {
-  final Future<UrlHistoryStorage> _storageFuture = UrlHistoryStorage.create();
-  UrlHistoryStorage? _storage;
+// URL history signal
+final urlHistorySignal = signal<List<UrlHistoryEntry>>([]);
 
-  @override
-  Future<List<UrlHistoryEntry>> build() async {
-    final storage = await _ensureStorage();
-    return storage.getHistory();
-  }
-
-  Future<UrlHistoryStorage> _ensureStorage() async {
-    final cached = _storage;
-    if (cached != null) {
-      return cached;
-    }
-    final storage = await _storageFuture;
-    _storage = storage;
-    return storage;
-  }
-
-  Future<void> addEntry(String url, String path) async {
-    final storage = await _ensureStorage();
-    await storage.addEntry(url, path);
-    state = AsyncValue.data(storage.getHistory());
-  }
-
-  Future<void> removeEntry(UrlHistoryEntry entry) async {
-    final storage = await _ensureStorage();
-    await storage.removeEntry(entry);
-    state = AsyncValue.data(storage.getHistory());
-  }
-
-  Future<void> clearHistory() async {
-    final storage = await _ensureStorage();
-    await storage.clearHistory();
-    state = const AsyncValue.data([]);
-  }
-
-  Future<void> reorderEntries(int oldIndex, int newIndex) async {
-    final storage = await _ensureStorage();
-    await storage.reorderHistory(oldIndex, newIndex);
-    state = AsyncValue.data(storage.getHistory());
-  }
-
-  void refresh() {
-    final storage = _storage;
-    if (storage == null) {
-      return;
-    }
-    state = AsyncValue.data(storage.getHistory());
-  }
+// Initialize URL history from storage
+Future<void> initializeUrlHistory() async {
+  final storage = await UrlHistoryStorage.create();
+  urlHistorySignal.value = storage.getHistory();
 }
 
-/// Global provider for URL history
-final urlHistoryProvider =
-    AsyncNotifierProvider<UrlHistoryNotifier, List<UrlHistoryEntry>>(
-      () => UrlHistoryNotifier(),
-    );
+// URL history operations
+class UrlHistoryOperations {
+  static Future<UrlHistoryStorage> _getStorage() async {
+    return await UrlHistoryStorage.create();
+  }
+
+  static Future<void> addEntry(String url, String path) async {
+    final storage = await _getStorage();
+    await storage.addEntry(url, path);
+    urlHistorySignal.value = storage.getHistory();
+  }
+
+  static Future<void> removeEntry(UrlHistoryEntry entry) async {
+    final storage = await _getStorage();
+    await storage.removeEntry(entry);
+    urlHistorySignal.value = storage.getHistory();
+  }
+
+  static Future<void> clearHistory() async {
+    final storage = await _getStorage();
+    await storage.clearHistory();
+    urlHistorySignal.value = [];
+  }
+
+  static Future<void> reorderEntries(int oldIndex, int newIndex) async {
+    final storage = await _getStorage();
+    await storage.reorderHistory(oldIndex, newIndex);
+    urlHistorySignal.value = storage.getHistory();
+  }
+
+  static Future<void> refresh() async {
+    final storage = await _getStorage();
+    urlHistorySignal.value = storage.getHistory();
+  }
+}

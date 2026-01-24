@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webfly/router/config.dart';
-import 'package:webfly/router/app_router.dart';
 
 void main() {
   group('Router URL Generation Tests', () {
@@ -22,7 +21,6 @@ void main() {
           path: '/',
         );
 
-        print('Generated URL for root path: $result');
         expect(result, startsWith('/app?'));
         expect(result, contains('url=https%3A%2F%2Fexample.com%2Fapp.js'));
         expect(result, contains('base='));
@@ -40,7 +38,6 @@ void main() {
           path: '/home',
         );
 
-        print('Generated URL for /home path: $result');
         expect(result, startsWith('/app?'));
         expect(result, contains('url=https%3A%2F%2Fexample.com%2Fapp.js'));
         expect(result, contains('path=%2Fhome'));
@@ -57,7 +54,6 @@ void main() {
         base: base,
       );
 
-      print('Generated URL with custom base: $result');
       expect(result, contains('base=my-custom-base'));
     });
 
@@ -69,7 +65,6 @@ void main() {
         path: 'about',
       );
 
-      print('Generated URL for path without slash: $result');
       expect(result, startsWith('/app?'));
       expect(result, contains('path=about'));
     });
@@ -84,7 +79,6 @@ void main() {
         path: '/new-page',
       );
 
-      print('Generated URL preserving base: $result');
       expect(result, contains('base=test-base'));
       expect(result, startsWith('/app?'));
       expect(result, contains('path=%2Fnew-page'));
@@ -99,7 +93,6 @@ void main() {
       final name2 = generateDefaultControllerName(url2);
       final name3 = generateDefaultControllerName(url3);
 
-      print('Controller names: $name1, $name2, $name3');
       expect(name1, equals(name2)); // Same URL should generate same name
       expect(
         name1,
@@ -122,9 +115,7 @@ void main() {
         '/app/products/123',
       ];
 
-      for (final url in testUrls) {
-        print('Testing pattern match for: $url');
-      }
+      for (final url in testUrls) {}
     });
 
     test('Route paths are correctly defined', () {
@@ -147,7 +138,6 @@ void main() {
       final url = 'https://example.com/app.js?foo=bar&baz=qux';
       final result = buildWebFUrl(url);
 
-      print('Encoded URL: $result');
       expect(
         result,
         contains(
@@ -166,7 +156,6 @@ void main() {
         base: base,
       );
 
-      print('URL with encoded base: $result');
       // The base should be URL encoded
       expect(result, isNot(contains(':/@')));
     });
@@ -182,7 +171,6 @@ void main() {
       );
 
       // Path is '/' which generates /app?...&path=%2F
-      print('Root path URL: $result');
       expect(result, matches(RegExp(r'^/app\?')));
     });
 
@@ -194,7 +182,6 @@ void main() {
         path: '//double//slash',
       );
 
-      print('Multiple slashes URL: $result');
       // Should still work with query parameter format
       expect(result, startsWith('/app?'));
       expect(result, contains('path=%2F%2Fdouble%2F%2Fslash'));
@@ -210,7 +197,6 @@ void main() {
       expect(pattern.hasMatch('/app?url=xxx'), isFalse); // Missing slash!
 
       final match = pattern.firstMatch('/app/');
-      print('Captured from /app/: "${match?.group(1)}"');
       expect(match?.group(1), equals(''));
     });
   });

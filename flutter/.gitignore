@@ -48,8 +48,12 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/
+/windows/
 
 assets/use_cases
+
+# Generated assets
+assets/gen/
 
 # Python / uv
 .venv/

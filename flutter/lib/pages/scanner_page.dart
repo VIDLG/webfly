@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart' show useEffect, useMemoized;
-import 'package:hooks_riverpod/hooks_riverpod.dart'
-    show HookConsumerWidget, WidgetRef;
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:mobile_scanner/mobile_scanner.dart'
     show BarcodeCapture, MobileScanner, MobileScannerController;
-import '../services/url_history_service.dart' show urlHistoryProvider;
+import '../services/url_history_service.dart' show UrlHistoryOperations;
 import '../utils/validators.dart' show isValidHttpUrl;
 
-class ScannerPage extends HookConsumerWidget {
+class ScannerPage extends HookWidget {
   const ScannerPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final controller = useMemoized(() => MobileScannerController());
     useEffect(() {
       return controller.dispose;
@@ -32,7 +30,7 @@ class ScannerPage extends HookConsumerWidget {
             '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
         final path = uri.path.isEmpty || uri.path == '/' ? '/' : uri.path;
 
-        ref.read(urlHistoryProvider.notifier).addEntry(baseUrl, path);
+        UrlHistoryOperations.addEntry(baseUrl, path);
         Navigator.of(context).pop({'url': baseUrl, 'path': path});
       }
     }

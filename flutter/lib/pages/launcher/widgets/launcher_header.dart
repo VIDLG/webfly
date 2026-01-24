@@ -10,8 +10,8 @@ class LauncherHeader extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     // _dark.png for dark theme, _light.png for light theme
     final logoPath = isDark
-        ? 'assets/logo/webfly_logo_dark.png'
-        : 'assets/logo/webfly_logo_light.png';
+        ? 'assets/gen/webfly_logo_dark.png'
+        : 'assets/gen/webfly_logo_light.png';
     return Column(
       children: [
         Image.asset(logoPath, width: 80, height: 80),

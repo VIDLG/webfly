@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart' show useEffect, useState;
-import 'package:hooks_riverpod/hooks_riverpod.dart'
-    show HookConsumerWidget, WidgetRef;
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:webf/launcher.dart' show WebFController, WebFControllerManager;
 import 'package:webf/webf.dart' show WebFBundle;
 import 'package:webf/widget.dart' show WebFRouterView;
@@ -24,15 +22,11 @@ Future<WebFController?> injectWebfBundleAsync({
       createController: () => WebFController(
         routeObserver: kWebfRouteObserver,
         onJSError: (String errorMessage) {
-          // Print full error stack with clear delimiter
-          debugPrint('\n${'=' * 80}');
-          debugPrint('❌ JavaScript Error in: $controllerName');
-          debugPrint('${'=' * 80}');
-          debugPrint(errorMessage);
-          debugPrint('${'=' * 80}\n');
-
-          // Also log to appLogger for production logging
-          appLogger.e('[WebFView] JavaScript Error', error: errorMessage);
+          // Log full error stack
+          appLogger.e(
+            '❌ JavaScript Error in: $controllerName\n$errorMessage',
+            error: errorMessage,
+          );
 
           // Update UI state to show the error
           onJSRuntimeError?.call(errorMessage);
@@ -70,7 +64,7 @@ Widget _defaultErrorWidget(Object? error) {
       children: [
         const Icon(Icons.error_outline, size: 48, color: Colors.red),
         const SizedBox(height: 16),
-        Text('${error ?? 'Unknown error'}', textAlign: TextAlign.center),
+        Text(error?.toString() ?? 'Unknown error', textAlign: TextAlign.center),
       ],
     ),
   );
@@ -81,7 +75,7 @@ Widget _defaultErrorWidget(Object? error) {
 /// This widget handles WebF controller lifecycle, route focus monitoring,
 /// and displays loading/error states. It's designed to be composed into
 /// larger page structures rather than being a complete page itself.
-class WebFView extends HookConsumerWidget {
+class WebFView extends HookWidget {
   const WebFView({
     super.key,
     required this.url,
@@ -102,7 +96,7 @@ class WebFView extends HookConsumerWidget {
   final Widget Function(BuildContext, Object?)? errorBuilder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final controllerInstance = useState<WebFController?>(null);
     final initError = useState<Object?>(null);
     final jsRuntimeError = useState<String?>(null); // JavaScript runtime errors

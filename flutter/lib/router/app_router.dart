@@ -5,6 +5,7 @@ import '../pages/scanner_page.dart';
 import '../pages/webf_page.dart';
 import 'go_router_delegate.dart';
 import 'config.dart';
+import '../utils/app_logger.dart';
 
 /// Route observer for WebF pages
 final kWebfRouteObserver = RouteObserver<PageRoute>();
@@ -79,11 +80,11 @@ final kGoRouter = GoRouter(
     GoRoute(
       path: kAppRoutePath,
       redirect: (context, state) {
-        print('[AppRouter] Hybrid route matched: ${state.uri}');
-        print('[AppRouter] Query params: ${state.uri.queryParameters}');
+        appLogger.d('[AppRouter] Hybrid route matched: ${state.uri}');
+        appLogger.d('[AppRouter] Query params: ${state.uri.queryParameters}');
         final url = state.uri.queryParameters[kUrlParam];
         if (url == null || url.isEmpty) {
-          print('[AppRouter] Missing URL param, redirecting to launcher');
+          appLogger.d('[AppRouter] Missing URL param, redirecting to launcher');
           return kLauncherPath; // Redirect to launcher if no URL
         }
         return null; // No redirect, continue to builder
@@ -110,11 +111,13 @@ final kGoRouter = GoRouter(
 
   // Error handling
   errorBuilder: (context, state) {
-    print('[AppRouter] ERROR - Route not found!');
-    print('[AppRouter] URI: ${state.uri}');
-    print('[AppRouter] Path: ${state.uri.path}');
-    print('[AppRouter] Query: ${state.uri.query}');
-    print('[AppRouter] Location: ${state.matchedLocation}');
+    appLogger.e(
+      '[AppRouter] ERROR - Route not found!\n'
+      'URI: ${state.uri}\n'
+      'Path: ${state.uri.path}\n'
+      'Query: ${state.uri.query}\n'
+      'Location: ${state.matchedLocation}',
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('Page Not Found')),
       body: Center(

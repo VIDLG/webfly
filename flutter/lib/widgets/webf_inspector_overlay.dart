@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart' show useMemoized;
-import 'package:hooks_riverpod/hooks_riverpod.dart'
-    show HookConsumerWidget, WidgetRef;
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 import 'package:webf/devtools.dart' show WebFInspectorFloatingPanel;
-import '../services/app_settings_service.dart' show showWebfInspectorProvider;
+import '../services/app_settings_service.dart' show showWebfInspectorSignal;
 
-class WebFInspectorOverlay extends HookConsumerWidget {
+class WebFInspectorOverlay extends HookWidget {
   const WebFInspectorOverlay({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final showInspector = ref.watch(showWebfInspectorProvider);
+  Widget build(BuildContext context) {
+    final showInspector = showWebfInspectorSignal.watch(context);
     if (!showInspector) {
       return const SizedBox.shrink();
     }

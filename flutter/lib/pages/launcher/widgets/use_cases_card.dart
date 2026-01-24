@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../services/asset_http_server.dart';
 import '../../../services/url_history_service.dart';
 import '../../../router/config.dart' show kUseCasesPath, buildWebFRouteUrl;
+import '../../../utils/app_logger.dart';
 
 /// Use Cases card
-class LauncherUseCasesCard extends ConsumerWidget {
+class LauncherUseCasesCard extends StatelessWidget {
   const LauncherUseCasesCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     void onTap() {
@@ -24,13 +24,13 @@ class LauncherUseCasesCard extends ConsumerWidget {
       }
 
       final useCaseUrl = '${server.baseUrl}/';
-      ref.read(urlHistoryProvider.notifier).addEntry(useCaseUrl, '/');
+      UrlHistoryOperations.addEntry(useCaseUrl, '/');
       final routeUrl = buildWebFRouteUrl(
         url: useCaseUrl,
         route: kUseCasesPath,
         path: '/',
       );
-      print('[LauncherPage] Opening use cases: $routeUrl');
+      appLogger.d('[LauncherPage] Opening use cases: $routeUrl');
       context.push(routeUrl, extra: {'initial': true, 'url': useCaseUrl});
     }
 
