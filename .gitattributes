@@ -1,0 +1,5 @@
+# Normalize line endings across platforms.
+# On Windows, keep these files checked out with LF to avoid churn and tooling issues.
+
+*.yaml text eol=lf
+*.yml  text eol=lf

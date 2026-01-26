@@ -61,9 +61,9 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.3
 
-# dependency_overrides:
-#   webf:
-#     path: third_party/webf
+dependency_overrides:
+  webf:
+    path: third_party/webf_0.24.8_patched
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

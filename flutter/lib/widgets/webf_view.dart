@@ -253,7 +253,7 @@ class WebFView extends HookWidget {
     }, [controllerName, url]);
 
     // Disposal policy:
-    // Only an instance that actually mounted a WebF widget (via WebF.fromController)
+    // Only an instance that actually mounted a WebF widget (via WebF.fromControllerName)
     // is considered the owner of the controller lifecycle.
     useEffect(() {
       final controllerNameForDispose = controllerName;
@@ -341,8 +341,8 @@ class WebFView extends HookWidget {
     }
 
     return shouldMountWebF
-        ? WebF.fromController(
-            controller: controller,
+        ? WebF.fromControllerName(
+            controllerName: controllerName,
             // If deep-linking directly to a sub-route, let WebF build the hybrid view.
             initialRoute: routePath,
             loadingWidget: loadingBuilder?.call(context) ?? _defaultLoadingWidget(),

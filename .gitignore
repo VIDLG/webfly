@@ -26,3 +26,4 @@ dist-ssr
 contrib/
 tmp/
 build/
+flutter/third_party
