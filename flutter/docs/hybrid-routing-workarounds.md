@@ -1,8 +1,16 @@
-# Hybrid Routing Workarounds for WebF 0.24.6
+# Hybrid Routing Notes (Historical)
 
 This document describes issues encountered when implementing hybrid routing with go_router and WebF, along with their workarounds.
 
-**Note**: This guide assumes all pages/URLs share a single WebFController instance. Multiple controllers are not currently supported in this setup.
+**Status**: Historical reference. The project has converged to WebF's official widget lifecycle management.
+
+**Current approach (recommended)**
+
+- Render the root document with `WebF.fromControllerName(...)`.
+- Render hybrid sub routes with `WebFRouterView.fromControllerName(..., path: ...)`.
+- Avoid manual attach/detach stacks and custom reference counting.
+
+The previously-used `HybridControllerManager` workaround was removed.
 
 ## Problem 1: Controller Attach/Detach Stack Corruption
 
@@ -46,7 +54,7 @@ Future<void> detachController(
 }
 ```
 
-### Solution: Hybrid Controller Manager with Reference Counting
+### Historical workaround: Hybrid Controller Manager with Reference Counting
 
 Created `HybridControllerManager` that maintains reference counts. Since all pages share the same controller instance, the reference count tracks how many pages are currently using it:
 

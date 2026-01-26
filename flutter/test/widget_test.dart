@@ -1,30 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert' show base64Decode;
+import 'dart:typed_data' show ByteData, Uint8List;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show CachingAssetBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:webfly/main.dart';
 
+class _TestAssetBundle extends CachingAssetBundle {
+  static final Uint8List _png1x1Transparent = base64Decode(
+    // 1x1 transparent PNG
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO8p4qUAAAAASUVORK5CYII=',
+  );
+
+  @override
+  Future<ByteData> load(String key) async {
+    // Provide a valid tiny PNG for any requested asset to keep widget tests
+    // deterministic (LauncherHeader uses Image.asset for the logo).
+    return ByteData.sublistView(_png1x1Transparent);
+  }
+}
+
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Launcher smoke test', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      DefaultAssetBundle(
+        bundle: _TestAssetBundle(),
+        child: const MyApp(),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('WebFly'), findsOneWidget);
+    expect(find.byIcon(Icons.settings), findsOneWidget);
+    expect(find.text('Launch'), findsOneWidget);
+    expect(find.text('Use Cases'), findsOneWidget);
   });
 }

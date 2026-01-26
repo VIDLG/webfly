@@ -1,13 +1,26 @@
+import 'dart:async' show Timer, unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 import 'package:webf/launcher.dart' show WebFController, WebFControllerManager;
 import 'package:webf/webf.dart' show WebFBundle;
-import 'package:webf/widget.dart' show WebFRouterView;
-import '../hooks/use_route_focus.dart';
-import '../services/hybrid_controller_manager.dart';
+import 'package:webf/widget.dart' show WebF, WebFRouterView;
 import '../router/app_router.dart' show kGoRouterDelegate, kWebfRouteObserver;
+import '../services/app_settings_service.dart' show cacheControllersSignal;
 import '../utils/app_logger.dart';
 import 'webfly_loading.dart';
+
+bool _canResolveHybridRoute(WebFController controller, String routePath) {
+  try {
+    final dynamic dynamicController = controller;
+    final dynamic view = dynamicController.view;
+    final dynamic result = view.getHybridRouterView(routePath);
+    return result != null;
+  } catch (_) {
+    return false;
+  }
+}
 
 Future<WebFController?> injectWebfBundleAsync({
   required String controllerName,
@@ -17,7 +30,7 @@ Future<WebFController?> injectWebfBundleAsync({
   appLogger.d('[WebFView] Injecting: controller=$controllerName, url=$url');
 
   try {
-    final controller = await WebFControllerManager.instance.addWithPrerendering(
+    WebFController? controller = await WebFControllerManager.instance.addWithPrerendering(
       name: controllerName,
       createController: () => WebFController(
         routeObserver: kWebfRouteObserver,
@@ -38,6 +51,10 @@ Future<WebFController?> injectWebfBundleAsync({
         appLogger.d('[WebFView] Controller setup complete');
       },
     );
+
+    // WebFControllerManager may return null due to concurrency rules (another request won).
+    // In that case, fetch the winner controller.
+    controller ??= await WebFControllerManager.instance.getController(controllerName);
 
     appLogger.d('[WebFView] Bundle injection complete');
     return controller;
@@ -70,6 +87,72 @@ Widget _defaultErrorWidget(Object? error) {
   );
 }
 
+class _JavaScriptRuntimeErrorView extends StatelessWidget {
+  const _JavaScriptRuntimeErrorView({
+    required this.message,
+    required this.onClose,
+  });
+
+  final String message;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(maxWidth: 900),
+        decoration: BoxDecoration(
+          color: Colors.red.shade900,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.shade700),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'JavaScript Runtime Error',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: onClose,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// A pure WebF view widget without Scaffold or AppBar.
 ///
 /// This widget handles WebF controller lifecycle, route focus monitoring,
@@ -81,6 +164,7 @@ class WebFView extends HookWidget {
     required this.url,
     required this.controllerName,
     this.routePath = '/',
+    this.cacheController,
     this.loadingBuilder,
     this.errorBuilder,
   });
@@ -88,6 +172,13 @@ class WebFView extends HookWidget {
   final String url;
   final String controllerName;
   final String routePath;
+
+  /// Whether to cache the underlying WebF controller.
+  ///
+  /// - `true`: keep controller alive across navigation.
+  /// - `false`: dispose controller when this view is unmounted.
+  /// - `null` (default): follow global `cacheControllersSignal`.
+  final bool? cacheController;
 
   /// Optional custom loading widget builder
   final Widget Function(BuildContext)? loadingBuilder;
@@ -97,24 +188,48 @@ class WebFView extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controllerInstance = useState<WebFController?>(null);
     final initError = useState<Object?>(null);
     final jsRuntimeError = useState<String?>(null); // JavaScript runtime errors
-    final isInitialized = useState(false);
-    final isAttached = useState(false);
-    final isReady = useState(false);
+    final controllerState = useState<WebFController?>(null);
+    final didMountRootWebF = useRef(false);
+    final hybridRouteReady = useState(false);
+    final cacheControllers = cacheController ?? cacheControllersSignal.watch(context);
 
-    // Use route focus hook to monitor when this page gains/loses focus
-    final isRouteCurrent = useRouteFocus();
+    final controller = controllerState.value;
+    final hasController = controller != null;
+    final shouldMountWebF = hasController &&
+      (routePath == '/' ||
+        controller.state == null ||
+        didMountRootWebF.value);
+
+    // Deep-link bootstrap: before mounting WebF with an initialRoute != '/', try to
+    // wait until WebF can resolve the hybrid router view. This avoids transient
+    // "Loading Error: the route path ... was not found" during router registration.
+    final shouldWaitForHybridRoute =
+      shouldMountWebF && routePath != '/' && !didMountRootWebF.value;
 
     useEffect(() {
       var cancelled = false;
-      isInitialized.value = false;
+      controllerState.value = null;
       initError.value = null;
+      jsRuntimeError.value = null;
+
+      final controllerNameForEffect = controllerName;
 
       Future<void> run() async {
+        // Reuse existing controller if already present.
+        final existing = WebFControllerManager.instance.getControllerSync(
+          controllerNameForEffect,
+        );
+        if (existing != null && !existing.disposed) {
+          // Keep delegate wired even across rebuilds.
+          existing.hybridHistory.delegate = kGoRouterDelegate;
+          controllerState.value = existing;
+          return;
+        }
+
         final controller = await injectWebfBundleAsync(
-          controllerName: controllerName,
+          controllerName: controllerNameForEffect,
           url: url,
           onJSRuntimeError: (errorMessage) {
             if (!cancelled && context.mounted) {
@@ -124,11 +239,10 @@ class WebFView extends HookWidget {
         );
         if (cancelled) return;
         if (!context.mounted) return;
-        controllerInstance.value = controller;
         if (controller == null) {
           initError.value = 'Controller initialization returned null';
         } else {
-          isInitialized.value = true;
+          controllerState.value = controller;
         }
       }
 
@@ -138,112 +252,58 @@ class WebFView extends HookWidget {
       };
     }, [controllerName, url]);
 
-    // Effect: Handle attach/detach lifecycle based on route focus
-    useEffect(
-      () {
-        if (!isInitialized.value || !isRouteCurrent.value) {
-          return null;
-        }
-        final controller = controllerInstance.value;
-        if (controller == null) {
-          return null;
-        }
-
-        isAttached.value = false;
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!context.mounted) return;
-
-          // Intelligently attach: first reference uses manager, subsequent use direct push
-          final refCount = HybridControllerManager.instance.attachController(
-            controllerName,
-            context,
-            controller,
-          );
-          appLogger.d(
-            '[WebFView] ✅ Attached controller (ref count: $refCount)',
-          );
-
-          // Mark as attached so route checking can begin
-          isAttached.value = true;
-        });
-
-        return () {
-          isAttached.value = false;
-
-          // Intelligently detach: last reference uses manager, intermediate use direct pop
-          final refCount = HybridControllerManager.instance.detachController(
-            controllerName,
-            context.mounted ? context : null,
-            controller,
-          );
-          appLogger.d(
-            '[WebFView] 🔌 Detached controller (ref count: $refCount)',
-          );
-        };
-      },
-      [
-        isInitialized.value,
-        isRouteCurrent.value,
-        controllerInstance.value,
-        controllerName,
-      ],
-    );
-
-    // Effect: Check route ready status (only after attached)
+    // Disposal policy:
+    // Only an instance that actually mounted a WebF widget (via WebF.fromController)
+    // is considered the owner of the controller lifecycle.
     useEffect(() {
-      if (!isAttached.value) {
-        return null;
-      }
-      final controller = controllerInstance.value;
-      if (controller == null) {
-        return null;
-      }
-
-      isReady.value = false;
-      final startTime = DateTime.now();
-      var frameCount = 0;
-      var disposed = false;
-
-      void checkRouteReady() {
-        if (disposed || !context.mounted) return;
-
-        frameCount++;
-        final routerView = controller.view.getHybridRouterView(routePath);
-        final elapsed = DateTime.now().difference(startTime).inMilliseconds;
-
-        if (routerView != null) {
-          appLogger.d(
-            '[WebFView] 🎉 Route ready after $frameCount frames (${elapsed}ms)',
-          );
-          isReady.value = true;
-          initError.value = null;
-        } else if (frameCount >= 10) {
-          // Stop after 10 frames (~150-200ms) - treat as error
-          appLogger.e(
-            '[WebFView] ⏰ Route not ready after $frameCount frames (${elapsed}ms)',
-          );
-          initError.value =
-              'Route "$routePath" not found after ${elapsed}ms. Verify webf-router registration.';
-          isReady.value = false;
-        } else {
-          // Schedule next frame check
-          appLogger.d(
-            '[WebFView] ⏳ Frame $frameCount: Route pending (${elapsed}ms)',
-          );
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => checkRouteReady(),
-          );
-        }
-      }
-
-      // Start checking
-      WidgetsBinding.instance.addPostFrameCallback((_) => checkRouteReady());
+      final controllerNameForDispose = controllerName;
+      final shouldCacheControllersForDispose = cacheControllers;
 
       return () {
-        disposed = true;
+        if (!shouldCacheControllersForDispose && didMountRootWebF.value) {
+          unawaited(
+            WebFControllerManager.instance.removeAndDisposeController(
+              controllerNameForDispose,
+            ),
+          );
+        }
       };
-    }, [isAttached.value, controllerInstance.value, routePath]);
+    }, [controllerName, cacheControllers]);
+
+    // Wait for hybrid router view to be resolvable before mounting WebF for deep-link.
+    // This effect is always registered to satisfy hooks ordering; it no-ops when not needed.
+    useEffect(() {
+      if (!hasController) {
+        hybridRouteReady.value = false;
+        return null;
+      }
+
+      if (!shouldWaitForHybridRoute) {
+        hybridRouteReady.value = true;
+        return null;
+      }
+
+      final ctrl = controller;
+
+      hybridRouteReady.value = _canResolveHybridRoute(ctrl, routePath);
+      if (hybridRouteReady.value) {
+        return null;
+      }
+
+      final poll = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        if (!context.mounted) return;
+
+        final ready = _canResolveHybridRoute(ctrl, routePath);
+        if (ready && !hybridRouteReady.value) {
+          hybridRouteReady.value = true;
+          timer.cancel();
+        }
+      });
+
+      return () {
+        poll.cancel();
+      };
+    }, [hasController, shouldWaitForHybridRoute, controller, routePath, controllerName]);
 
     appLogger.d(
       '[WebFView] build: controller=$controllerName, path=$routePath, url=$url',
@@ -252,85 +312,53 @@ class WebFView extends HookWidget {
       appLogger.e('[WebFView] Error: ${initError.value}');
     }
 
-    if (!isInitialized.value || !isReady.value) {
-      return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
+    // If we decided to mount root WebF, mark ownership without triggering rebuilds.
+    // This is used for lifecycle ownership and to avoid branch-flips later.
+    if (shouldMountWebF && (!shouldWaitForHybridRoute || hybridRouteReady.value)) {
+      didMountRootWebF.value = true;
     }
+
+    final runtimeErrorMessage = jsRuntimeError.value;
 
     if (initError.value != null) {
       return errorBuilder?.call(context, initError.value) ??
           _defaultErrorWidget(initError.value);
     }
 
-    final controller = controllerInstance.value!;
+    if (runtimeErrorMessage != null) {
+      return _JavaScriptRuntimeErrorView(
+        message: runtimeErrorMessage,
+        onClose: () => jsRuntimeError.value = null,
+      );
+    }
 
-    return Stack(
-      children: [
-        WebFRouterView(
-          controller: controller,
-          path: routePath,
-          defaultViewBuilder: (context) => Center(
-            child: Text(
-              'Route "$routePath" not found. Verify webf-router registration.',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
+    if (controller == null) {
+      return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
+    }
 
-        // JavaScript runtime error overlay
-        if (jsRuntimeError.value != null)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Material(
-              color: Colors.red.shade900,
-              elevation: 8,
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 200),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.white),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'JavaScript Runtime Error',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => jsRuntimeError.value = null,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        child: Text(
-                          jsRuntimeError.value!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
+    if (shouldWaitForHybridRoute && !hybridRouteReady.value) {
+      return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
+    }
+
+    return shouldMountWebF
+        ? WebF.fromController(
+            controller: controller,
+            // If deep-linking directly to a sub-route, let WebF build the hybrid view.
+            initialRoute: routePath,
+            loadingWidget: loadingBuilder?.call(context) ?? _defaultLoadingWidget(),
+            errorBuilder: (context, error) {
+              final resolvedError = errorBuilder?.call(context, error) ??
+                  _defaultErrorWidget(error);
+
+              return resolvedError;
+            },
+          )
+        : WebFRouterView(
+            controller: controller,
+            path: routePath,
+            defaultViewBuilder: (context) {
+              return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
+            },
+          );
   }
 }

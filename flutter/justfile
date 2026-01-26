@@ -11,7 +11,7 @@ default:
 # Run on Android device (auto-detects first Android device)
 # Usage: just android [debug|release] [--verbose]
 android MODE='debug' *FLAGS:
-    rust-script tools/cmd-run.rs --log=logs/flutter-android-{{MODE}}.log flutter run -d 29H0223315019143 --{{MODE}} {{FLAGS}}
+    DEVICE_ID=$(flutter devices --machine | jq -r 'map(select(.targetPlatform | startswith("android")))[0].id // empty'); if [ -z "$DEVICE_ID" ]; then echo "No Android device found. Run: just devices" 1>&2; exit 1; fi; rust-script tools/cmd-run.rs --log=logs/flutter-android-{{MODE}}.log flutter run -d "$DEVICE_ID" --{{MODE}} {{FLAGS}}
 
 # Run on Windows
 # Usage: just windows [debug|release] [--verbose]

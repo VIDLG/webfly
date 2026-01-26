@@ -1,99 +1,101 @@
-import 'dart:convert' show jsonEncode;
-import 'package:flutter/material.dart' show BuildContext, RoutePredicate;
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:webf/webf.dart' show HybridHistoryDelegate;
-import 'package:webfly/utils/app_logger.dart';
+import 'package:webf/webf.dart';
+
 import 'config.dart';
 
-/// HybridHistoryDelegate for go_router
-///
-/// Integrates WebF's Hybrid Routing with go_router
-/// Uses go_router's stack directly for WebF navigation
-class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
-  final GoRouter router;
-
-  GoRouterHybridHistoryDelegate(this.router);
-
-  /// Prepare navigation: build route URL from path
-  String _prepareNavigation(String path, BuildContext context) {
-    final state = GoRouterState.of(context);
-    final url = state.uri.queryParameters['url'];
-    final base = state.uri.queryParameters['base'];
-
-    if (url == null || base == null) {
-      throw StateError(
-        'Current page does not have url/base parameters. URI: ${state.uri}',
-      );
+class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
+  String _maybeWrapToHybridAppRoute(BuildContext context, String location) {
+    // If it's already one of our Flutter-native routes, keep it as-is.
+    // Otherwise, treat it as a WebF internal route and wrap it into `/app?...&path=...`.
+    Uri? targetUri;
+    try {
+      targetUri = Uri.parse(location);
+    } catch (_) {
+      return location;
     }
 
-    return buildWebFRouteUrl(
-      url: url,
-      route: state.uri.path,
-      path: path,
-      base: base,
+    final path = targetUri.path.isEmpty ? '/' : targetUri.path;
+    if (path == kLauncherPath ||
+        path == kScannerPath ||
+        path == kWebfRoutePath ||
+        path == kUseCasesPath ||
+        path == kAppRoutePath) {
+      return location;
+    }
+
+    Uri currentUri;
+    try {
+      currentUri = GoRouterState.of(context).uri;
+    } catch (_) {
+      // If we can't read current route context, fall back to raw location.
+      return location;
+    }
+
+    // Only wrap when we have enough context to build the `/app` URL.
+    final url = currentUri.queryParameters[kUrlParam];
+    if (url == null || url.isEmpty) {
+      return location;
+    }
+
+    // WebF hybrid route expects the internal path in query param `path`.
+    // We intentionally ignore query/fragment of [location] here; WebF routing
+    // state should be passed via the `arguments`/state channel.
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    return buildWebFRouteUrlFromUri(
+      uri: currentUri,
+      route: kAppRoutePath,
+      path: normalizedPath,
     );
   }
 
   @override
   void pop(BuildContext context) {
-    if (router.canPop()) {
-      appLogger.i('[GoRouter] pop: canPop=true');
-      router.pop();
-    } else {
-      appLogger.i('[GoRouter] pop: canPop=false (at root)');
+    if (GoRouter.of(context).canPop()) {
+      GoRouter.of(context).pop();
+      return;
     }
+    Navigator.pop(context);
   }
 
   @override
   String path(BuildContext? context, String? initialRoute) {
-    if (context != null) {
-      try {
-        final state = GoRouterState.of(context);
-        // Get path from query parameter
-        return state.uri.queryParameters['path'] ?? '/';
-      } catch (e) {
-        appLogger.e('[GoRouterDelegate] Failed to get path from context: $e');
-      }
+    if (context == null) return initialRoute ?? '/';
+    try {
+      return GoRouterState.of(context).uri.toString();
+    } catch (_) {
+      String? currentPath = ModalRoute.of(context)?.settings.name;
+      return currentPath ?? initialRoute ?? '/';
     }
-    // Fallback to initialRoute or root
-    return initialRoute ?? '/';
-  }
-
-  @override
-  dynamic state(BuildContext? context, Map<String, dynamic>? initialState) {
-    if (context != null) {
-      try {
-        final goRouterState = GoRouterState.of(context);
-        // Return extra state if available
-        if (goRouterState.extra != null) {
-          return jsonEncode(goRouterState.extra);
-        }
-        // Return query parameters from current page URI
-        final params = goRouterState.uri.queryParameters;
-        if (params.isNotEmpty) {
-          return jsonEncode(params);
-        }
-      } catch (e) {
-        appLogger.e('[GoRouterDelegate] Failed to get GoRouterState: $e');
-      }
-    }
-
-    // Fallback to initialState
-    return jsonEncode(initialState ?? {});
   }
 
   @override
   void pushNamed(BuildContext context, String routeName, {Object? arguments}) {
-    final routeUrl = _prepareNavigation(routeName, context);
-    appLogger.i('[GoRouter] pushNamed: url=$routeUrl, arguments=$arguments');
-    router.push(routeUrl, extra: arguments);
+    final location = _maybeWrapToHybridAppRoute(context, routeName);
+    GoRouter.of(context).push(location, extra: arguments);
   }
 
   @override
   void replaceState(BuildContext context, Object? state, String name) {
-    final routeUrl = _prepareNavigation(name, context);
-    appLogger.i('[GoRouter] replaceState: url=$routeUrl, state=$state');
-    router.replace(routeUrl, extra: state);
+    final location = _maybeWrapToHybridAppRoute(context, name);
+    GoRouter.of(context).pushReplacement(location, extra: state);
+  }
+
+  @override
+  dynamic state(BuildContext? context, Map<String, dynamic>? initialState) {
+    if (context == null) {
+      return initialState != null ? jsonEncode(initialState) : '{}';
+    }
+    var route = ModalRoute.of(context);
+    if (route?.settings.arguments != null) {
+      return jsonEncode(route!.settings.arguments);
+    }
+    return '{}';
   }
 
   @override
@@ -103,44 +105,34 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     TO? result,
     Object? arguments,
   }) {
-    appLogger.i(
-      '[GoRouter] restorablePopAndPush: routeName=$routeName, result=$result, arguments=$arguments, canPop=${router.canPop()}',
-    );
-    if (router.canPop()) {
-      router.pop();
+    // go_router doesn't support restorable navigation APIs; fall back to a non-restorable equivalent.
+    if (GoRouter.of(context).canPop()) {
+      GoRouter.of(context).pop();
     }
-    pushNamed(context, routeName, arguments: arguments);
-    return routeName;
+    final location = _maybeWrapToHybridAppRoute(context, routeName);
+    GoRouter.of(context).push(location, extra: arguments);
+    return location;
   }
 
   @override
   void popUntil(BuildContext context, RoutePredicate predicate) {
-    // go_router doesn't expose routes directly, use the underlying Navigator
+    final router = GoRouter.of(context);
     final navigator = router.routerDelegate.navigatorKey.currentState;
     if (navigator != null) {
       navigator.popUntil(predicate);
+      return;
     }
+    Navigator.popUntil(context, predicate);
   }
 
   @override
   bool canPop(BuildContext context) {
-    // WebF and Flutter share the same route stack
-    return router.canPop();
+    return GoRouter.of(context).canPop() || Navigator.canPop(context);
   }
 
   @override
-  Future<bool> maybePop<T extends Object?>(
-    BuildContext context, [
-    T? result,
-  ]) async {
-    appLogger.i(
-      '[GoRouter] maybePop: canPop=${router.canPop()}, result=$result',
-    );
-    if (router.canPop()) {
-      router.pop();
-      return true;
-    }
-    return false;
+  Future<bool> maybePop<T extends Object?>(BuildContext context, [T? result]) {
+    return Navigator.maybePop(context, result);
   }
 
   @override
@@ -149,13 +141,12 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     String routeName, {
     Object? arguments,
   }) {
-    appLogger.i(
-      '[GoRouter] popAndPushNamed: routeName=$routeName, arguments=$arguments, canPop=${router.canPop()}',
-    );
+    final router = GoRouter.of(context);
     if (router.canPop()) {
       router.pop();
     }
-    pushNamed(context, routeName, arguments: arguments);
+    final location = _maybeWrapToHybridAppRoute(context, routeName);
+    router.push(location, extra: arguments);
   }
 
   @override
@@ -165,10 +156,14 @@ class GoRouterHybridHistoryDelegate extends HybridHistoryDelegate {
     RoutePredicate predicate, {
     Object? arguments,
   }) {
-    appLogger.i(
-      '[GoRouter] pushNamedAndRemoveUntil: newRouteName=$newRouteName, arguments=$arguments',
-    );
-    popUntil(context, predicate);
-    pushNamed(context, newRouteName, arguments: arguments);
+    final router = GoRouter.of(context);
+    final navigator = router.routerDelegate.navigatorKey.currentState;
+    final location = _maybeWrapToHybridAppRoute(context, newRouteName);
+    if (navigator != null) {
+      navigator.popUntil(predicate);
+      router.push(location, extra: arguments);
+      return;
+    }
+    router.go(location, extra: arguments);
   }
 }

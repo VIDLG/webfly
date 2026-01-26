@@ -13,6 +13,7 @@ class WebFPage extends StatelessWidget {
     required this.controllerName,
     this.routePath = '/',
     this.title,
+    this.cacheController,
     this.loadingBuilder,
     this.errorBuilder,
   });
@@ -21,6 +22,7 @@ class WebFPage extends StatelessWidget {
   final String controllerName;
   final String routePath;
   final String? title;
+  final bool? cacheController;
 
   /// Optional custom loading widget builder
   final Widget Function(BuildContext)? loadingBuilder;
@@ -48,6 +50,7 @@ class WebFPage extends StatelessWidget {
             url: url,
             controllerName: controllerName,
             routePath: routePath,
+            cacheController: cacheController,
             loadingBuilder: loadingBuilder,
             errorBuilder: errorBuilder,
           ),

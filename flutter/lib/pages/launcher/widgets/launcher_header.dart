@@ -14,7 +14,14 @@ class LauncherHeader extends StatelessWidget {
         : 'assets/gen/webfly_logo_light.png';
     return Column(
       children: [
-        Image.asset(logoPath, width: 80, height: 80),
+        Image.asset(
+          logoPath,
+          width: 80,
+          height: 80,
+          errorBuilder: (context, error, stackTrace) {
+            return const SizedBox(width: 80, height: 80);
+          },
+        ),
         const SizedBox(height: 12),
         Text(
           'Enter a URL or scan a QR code to launch',

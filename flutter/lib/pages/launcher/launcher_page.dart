@@ -3,10 +3,10 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import 'package:webf/launcher.dart' show WebFControllerManager;
 import '../../hooks/use_route_focus.dart';
 import '../../services/app_settings_service.dart';
 import '../../services/url_history_service.dart';
-import '../../services/hybrid_controller_manager.dart';
 import '../../utils/app_logger.dart';
 import 'widgets/history_list.dart';
 import '../../widgets/webf_inspector_overlay.dart';
@@ -45,13 +45,14 @@ class LauncherPage extends HookWidget {
       return null;
     }, [urls, urlController, pathController]);
 
-    // Monitor route focus and clean up controllers when returning to launcher
+    // Safety-net: when caching is disabled, fully clean up WebF controllers
+    // when returning to launcher. The primary disposal path is per-WebFView
+    // unmount, but this catches edge cases (aborted routes, unexpected rebuilds).
     final isRouteFocused = useRouteFocus();
     useEffect(() {
       if (isRouteFocused.value && !cacheControllers) {
-        // Dispose all controllers when this page regains focus
-        // This ensures clean state when returning from WebF pages
-        HybridControllerManager.instance.disposeAll();
+        appLogger.d('[LauncherPage] Cache disabled: disposing all WebF controllers');
+        WebFControllerManager.instance.disposeAll();
       }
       return null;
     }, [isRouteFocused.value, cacheControllers]);

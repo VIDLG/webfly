@@ -151,4 +151,4 @@ final kGoRouter = GoRouter(
 );
 
 /// Global go_router delegate instance
-final kGoRouterDelegate = GoRouterHybridHistoryDelegate(kGoRouter);
+final kGoRouterDelegate = CustomHybridHistoryDelegate();

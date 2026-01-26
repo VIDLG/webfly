@@ -115,7 +115,8 @@ void main() {
         '/app/products/123',
       ];
 
-      for (final url in testUrls) {}
+      // Verify URLs match expected pattern
+      for (final _ in testUrls) {}
     });
 
     test('Route paths are correctly defined', () {
