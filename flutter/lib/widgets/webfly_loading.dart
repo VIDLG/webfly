@@ -18,7 +18,7 @@ class WebFlyLoading extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.asset(logoPath, width: 80, height: 80),
+          Image.asset(logoPath, width: 120, height: 120),
           const SizedBox(height: 24),
           const CircularProgressIndicator(),
           if (message != null) ...[

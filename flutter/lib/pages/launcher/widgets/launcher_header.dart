@@ -16,10 +16,10 @@ class LauncherHeader extends StatelessWidget {
       children: [
         Image.asset(
           logoPath,
-          width: 80,
-          height: 80,
+          width: 120,
+          height: 120,
           errorBuilder: (context, error, stackTrace) {
-            return const SizedBox(width: 80, height: 80);
+            return const SizedBox(width: 120, height: 120);
           },
         ),
         const SizedBox(height: 12),
