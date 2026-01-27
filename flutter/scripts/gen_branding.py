@@ -4,17 +4,17 @@
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 
-def create_branding_image(text: str, output_path: Path, text_color: tuple, width: int = 300, height: int = 60):
+def create_branding_image(text: str, output_path: Path, text_color: tuple, width: int = 300, height: int = 80):
     """Create a simple branding image with text."""
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
     # Try to use a system font, fallback to default
     try:
-        font = ImageFont.truetype("arial.ttf", 32)
+        font = ImageFont.truetype("arial.ttf", 40)
     except:
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 32)
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
         except:
             font = ImageFont.load_default()
     
