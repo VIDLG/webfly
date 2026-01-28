@@ -1,0 +1,7 @@
+{
+  "rust-analyzer.linkedProjects": [
+    ".vscode/rust-project.json"
+  ],
+  "rust-analyzer.checkOnSave": false,
+  "files.eol": "\n"
+}

@@ -1,0 +1,10 @@
+{
+  "sysroot_src": null,
+  "crates": [
+    {
+      "root_module": "tools/manage_use_cases.rs",
+      "edition": "2021",
+      "deps": []
+    }
+  ]
+}

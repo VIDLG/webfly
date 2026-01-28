@@ -4,11 +4,7 @@
 
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="flutter/assets/gen/webfly_logo_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="flutter/assets/gen/webfly_logo_light.png">
-  <img src="flutter/assets/gen/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
-</picture>
+<img src="assets/logo/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
@@ -104,24 +100,26 @@ WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运�
    cd webfly
    ```
 
-2. **安装 Flutter 依赖**
+2. **初始化 submodule**
+  ```bash
+  git submodule update --init --recursive
+  ```
+
+3. **安装 Flutter 依赖**
    ```bash
-   cd flutter
    flutter pub get
    ```
 
-3. **安装 Web 依赖**（用于示例用例）
+4. **安装 Web 依赖**（用于示例用例）
    ```bash
-   pnpm install
+  cd frontend
+  pnpm install
    ```
 
-4. **运行应用**
+5. **运行应用**
    ```bash
-   # 从根目录
-   pnpm flutter
-
-   # 或从 flutter 目录
-   flutter run
+  # 从仓库根目录
+  flutter run
    ```
 
 ## 📱 使用方法
@@ -174,109 +172,81 @@ if (window.webf?.share) {
 
 ```
 webfly/
-├── flutter/                 # Flutter 应用
-│   ├── lib/
-│   │   ├── pages/          # 应用页面
-│   │   │   └── launcher/   # 启动器页面及组件
-│   │   ├── services/       # 业务逻辑
-│   │   ├── widgets/        # 可复用组件
-│   │   └── router/         # 导航配置
-│   ├── tools/              # 构建自动化工具
-│   │   ├── flutter-gen-platforms.rs  # 平台生成（含图标/启动画面）
-│   │   ├── cmd-run.rs                # 通用命令包装器（带日志）
-│   │   └── kill-file-handles.rs      # 进程清理工具
-│   ├── assets/             # 图片、Logo
-│   └── pubspec.yaml        # Flutter 依赖
-│
-├── src/                    # Web 应用开发
-│   └── pages/              # 示例 Web 页面
-│
-└── contrib/                # WebF 贡献
-    └── webf/               # WebF 引擎源码
+├── lib/                    # Flutter 应用代码
+│   ├── screens/            # 页面（launcher/webf/scanner/diagnostics 等）
+│   ├── services/           # 业务逻辑
+│   ├── widgets/            # 可复用组件
+│   └── router/             # 导航配置
+├── assets/                 # 图片、Logo、打包 use_cases
+├── platforms/              # 平台模板（source-of-truth）
+├── flutter_tools/          # 构建/开发工具（Rust + 脚本，git submodule）
+├── tools/                  # 仓库工具（Rust）
+├── frontend/               # Web 应用（Vite）
+└── pubspec.yaml            # Flutter 依赖
 ```
 
 ### 开发工具
 
-WebFly 包含了基于 Rust 的自定义工具，用于增强开发工作流：
+WebFly 包含了基于 Rust 的自定义工具（位于 `flutter_tools/`），用于增强开发工作流（设备选择、生成平台目录、生成 Logo、记录日志等）。
 
-**flutter-gen-platforms.rs**
-- 从 Pkl/TOML 配置生成 Flutter 平台目录
-- 自动使用 `flutter_launcher_icons` 生成应用图标
-- 通过 `flutter_native_splash` 创建启动画面
-- 集成到 `pnpm flutter:platforms` 命令中
+### Flutter 任务（Just）
 
-**cmd-run.rs**
-- 带日志功能的通用命令包装器
-- 支持通过 `--cwd` 指定工作目录
-- 捕获命令输出到日志文件
-- 用于 `pnpm flutter:run` 和 `pnpm flutter:build-apk`
+从仓库根目录运行：
 
-**kill-file-handles.rs**
-- 查找锁定文件或目录的进程
-- 在开发过程中清理构建产物时很有用
-- 支持 `--list-only` 模式，仅预览不终止
-- 使用 Windows Sysinternals `handle.exe` 进行精确检测
-
-### NPM 脚本
-
-WebFly 提供了便捷的 npm 脚本用于常见开发任务：
-
-**Flutter 命令**
 ```bash
-# 运行 Flutter 应用并记录日志
-pnpm flutter:run
+# 生成平台目录（从 platforms/ 模板生成）
+just gen-platforms
 
-# 生成平台目录，包含图标和启动画面
-pnpm flutter:platforms
+# 只生成 Logo（不应用）
+just logo
 
-# 构建发布版 APK，包含代码混淆和调试符号
-pnpm flutter:build-apk
+# 生成 Logo 并应用到 launcher icons / splash
+just gen-logo
 
-# 清理 Flutter 构建产物
-pnpm flutter:clean
+# 运行 Android（自动选择设备）
+just android
 
-# 直接执行 Flutter 命令
-pnpm flutter <命令>
+# 运行 Windows
+just windows
+
+# 构建发布版 APK
+just build-apk
 ```
 
-**Web 开发**
+### Web 开发
+
 ```bash
-# 启动 Vite 开发服务器
+cd frontend
 pnpm dev
-
-# 构建 Web 应用
 pnpm build
-
-# 构建用例
-pnpm build:use-cases
 ```
 
 ### 从源码构建
 
 **Android APK**
 ```bash
-pnpm flutter:build-apk
+# 通过 just（推荐）：
+just build-apk
+
 # 或手动执行：
-cd flutter
 flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
 ```
 
 **Android App Bundle**
 ```bash
-cd flutter
 flutter build appbundle --release
 ```
 
 ### 自定义开发
 
 **添加自定义原生插件：**
-1. 将插件依赖添加到 `flutter/pubspec.yaml`
+1. 将插件依赖添加到 `pubspec.yaml`
 2. 在 `services/` 中与 WebF bridge 集成
 3. 将 API 暴露到 JavaScript 上下文
 
 **修改 UI 主题：**
-- 编辑 `flutter/lib/main.dart` 修改应用全局主题
-- 在 `pages/launcher/widgets/` 中自定义启动器组件
+- 编辑 `lib/main.dart` 修改应用全局主题
+- 在 `screens/launcher/widgets/` 中自定义启动器组件
 
 ## ⚙️ 配置说明
 
@@ -292,7 +262,7 @@ flutter build appbundle --release
 在开发时，内置 HTTP 服务器从以下位置提供资源：
 - 端口：自动分配（查看控制台日志）
 - 基础 URL：`http://localhost:{port}/`
-- 资源路径：`flutter/assets/use_cases/`
+- 资源路径：`assets/use_cases/`
 
 ## 📦 依赖项
 

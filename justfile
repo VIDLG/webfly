@@ -1,17 +1,99 @@
-# WebFly Project Tasks
+# Flutter Project Tasks
 
-# Use sh as the shell (e.g. Git Bash / MSYS2)
+# Use sh as the shell (from Git Bash or similar)
 set shell := ["sh", "-c"]
+set windows-shell := ["sh", "-c"]
+
+# Load environment variables from .env
+set dotenv-load
 
 # List all available commands
 default:
     @just --list
 
-# Flutter tasks (use: just flutter <command>)
-flutter *args:
-    cd flutter && just {{args}}
+# Run on Android device (auto-detects first Android device)
+# Usage: just android [debug|release] [--verbose]
+android MODE='debug' *FLAGS:
+    DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found. Run: just devices" 1>&2; exit 1; fi; VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; rust-script flutter_tools/cmd_run.rs --log=logs/flutter-android-{{MODE}}.log flutter run -d "$DEVICE_ID" --{{MODE}} $VERBOSE {{FLAGS}}
 
-# Build everything for release packaging (refresh use_cases assets then build main web)
-build-all:
-    just flutter use-cases-refresh
-    pnpm build
+# Run on Windows
+# Usage: just windows [debug|release] [--verbose]
+windows MODE='debug' *FLAGS:
+    VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; rust-script flutter_tools/cmd_run.rs --log=logs/flutter-windows-{{MODE}}.log flutter run -d windows --{{MODE}} $VERBOSE {{FLAGS}}
+
+# Generate platform configuration
+gen-platforms:
+    cargo run --manifest-path flutter_tools/flutter_gen_platforms/Cargo.toml -- --config app.pkl
+
+# Generate logo variants + apply to launcher icons/splash
+gen-logo:
+    flutter_tools/flutter_gen_logo.py
+
+# Generate logo variants only (without applying to launcher icons)
+logo:
+    flutter_tools/flutter_gen_logo.py --no-apply
+
+# Kill processes locking Android directory
+kill-android:
+    rust-script flutter_tools/kill_file_handles.rs android
+
+# Build APK (release)
+# Usage: just build-apk [--verbose]
+build-apk *FLAGS:
+    rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{FLAGS}}
+
+# Analyze Dart code for syntax and semantic issues
+analyze PATH='lib test' *ARGS:
+    flutter analyze {{PATH}} {{ARGS}}
+
+# Check Flutter development environment and accept Android licenses
+doctor *ARGS:
+    yes | flutter doctor --android-licenses {{ARGS}}
+
+# Bump version and regenerate platform config
+# Usage: just bump-version [major|minor|patch|build]
+bump-version PART:
+    rust-script flutter_tools/bump_version.rs {{PART}}
+    just gen-platforms
+    just gen-logo
+
+# One-shot refresh: update use cases + regenerate platforms + regenerate logos
+# Requires .env: WEBF_USE_CASES_DIR
+refresh-all:
+    just use-cases-refresh
+    just gen-platforms
+    just gen-logo
+
+# List all connected devices
+devices *ARGS:
+    flutter devices {{ARGS}}
+
+# Run tests
+test *ARGS:
+    flutter test {{ARGS}}
+
+# Format Dart code
+format *ARGS:
+    flutter format {{ARGS}} lib test
+
+# Clean build artifacts
+clean:
+    flutter clean
+
+# Upgrade packages to latest major versions
+upgrade *ARGS:
+    flutter pub upgrade --major-versions {{ARGS}}
+
+# Build upstream WebF use_cases in external folder (requires .env: WEBF_USE_CASES_DIR)
+use-cases-build:
+    rust-script tools/manage_use_cases.rs build --src "$WEBF_USE_CASES_DIR"
+
+# Copy upstream use_cases build output into assets/use_cases
+use-cases-copy:
+    rust-script tools/manage_use_cases.rs copy --src "$WEBF_USE_CASES_DIR" --dst assets/use_cases
+
+# One-shot refresh: build upstream + copy assets
+use-cases-refresh:
+    rust-script tools/manage_use_cases.rs refresh --src "$WEBF_USE_CASES_DIR" --dst assets/use_cases
+
+

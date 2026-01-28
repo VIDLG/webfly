@@ -1,3 +1,4 @@
-[submodule "flutter/flutter_tools"]
-	path = flutter/flutter_tools
+
+[submodule "flutter_tools"]
+	path = flutter_tools
 	url = https://github.com/daleydeng/flutter_tools.git

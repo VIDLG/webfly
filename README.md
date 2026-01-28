@@ -4,11 +4,7 @@ English | [简体中文](README.zh-CN.md)
 
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="flutter/assets/gen/webfly_logo_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="flutter/assets/gen/webfly_logo_light.png">
-  <img src="flutter/assets/gen/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
-</picture>
+<img src="assets/logo/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
@@ -104,24 +100,26 @@ WebFly isn't just a web viewer - it's a fully-featured native runtime with integ
    cd webfly
    ```
 
-2. **Install Flutter dependencies**
+2. **Initialize submodules**
+  ```bash
+  git submodule update --init --recursive
+  ```
+
+3. **Install Flutter dependencies**
    ```bash
-   cd flutter
    flutter pub get
    ```
 
-3. **Install web dependencies** (for use cases)
+4. **Install web dependencies** (for use cases)
    ```bash
-   pnpm install
+  cd frontend
+  pnpm install
    ```
 
-4. **Run the app**
+5. **Run the app**
    ```bash
-   # From root directory
-   pnpm flutter
-
-   # Or from flutter directory
-   flutter run
+  # From repo root
+  flutter run
    ```
 
 ## 📱 Usage
@@ -174,25 +172,17 @@ if (window.webf?.share) {
 
 ```
 webfly/
-├── flutter/                 # Flutter application
-│   ├── lib/
-│   │   ├── screens/        # App screens (launcher, webf, scanner, diagnostics)
-│   │   │   ├── launcher/   # Launcher screen & widgets
-│   │   │   └── native_diagnostics/ # Native diagnostics (BLE + logs)
-│   │   ├── services/       # Business logic
-│   │   ├── widgets/        # Reusable components
-│   │   └── router/         # Navigation setup
-│   ├── platforms/          # Platform templates (source-of-truth)
-│   │   └── android/        # AndroidManifest.*.xml templates
-│   ├── flutter_tools/      # Build automation tools (Rust + scripts)
-│   ├── assets/             # Images, logos
-│   └── pubspec.yaml        # Flutter dependencies
-│
-├── src/                    # Web app development
-│   └── pages/              # Example web pages
-│
-└── contrib/                # WebF contributions
-    └── webf/               # WebF engine source
+├── lib/                    # Flutter app sources
+│   ├── screens/            # App screens (launcher, webf, scanner, diagnostics)
+│   ├── services/           # Business logic
+│   ├── widgets/            # Reusable components
+│   └── router/             # Navigation setup
+├── assets/                 # Images, logos, bundled use_cases
+├── platforms/              # Platform templates (source-of-truth)
+├── flutter_tools/          # Build automation tools (Rust + scripts, git submodule)
+├── tools/                  # Repo tools (Rust)
+├── frontend/               # Web app (Vite)
+└── pubspec.yaml            # Flutter dependencies
 ```
 
 ### Development Tools
@@ -201,10 +191,10 @@ WebFly includes custom Rust-based tools (invoked via `just`) to keep platform di
 
 ### Flutter Tasks (Just)
 
-Run these from the `flutter/` directory:
+Run these from the repository root:
 
 ```bash
-# Generate platform directories (copies templates from flutter/platforms)
+# Generate platform directories (copies templates from platforms/)
 just gen-platforms
 
 # Generate logos only (without applying to launcher icons)
@@ -223,6 +213,7 @@ just build-apk
 **Web Development**
 ```bash
 # Start Vite dev server
+cd frontend
 pnpm dev
 
 # Build web app
@@ -236,27 +227,27 @@ pnpm build:use-cases
 
 **Android APK**
 ```bash
-pnpm flutter:build-apk
+# Via just (recommended):
+just build-apk
+
 # Or manually:
-cd flutter
 flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
 ```
 
 **Android App Bundle**
 ```bash
-cd flutter
 flutter build appbundle --release
 ```
 
 ### Customization
 
 **Add Custom Native Plugins:**
-1. Add plugin dependency to `flutter/pubspec.yaml`
+1. Add plugin dependency to `pubspec.yaml`
 2. Integrate with WebF bridge in `services/`
 3. Expose API to JavaScript context
 
 **Modify UI Theme:**
-- Edit `flutter/lib/main.dart` for app-wide theme
+- Edit `lib/main.dart` for app-wide theme
 - Customize launcher widgets in `screens/launcher/widgets/`
 
 ## ⚙️ Configuration
@@ -273,13 +264,13 @@ Access via the settings button (⚙️) in the launcher:
 For development, the built-in HTTP server serves assets from:
 - Port: Auto-assigned (check console logs)
 - Base URL: `http://localhost:{port}/`
-- Asset path: `flutter/assets/use_cases/`
+- Asset path: `assets/use_cases/`
 
 ## 📦 Dependencies
 
 ### Core
-- `webf: ^0.24.6` - Web rendering engine
-- `hooks_riverpod: ^3.2.0` - State management
+- `webf: ^0.24.8+1` - Web rendering engine
+- `signals_flutter: ^6.3.0` - State management
 - `go_router: ^17.0.1` - Navigation
 
 ### Native Capabilities
