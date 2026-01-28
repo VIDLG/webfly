@@ -6,7 +6,7 @@ function SettingsPage() {
   const [darkMode, setDarkMode] = useState(true)
 
   const handleSave = () => {
-    navigate('/', { state: { from: 'settings' } })
+    navigate('/home', { state: { from: 'settings' }, replace: true })
   }
 
   return (
@@ -49,7 +49,7 @@ function SettingsPage() {
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
-        💡 <strong>Using useNavigate():</strong> Save button uses <code className="rounded bg-slate-700 px-1.5 py-0.5 text-sky-400">navigate('/', {'{'} state: {'{'} from: 'settings' {'}'} {'}'})</code> to navigate back home.
+        💡 <strong>Using useNavigate():</strong> Save button uses <code className="rounded bg-slate-700 px-1.5 py-0.5 text-sky-400">navigate('/home', {'{'} state: {'{'} from: 'settings' {'}'}, replace: true {'}'})</code> to navigate back home.
       </div>
     </div>
   )
