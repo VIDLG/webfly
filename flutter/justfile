@@ -24,7 +24,6 @@ windows MODE='debug' *FLAGS:
 # Generate platform configuration
 gen-platforms:
     cargo run --manifest-path flutter_tools/flutter_gen_platforms/Cargo.toml -- --config app.pkl
-    flutter_tools/flutter_gen_logo.py
 
 # Generate logo variants + apply to launcher icons/splash
 gen-logo:
@@ -55,6 +54,13 @@ doctor *ARGS:
 # Usage: just bump-version [major|minor|patch|build]
 bump-version PART:
     rust-script flutter_tools/bump_version.rs {{PART}}
+    just gen-platforms
+    just gen-logo
+
+# One-shot refresh: update use cases + regenerate platforms + regenerate logos
+# Requires .env: WEBF_USE_CASES_DIR
+refresh-all:
+    just use-cases-refresh
     just gen-platforms
     just gen-logo
 
