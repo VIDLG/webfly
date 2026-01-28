@@ -176,15 +176,15 @@ if (window.webf?.share) {
 webfly/
 ├── flutter/                 # Flutter application
 │   ├── lib/
-│   │   ├── pages/          # App screens
-│   │   │   └── launcher/   # Launcher page & widgets
+│   │   ├── screens/        # App screens (launcher, webf, scanner, diagnostics)
+│   │   │   ├── launcher/   # Launcher screen & widgets
+│   │   │   └── native_diagnostics/ # Native diagnostics (BLE + logs)
 │   │   ├── services/       # Business logic
 │   │   ├── widgets/        # Reusable components
 │   │   └── router/         # Navigation setup
-│   ├── tools/              # Build automation tools
-│   │   ├── flutter-gen-platforms.rs  # Platform generation with icons/splash
-│   │   ├── cmd-run.rs                # Generic command wrapper with logging
-│   │   └── kill-file-handles.rs      # Process cleanup utility
+│   ├── platforms/          # Platform templates (source-of-truth)
+│   │   └── android/        # AndroidManifest.*.xml templates
+│   ├── flutter_tools/      # Build automation tools (Rust + scripts)
 │   ├── assets/             # Images, logos
 │   └── pubspec.yaml        # Flutter dependencies
 │
@@ -197,46 +197,27 @@ webfly/
 
 ### Development Tools
 
-WebFly includes custom Rust-based tools for enhanced development workflow:
+WebFly includes custom Rust-based tools (invoked via `just`) to keep platform directories reproducible and to streamline dev workflows.
 
-**flutter-gen-platforms.rs**
-- Generates Flutter platform directories from Pkl/TOML configuration
-- Automatically generates app icons using `flutter_launcher_icons`
-- Creates splash screens via `flutter_native_splash`
-- Integrated into `pnpm flutter:platforms` command
+### Flutter Tasks (Just)
 
-**cmd-run.rs**
-- Generic command wrapper with logging capabilities
-- Supports custom working directories via `--cwd`
-- Captures command output to log files
-- Used by `pnpm flutter:run` and `pnpm flutter:build-apk`
+Run these from the `flutter/` directory:
 
-**kill-file-handles.rs**
-- Finds processes locking files or directories
-- Useful for cleaning up build artifacts during development
-- Supports `--list-only` mode to preview without killing
-- Uses Windows Sysinternals `handle.exe` for accurate detection
-
-### NPM Scripts
-
-WebFly includes convenient npm scripts for common development tasks:
-
-**Flutter Commands**
 ```bash
-# Run Flutter app with logging
-pnpm flutter:run
+# Generate platform directories (copies templates from flutter/platforms)
+just gen-platforms
 
-# Generate platform directories with icons and splash screens
-pnpm flutter:platforms
+# Generate logos only (without applying to launcher icons)
+just logo
 
-# Build release APK with obfuscation and debug symbols
-pnpm flutter:build-apk
+# Generate logos + apply (launcher icons + native splash)
+just gen-logo
 
-# Clean Flutter build artifacts
-pnpm flutter:clean
+# Run on Android (auto-select device)
+just android
 
-# Direct Flutter command access
-pnpm flutter <command>
+# Build a release APK
+just build-apk
 ```
 
 **Web Development**
@@ -276,7 +257,7 @@ flutter build appbundle --release
 
 **Modify UI Theme:**
 - Edit `flutter/lib/main.dart` for app-wide theme
-- Customize launcher widgets in `pages/launcher/widgets/`
+- Customize launcher widgets in `screens/launcher/widgets/`
 
 ## ⚙️ Configuration
 

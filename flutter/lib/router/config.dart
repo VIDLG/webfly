@@ -1,6 +1,9 @@
 // Route path constants (exported for router configuration)
 const String kLauncherPath = '/';
 const String kScannerPath = '/scanner';
+const String kNativeDiagnosticsPath = '/native-diagnostics';
+const String kNativeDiagnosticsLogsPath = '/native-diagnostics/logs';
+const String kBleDiagnosticsPath = '/native-diagnostics/ble';
 const String kWebfRoutePath = '/webf';
 const String kUseCasesPath = '/usecases'; // Dedicated route for use cases
 const String kAppRoutePath =

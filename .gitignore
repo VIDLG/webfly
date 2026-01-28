@@ -27,3 +27,4 @@ contrib/
 tmp/
 build/
 flutter/third_party
+use_cases/

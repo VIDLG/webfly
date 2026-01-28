@@ -4,6 +4,9 @@
 set shell := ["sh", "-c"]
 set windows-shell := ["sh", "-c"]
 
+# Load environment variables from .env
+set dotenv-load
+
 # List all available commands
 default:
     @just --list
@@ -21,8 +24,9 @@ windows MODE='debug' *FLAGS:
 # Generate platform configuration
 gen-platforms:
     cargo run --manifest-path flutter_tools/flutter_gen_platforms/Cargo.toml -- --config app.pkl
+    flutter_tools/flutter_gen_logo.py
 
-# Generate logo variants and launcher icons
+# Generate logo variants + apply to launcher icons/splash
 gen-logo:
     flutter_tools/flutter_gen_logo.py
 
@@ -47,6 +51,13 @@ analyze PATH='lib test' *ARGS:
 doctor *ARGS:
     yes | flutter doctor --android-licenses {{ARGS}}
 
+# Bump version and regenerate platform config
+# Usage: just bump-version [major|minor|patch|build]
+bump-version PART:
+    rust-script flutter_tools/bump_version.rs {{PART}}
+    just gen-platforms
+    just gen-logo
+
 # List all connected devices
 devices *ARGS:
     flutter devices {{ARGS}}
@@ -62,5 +73,21 @@ format *ARGS:
 # Clean build artifacts
 clean:
     flutter clean
+
+# Upgrade packages to latest major versions
+upgrade *ARGS:
+    flutter pub upgrade --major-versions {{ARGS}}
+
+# Build upstream WebF use_cases in external folder (requires .env: WEBF_USE_CASES_DIR)
+use-cases-build:
+    rust-script tools/manage_use_cases.rs build --src "$WEBF_USE_CASES_DIR"
+
+# Copy upstream use_cases build output into flutter/assets/use_cases
+use-cases-copy:
+    rust-script tools/manage_use_cases.rs copy --src "$WEBF_USE_CASES_DIR" --dst assets/use_cases
+
+# One-shot refresh: build upstream + copy assets
+use-cases-refresh:
+    rust-script tools/manage_use_cases.rs refresh --src "$WEBF_USE_CASES_DIR" --dst assets/use_cases
 
 

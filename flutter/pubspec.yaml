@@ -2,7 +2,7 @@ name: webfly
 description: "WebFly is like webf go / expo go, focused on rendering target web pages"
 homepage: "https://github.com/vidlg/webfly"
 publish_to: 'none'
-version: 0.2.1
+version: 0.3.0+1
 
 environment:
   sdk: ^3.10.7
@@ -24,6 +24,8 @@ dependencies:
   logger: ^2.6.2
   shelf: ^1.4.2
   shelf_static: ^1.1.3
+  permission_handler: ^12.0.1
+  flutter_blue_plus: ^1.36.0
 
 dev_dependencies:
   flutter_test:

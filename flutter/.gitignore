@@ -48,6 +48,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/
+
+# Local environment files
+.env
+.env.*
+!.env.example
 /windows/
 
 assets/use_cases

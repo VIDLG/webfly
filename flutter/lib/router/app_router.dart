@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../pages/launcher/launcher_page.dart';
-import '../pages/scanner_page.dart';
-import '../pages/webf_page.dart';
+import '../screens/launcher/launcher_screen.dart';
+import '../screens/native_diagnostics/ble_diagnostics_screen.dart';
+import '../screens/native_diagnostics/native_diagnostics_logs_screen.dart';
+import '../screens/native_diagnostics/native_diagnostics_screen.dart';
+import '../screens/scanner_screen.dart';
+import '../screens/webf_screen.dart';
 import 'go_router_delegate.dart';
 import 'config.dart';
 import '../utils/app_logger.dart';
@@ -24,13 +27,31 @@ final kGoRouter = GoRouter(
     // Launcher page
     GoRoute(
       path: kLauncherPath,
-      builder: (context, state) => const LauncherPage(),
+      builder: (context, state) => const LauncherScreen(),
+    ),
+
+    // Native diagnostics hub
+    GoRoute(
+      path: kNativeDiagnosticsPath,
+      builder: (context, state) => const NativeDiagnosticsScreen(),
+    ),
+
+    // Logs for native diagnostics
+    GoRoute(
+      path: kNativeDiagnosticsLogsPath,
+      builder: (context, state) => const NativeDiagnosticsLogsScreen(),
+    ),
+
+    // BLE diagnostics page (native scan, bypass WebF)
+    GoRoute(
+      path: kBleDiagnosticsPath,
+      builder: (context, state) => const BleDiagnosticsScreen(),
     ),
 
     // Scanner page
     GoRoute(
       path: kScannerPath,
-      builder: (context, state) => const ScannerPage(),
+      builder: (context, state) => const ScannerScreen(),
     ),
 
     // Use Cases page with fixed title
@@ -48,7 +69,7 @@ final kGoRouter = GoRouter(
             generateDefaultControllerName(url);
         final controllerName = base;
 
-        return WebFPage(
+        return WebFScreen(
           url: url,
           controllerName: controllerName,
           routePath: path,
@@ -71,7 +92,7 @@ final kGoRouter = GoRouter(
         final url = state.uri.queryParameters[kUrlParam]!; // Safe to use !
         final controllerName = generateDefaultControllerName(url);
 
-        return WebFPage(url: url, controllerName: controllerName);
+        return WebFScreen(url: url, controllerName: controllerName);
       },
     ),
 
@@ -99,7 +120,7 @@ final kGoRouter = GoRouter(
         final controllerName = base;
         final title = state.uri.queryParameters[kTitleParam];
 
-        return WebFPage(
+        return WebFScreen(
           url: url,
           controllerName: controllerName,
           routePath: path,

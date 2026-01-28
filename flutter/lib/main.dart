@@ -6,6 +6,7 @@ import 'package:webf/webf.dart' show WebF;
 import 'package:webf_bluetooth/webf_bluetooth.dart' show BluetoothModule;
 import 'package:webf_share/webf_share.dart' show ShareModule;
 import 'package:webf_sqflite/webf_sqflite.dart' show SQFliteModule;
+import 'package:permission_handler/permission_handler.dart';
 import 'router/app_router.dart' show kGoRouter;
 import 'services/asset_http_server.dart';
 import 'services/app_settings_service.dart'
@@ -33,6 +34,9 @@ void main() async {
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
 
+  // Request Bluetooth permissions at startup
+  await _requestBluetoothPermissions();
+
   // Start asset HTTP server for serving use case files
   await AssetHttpServer().start();
 
@@ -41,6 +45,20 @@ void main() async {
   await initializeUrlHistory();
 
   runApp(const MyApp());
+}
+
+Future<void> _requestBluetoothPermissions() async {
+  // Request Bluetooth permissions based on Android API level
+  if (await Permission.bluetoothScan.isDenied) {
+    await Permission.bluetoothScan.request();
+  }
+  if (await Permission.bluetoothConnect.isDenied) {
+    await Permission.bluetoothConnect.request();
+  }
+  // For older Android versions (<= API 30), also need location permission
+  if (await Permission.locationWhenInUse.isDenied) {
+    await Permission.locationWhenInUse.request();
+  }
 }
 
 class MyApp extends StatelessWidget {
