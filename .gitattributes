@@ -1,5 +1,32 @@
 # Normalize line endings across platforms.
-# On Windows, keep these files checked out with LF to avoid churn and tooling issues.
+# Default all text files to LF to avoid churn and tooling issues.
 
+* text=auto eol=lf
+
+# Windows command scripts should stay CRLF for best compatibility.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Explicit YAML rule (kept for clarity).
 *.yaml text eol=lf
 *.yml  text eol=lf
+
+# Common binary formats (never normalize line endings).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.7z   binary
+*.gz   binary
+*.tar  binary
+*.jar  binary
+*.keystore binary
+*.jks  binary
+*.ttf  binary
+*.otf  binary
+*.woff binary
+*.woff2 binary
