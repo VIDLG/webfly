@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './InputSizingPage.module.css';
 
 export const InputSizingPage: React.FC = () => {
-  const [testValue, setTestValue] = useState('');
+  // const [testValue, setTestValue] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTestValue(e.target.value);
-  };
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setTestValue(e.target.value);
+  // };
 
   return (
     <div className={styles.pageContainer}>

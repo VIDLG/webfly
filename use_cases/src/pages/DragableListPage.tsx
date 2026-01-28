@@ -113,7 +113,7 @@ export function DragableListPage() {
             key={i}
             onTouchStart={(e) => onTouchDown(i, y, e.touches[0].pageY)}
             onTouchMove={(e) => onTouchMove(e.touches[0])}
-            onTouchEnd={(e) => onMouseUp()}
+            onTouchEnd={() => onMouseUp()}
             className={`dragable-item dragable-item-${i % 4}`}
             style={{
               position: 'absolute',

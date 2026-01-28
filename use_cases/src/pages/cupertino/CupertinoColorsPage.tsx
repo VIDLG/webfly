@@ -1,31 +1,31 @@
 import React from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { CupertinoColors, CupertinoIcons } from '@openwebf/react-cupertino-ui';
+import { CupertinoColors } from '@openwebf/react-cupertino-ui';
+
+const ColorSwatch = ({ name, color, description }: { name: string; color: string; description?: string }) => (
+  <div className="flex items-center gap-4 p-3 bg-surface rounded-lg border border-line">
+    <div
+      className="w-16 h-16 rounded-lg shadow-md flex-shrink-0 border border-line"
+      style={{ backgroundColor: color }}
+    />
+    <div className="flex-1 min-w-0">
+      <div className="text-base font-medium text-fg-primary">{name}</div>
+      <div className="text-sm text-fg-secondary font-mono">{color}</div>
+      {description && <div className="text-xs text-fg-secondary mt-1">{description}</div>}
+    </div>
+  </div>
+);
+
+const ColorGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="mb-6">
+    <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">{title}</h2>
+    <div className="bg-surface-secondary rounded-xl p-6 border border-line space-y-3">
+      {children}
+    </div>
+  </div>
+);
 
 const CupertinoColorsPage: React.FC = () => {
-  const ColorSwatch = ({ name, color, description }: { name: string; color: string; description?: string }) => (
-    <div className="flex items-center gap-4 p-3 bg-surface rounded-lg border border-line">
-      <div
-        className="w-16 h-16 rounded-lg shadow-md flex-shrink-0 border border-line"
-        style={{ backgroundColor: color }}
-      />
-      <div className="flex-1 min-w-0">
-        <div className="text-base font-medium text-fg-primary">{name}</div>
-        <div className="text-sm text-fg-secondary font-mono">{color}</div>
-        {description && <div className="text-xs text-fg-secondary mt-1">{description}</div>}
-      </div>
-    </div>
-  );
-
-  const ColorGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="mb-6">
-      <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">{title}</h2>
-      <div className="bg-surface-secondary rounded-xl p-6 border border-line space-y-3">
-        {children}
-      </div>
-    </div>
-  );
-
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
       <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">

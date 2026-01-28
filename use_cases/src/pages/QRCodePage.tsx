@@ -90,6 +90,7 @@ export const QRCodePage: React.FC = () => {
     }
   };
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const handleTextareaChange = (event: any) => {
     const value = event.detail || '';
     setCustomText(value);
@@ -115,6 +116,7 @@ export const QRCodePage: React.FC = () => {
       setErrorLevel(errorLevelOptions[index].value as 'L' | 'M' | 'Q' | 'H');
     }
   };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   return (
     <div id="main">

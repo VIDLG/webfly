@@ -4,12 +4,14 @@ import { FlutterCupertinoIcon, FlutterCupertinoSwitch, FlutterCupertinoContextMe
 // Tailwind migration
 
 export const ContextMenuPage: React.FC = () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const menu0Ref = useRef<any>(null);
   const menu1Ref = useRef<any>(null);
   const menu2Ref = useRef<any>(null);
   const menu3Ref = useRef<any>(null);
   const menu4Ref = useRef<any>(null);
   const menu5Ref = useRef<any>(null);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const [menu1HasActions, setMenu1HasActions] = useState(true);
 
@@ -24,8 +26,10 @@ export const ContextMenuPage: React.FC = () => {
       console.log(`Setting actions for menu1 (hasActions: ${menu1HasActions}):`, actionsToSet);
       menu1Ref.current.setActions(actionsToSet);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu1HasActions]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMenu1SwitchChange = (event: any) => {
     const newValue = event.detail;
     console.log('Menu 1 Switch changed:', newValue);
@@ -83,6 +87,7 @@ export const ContextMenuPage: React.FC = () => {
   }, [setMenu1Actions]);
 
   // Event Handler
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onSelect = (e: any) => console.log('Select event', e.detail);
 
   return (

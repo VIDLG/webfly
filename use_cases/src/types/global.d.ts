@@ -15,6 +15,7 @@ declare global {
     inactiveColor?: string;
     height?: number;
     iconSize?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onTabchange?: (event: any) => void;
     children?: React.ReactNode;
   }

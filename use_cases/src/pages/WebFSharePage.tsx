@@ -62,14 +62,16 @@ export const WebFSharePage: React.FC = () => {
         throw new Error('Target element not found');
       }
 
-      // Get the element for screenshot
+      // Get the argument element for screenshot
       const element = targetRef.current;
 
       // Convert element to blob with device pixel ratio
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (typeof (element as any).toBlob !== 'function') {
         throw new Error('toBlob method not available on this element');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const blob = await (element as any).toBlob(window.devicePixelRatio || 1.0);
 
       // Convert to arrayBuffer for native method
@@ -114,10 +116,12 @@ export const WebFSharePage: React.FC = () => {
       const element = targetRef.current;
 
       // Convert element to blob with device pixel ratio
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (typeof (element as any).toBlob !== 'function') {
         throw new Error('toBlob method not available on this element');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const blob = await (element as any).toBlob(window.devicePixelRatio || 1.0);
 
       // Create a URL for the blob to display it

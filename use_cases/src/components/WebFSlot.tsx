@@ -22,6 +22,7 @@ export const WebFSlot: React.FC<WebFSlotProps> = ({ name, children, className, s
 
   return (
     <div
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...{ slotName: name } as any} // Type assertion to bypass TypeScript checking
       className={className}
       style={defaultStyle}

@@ -203,7 +203,7 @@ export const FeatureCatalogPage: React.FC = () => {
         </div>
 
         {/* Sections - flattened for WebFListView optimization */}
-        {sections.map((section, sectionIndex) => (
+        {sections.map((section) => (
           <div key={section.title} className="">
             {/* Section Header */}
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3 pl-3 border-l-4 border-blue-500">

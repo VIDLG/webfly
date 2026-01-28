@@ -6,6 +6,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 export const ReportDetailsPage: React.FC = () => {
   const params = useParams();
   const location = useLocation();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reportId = params.id ?? (params as any).reportId ?? location.state?.reportId;
 
   return (

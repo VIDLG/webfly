@@ -4,6 +4,8 @@ import ProductDetailPage from './pages/ProductDetailPage'
 import ProductListPage from './pages/ProductListPage'
 import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
+import LEDStripPage from './pages/LEDStripPage'
+import LEDEffectPreviewPage from './pages/LEDEffectPreviewPage'
 
 function App() {
   return (
@@ -11,6 +13,8 @@ function App() {
       <Route path="/" element={<HomePage />} title="Home" />
       <Route path="/index" element={<HomePage />} title="Home" />
       <Route path="/home" element={<HomePage />} title="Home" />
+      <Route path="/led" element={<LEDStripPage />} title="LED Strip Demo" />
+      <Route path="/led/:effectId" element={<LEDEffectPreviewPage />} title="LED Effect" />
       <Route path="/profile" element={<ProfilePage />} title="Profile" />
       <Route path="/settings" element={<SettingsPage />} title="Settings" />
       <Route path="/products" element={<ProductListPage />} title="Products" />

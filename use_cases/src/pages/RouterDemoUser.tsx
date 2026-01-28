@@ -9,6 +9,7 @@ export function RouterDemoUser() {
   const params = useParams();
   const location = useLocation();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const idFromParams = (params as any)?.id as string | undefined;
   const idFromPath = inferSegmentAfter(location.pathname, 'users');
   const userId = idFromParams ?? idFromPath ?? '(missing)';

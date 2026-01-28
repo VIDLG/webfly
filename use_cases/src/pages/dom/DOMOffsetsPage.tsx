@@ -4,6 +4,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 export const DOMOffsetsPage: React.FC = () => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [result, setResult] = useState<any>(null);
 
   const measure = () => {

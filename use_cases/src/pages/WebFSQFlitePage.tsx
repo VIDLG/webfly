@@ -40,6 +40,7 @@ export const WebFSQFlitePage: React.FC = () => {
         WebFSQFlite.closeDatabase(databaseId).catch(console.error);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initializeDatabase = async () => {

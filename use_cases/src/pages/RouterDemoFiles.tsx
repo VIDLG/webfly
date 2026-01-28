@@ -16,6 +16,7 @@ export function RouterDemoFiles() {
   const location = useLocation();
   const { navigate } = useNavigate();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const splat = (params as any)?.['*'] as string | undefined;
   const filePath = splat ?? inferFilesPath(location.pathname);
 

@@ -87,6 +87,7 @@ export const FormAdvancedPage: React.FC = () => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onError = (errors: any) => {
     console.log('Form validation errors:', errors);
     setSubmitResult(`Validation failed, please fix the following errors:\n${JSON.stringify(errors, null, 2)}`);

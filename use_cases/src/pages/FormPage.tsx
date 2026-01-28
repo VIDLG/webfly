@@ -9,12 +9,14 @@ export const FormPage: React.FC = () => {
   const [validationErrorMessage, setValidationErrorMessage] = useState('');
   const [, setIsSubmitting] = useState(false);
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const demoFormRef = useRef<any>(null);
   const usernameFieldRef = useRef<any>(null);
   const emailFieldRef = useRef<any>(null);
   const ageFieldRef = useRef<any>(null);
   const websiteFieldRef = useRef<any>(null);
   const passwordFieldRef = useRef<any>(null);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const layoutDisplayName = currentLayout === 'vertical' ? 'Vertical Layout' : 'Horizontal Layout';
 
@@ -82,6 +84,7 @@ export const FormPage: React.FC = () => {
     demoFormRef.current?.setAttribute('layout', layout);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLayoutChange = (event: any) => {
     // Switch on means horizontal layout, off means vertical layout
     const layout = event.detail ? 'horizontal' : 'vertical';

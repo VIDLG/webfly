@@ -34,18 +34,20 @@ export const MutationObserverPage: React.FC = () => {
 
         let details = '';
         switch (mutation.type) {
-          case 'attributes':
+          case 'attributes': {
             const attrName = mutation.attributeName;
             const attrValue = mutation.target instanceof Element
               ? mutation.target.getAttribute(attrName || '') || ''
               : '';
             details = `${attrName}: "${attrValue}"`;
             break;
-          case 'childList':
+          }
+          case 'childList': {
             const added = mutation.addedNodes.length;
             const removed = mutation.removedNodes.length;
             details = `+${added} -${removed} nodes`;
             break;
+          }
         }
 
         newMutations.push({

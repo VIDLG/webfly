@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -18,7 +18,7 @@ const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 export const SelectorsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('A');
+  // const [activeTab, setActiveTab] = useState('A');
 
   return (
     <div className="w-full h-full bg-gray-50">

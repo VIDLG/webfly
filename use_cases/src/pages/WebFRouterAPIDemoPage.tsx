@@ -4,6 +4,7 @@ import { WebFRouter } from '../router';
 
 export const WebFRouterAPIDemoPage: React.FC = () => {
   const [isNavigating, setIsNavigating] = useState<{[key: string]: boolean}>({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [routingStack, setRoutingStack] = useState<any[]>([]);
   const [currentPath, setCurrentPath] = useState('');
   const [canPopResult, setCanPopResult] = useState<boolean | null>(null);
@@ -43,12 +44,14 @@ export const WebFRouterAPIDemoPage: React.FC = () => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigateWithPush = (path: string, params: any = {}) => {
     console.log('navigate with push');
     WebFRouter.pushState({ ...params, timestamp: Date.now() }, path);
     setTimeout(updateRoutingState, 100);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigateWithReplace = (path: string, params: any = {}) => {
     WebFRouter.replaceState({ ...params, timestamp: Date.now() }, path);
     setTimeout(updateRoutingState, 100);

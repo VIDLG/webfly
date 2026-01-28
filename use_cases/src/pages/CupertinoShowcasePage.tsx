@@ -2,13 +2,18 @@ import React from 'react';
 import { WebFRouter } from '../router';
 import { WebFListView } from '@openwebf/react-core-ui';
 
-export const CupertinoShowcasePage: React.FC = () => {
-  const navigateTo = (path: string) => WebFRouter.pushState({}, path);
+interface CupertinoShowcaseItemProps {
+  label: string;
+  desc: string;
+  to?: string;
+  navigateTo: (path: string) => void;
+}
 
-  const Item = (props: { label: string; desc: string; to?: string }) => (
+const CupertinoShowcaseItem = (props: CupertinoShowcaseItemProps) => {
+  return (
     <div
       className={`flex items-center p-4 border-b border-[#f0f0f0] cursor-pointer transition-colors hover:bg-surface-hover ${props.to ? '' : 'pointer-events-none opacity-60'}`}
-      onClick={props.to ? () => navigateTo(props.to!) : undefined}
+      onClick={props.to ? () => props.navigateTo(props.to!) : undefined}
     >
       <div className="flex-1">
         <div className="text-[16px] font-semibold text-[#2c3e50] mb-1">{props.label}</div>
@@ -17,6 +22,10 @@ export const CupertinoShowcasePage: React.FC = () => {
       <div className="text-[16px] text-[#bdc3c7] font-bold">&gt;</div>
     </div>
   );
+};
+
+export const CupertinoShowcasePage: React.FC = () => {
+  const navigateTo = (path: string) => WebFRouter.pushState({}, path);
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
@@ -31,50 +40,50 @@ export const CupertinoShowcasePage: React.FC = () => {
           <div className="mt-6">
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Theme & Colors</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="Cupertino Colors" desc="Static and dynamic Cupertino colors" to="/cupertino/colors" />
-              <Item label="Cupertino Icons" desc="iOS SF Symbols icon set" to="/cupertino/icons" />
+              <CupertinoShowcaseItem label="Cupertino Colors" desc="Static and dynamic Cupertino colors" to="/cupertino/colors" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="Cupertino Icons" desc="iOS SF Symbols icon set" to="/cupertino/icons" navigateTo={navigateTo} />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Navigation, Tabs & Pages</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="Tabs" desc="TabScaffold · TabBar · TabView · Controller" to="/cupertino/tabs" />
+              <CupertinoShowcaseItem label="Tabs" desc="TabScaffold · TabBar · TabView · Controller" to="/cupertino/tabs" navigateTo={navigateTo} />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Dialogs, Sheets & Menus</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="Cupertino Alert Dialog" desc="Alerts & dialog actions" to="/cupertino/alert" />
-              <Item label="Cupertino Action Sheet" desc="Action sheet and sheet actions" to="/cupertino/actionsheet" />
-              <Item label="Cupertino Modal Popup" desc="Bottom sheet style modal popup" to="/cupertino/modal-popup" />
-              <Item label="Cupertino Context Menu" desc="Peek and pop context actions" to="/cupertino/context-menu" />
+              <CupertinoShowcaseItem label="Cupertino Alert Dialog" desc="Alerts & dialog actions" to="/cupertino/alert" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="Cupertino Action Sheet" desc="Action sheet and sheet actions" to="/cupertino/actionsheet" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="Cupertino Modal Popup" desc="Bottom sheet style modal popup" to="/cupertino/modal-popup" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="Cupertino Context Menu" desc="Peek and pop context actions" to="/cupertino/context-menu" navigateTo={navigateTo} />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Lists & Forms</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="CupertinoListSection" desc="Grouped list sections" to="/cupertino/list-section" />
-              <Item label="CupertinoListTile" desc="iOS-style list tiles" to="/cupertino/list-tile" />
-              <Item label="CupertinoFormSection" desc="Form rows and grouped settings" to="/cupertino/form-section" />
+              <CupertinoShowcaseItem label="CupertinoListSection" desc="Grouped list sections" to="/cupertino/list-section" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoListTile" desc="iOS-style list tiles" to="/cupertino/list-tile" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoFormSection" desc="Form rows and grouped settings" to="/cupertino/form-section" navigateTo={navigateTo} />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Text Input & Search</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="CupertinoTextField" desc="Single-line iOS-style text input" to="/cupertino/text-field" />
-              <Item label="CupertinoTextFormFieldRow" desc="Inline text field row for forms" to="/cupertino/text-form-field-row" />
-              <Item label="CupertinoSearchTextField" desc="iOS-style search bar" to="/cupertino/search-text-field" />
+              <CupertinoShowcaseItem label="CupertinoTextField" desc="Single-line iOS-style text input" to="/cupertino/text-field" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoTextFormFieldRow" desc="Inline text field row for forms" to="/cupertino/text-form-field-row" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoSearchTextField" desc="iOS-style search bar" to="/cupertino/search-text-field" navigateTo={navigateTo} />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Pickers</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="CupertinoDatePicker" desc="iOS date & time picker" to="/cupertino/date-picker" />
+              <CupertinoShowcaseItem label="CupertinoDatePicker" desc="iOS date & time picker" to="/cupertino/date-picker" navigateTo={navigateTo} />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Controls</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="Cupertino Buttons" desc="Buttons with iOS styling" to="/cupertino/buttons" />
-              <Item label="CupertinoSwitch" desc="iOS-style toggle" to="/cupertino/switch" />
-              <Item label="CupertinoSlider" desc="Value selection slider" to="/cupertino/slider" />
-              <Item label="Sliding Segmented Control" desc="Segmented control with sliding thumb" to="/cupertino/sliding-segmented-control" />
-              <Item label="CupertinoCheckBox" desc="iOS checkbox" to="/cupertino/checkbox" />
-              <Item label="CupertinoRadio" desc="iOS radio button" to="/cupertino/radio" />
+              <CupertinoShowcaseItem label="Cupertino Buttons" desc="Buttons with iOS styling" to="/cupertino/buttons" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoSwitch" desc="iOS-style toggle" to="/cupertino/switch" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoSlider" desc="Value selection slider" to="/cupertino/slider" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="Sliding Segmented Control" desc="Segmented control with sliding thumb" to="/cupertino/sliding-segmented-control" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoCheckBox" desc="iOS checkbox" to="/cupertino/checkbox" navigateTo={navigateTo} />
+              <CupertinoShowcaseItem label="CupertinoRadio" desc="iOS radio button" to="/cupertino/radio" navigateTo={navigateTo} />
             </div>
 
           </div>

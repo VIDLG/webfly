@@ -4,10 +4,12 @@ import { FlutterCupertinoButton, FlutterCupertinoActionSheet } from '@openwebf/r
 // Tailwind migration
 
 export const ActionSheetPage: React.FC = () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const basicActionSheetRef = useRef<any>(null);
   const destructiveActionSheetRef = useRef<any>(null);
   const customActionSheetRef = useRef<any>(null);
   const longListActionSheetRef = useRef<any>(null);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const showBasicActionSheet = () => {
     basicActionSheetRef.current?.show({
@@ -70,6 +72,7 @@ export const ActionSheetPage: React.FC = () => {
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAction = (event: any) => {
     console.log('Action selected:', event.detail);
   };

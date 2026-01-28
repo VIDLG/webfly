@@ -4,11 +4,13 @@ import { FlutterCupertinoButton, FlutterCupertinoModalPopup } from '@openwebf/re
 // Tailwind migration
 
 export const ModalPopupPage: React.FC = () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const basicPopupRef = useRef<any>(null);
   const customPopupRef = useRef<any>(null);
   const heightPopupRef = useRef<any>(null);
   const noMaskClosePopupRef = useRef<any>(null);
   const customStylePopupRef = useRef<any>(null);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const shareItems = [
     { icon: 'pencil', label: 'Message' },

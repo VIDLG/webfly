@@ -27,6 +27,7 @@ export const CupertinoAlertPage: React.FC = () => {
               <button
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 onClick={() => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const alert = document.querySelector('flutter-cupertino-alert') as any;
                   alert?.show();
                 }}
@@ -68,6 +69,7 @@ export const CupertinoAlertPage: React.FC = () => {
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 onClick={() => {
                   const alerts = document.querySelectorAll('flutter-cupertino-alert');
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   (alerts[1] as any)?.show();
                 }}
               >
@@ -112,6 +114,7 @@ export const CupertinoAlertPage: React.FC = () => {
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 onClick={() => {
                   const alerts = document.querySelectorAll('flutter-cupertino-alert');
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   (alerts[2] as any)?.show();
                 }}
               >
@@ -158,6 +161,7 @@ export const CupertinoAlertPage: React.FC = () => {
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 onClick={() => {
                   const alerts = document.querySelectorAll('flutter-cupertino-alert');
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   (alerts[3] as any)?.show();
                 }}
               >
@@ -265,6 +269,7 @@ ref.current?.hide();`}</code></pre>
                     className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
                     onClick={() => {
                       const alerts = document.querySelectorAll('flutter-cupertino-alert');
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       (alerts[4] as any)?.show();
                     }}
                   >
@@ -288,6 +293,7 @@ ref.current?.hide();`}</code></pre>
                     className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
                     onClick={() => {
                       const alerts = document.querySelectorAll('flutter-cupertino-alert');
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       (alerts[5] as any)?.show();
                     }}
                   >

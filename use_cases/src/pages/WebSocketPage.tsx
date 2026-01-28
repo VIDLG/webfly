@@ -21,6 +21,7 @@ export const WebSocketPage: React.FC = () => {
       ws.onmessage = (e) => appendLog(`← ${String(e.data)}`);
       ws.onerror = () => appendLog('Error');
       ws.onclose = () => { setStatus('disconnected'); appendLog('Closed'); };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       setStatus('disconnected');
       appendLog(`Connection error: ${e?.message ?? e}`);

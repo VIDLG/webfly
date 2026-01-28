@@ -4,6 +4,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 interface RequestResult {
   status: number;
   statusText: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   headers?: {[key: string]: string};
   duration: number;

@@ -19,6 +19,7 @@ export const CupertinoContextMenuPage: React.FC = () => {
   const musicRef = useRef<FlutterCupertinoContextMenuElement>(null);
   const videoRef = useRef<FlutterCupertinoContextMenuElement>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSelect = (e: CustomEvent<any>) => {
     const detail = e.detail;
     const prefix = detail.default ? 'Default: ' : '';

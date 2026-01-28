@@ -49,6 +49,7 @@ export const ErrorTestPage: React.FC = () => {
   const throwTypeError = () => {
     setErrorResult('Throwing TypeError - check Dart console!');
     setTimeout(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const obj: any = null;
       obj.someMethod(); // This will throw TypeError
     }, 100);
@@ -58,7 +59,7 @@ export const ErrorTestPage: React.FC = () => {
   const throwReferenceError = () => {
     setErrorResult('Throwing ReferenceError - check Dart console!');
     setTimeout(() => {
-      // @ts-ignore
+      // @ts-expect-error: Testing error handling
       undefinedVariable.doSomething();
     }, 100);
   };

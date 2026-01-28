@@ -29,7 +29,7 @@ export const CupertinoSlidingSegmentedControlPage: React.FC = () => {
     ? allItems
     : allItems.filter(item => item.status === filterCategories[filterIndex].toLowerCase());
 
-  const sortOptions = ['Name', 'Priority', 'Status'];
+  // const sortOptions = ['Name', 'Priority', 'Status'];
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">

@@ -24,7 +24,7 @@ export const DOMEventsPage: React.FC = () => {
   useEffect(() => {
     const el = customRef.current;
     if (!el) return;
-    const onCustom = (e: Event) => push('CustomEvent received: my-event');
+    const onCustom = () => push('CustomEvent received: my-event');
     el.addEventListener('my-event', onCustom as EventListener);
     return () => el.removeEventListener('my-event', onCustom as EventListener);
   }, []);

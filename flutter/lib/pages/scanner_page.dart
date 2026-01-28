@@ -24,11 +24,11 @@ class ScannerPage extends HookWidget {
       if (isValidHttpUrl(rawValue)) {
         controller.stop();
 
-        // Parse URL to separate base URL and path
-        final uri = Uri.parse(rawValue);
-        final baseUrl =
-            '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
-        final path = uri.path.isEmpty || uri.path == '/' ? '/' : uri.path;
+        // Use the full URL as baseUrl, and default path to '/'
+        // We do *not* split the path from the URL automatically, because usually
+        // the scanned URL is the bundle URL itself (which may contain a path).
+        final baseUrl = rawValue;
+        const path = '/';
 
         UrlHistoryOperations.addEntry(baseUrl, path);
         Navigator.of(context).pop({'url': baseUrl, 'path': path});

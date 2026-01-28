@@ -15,6 +15,7 @@ export const ThemeTogglePage: React.FC = () => {
   const getCurrentThemeFromFlutter = async () => {
     try {
       if (window.webf?.methodChannel?.invokeMethod) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await window.webf.methodChannel.invokeMethod('getCurrentTheme') as any;
         
         if (result.success) {

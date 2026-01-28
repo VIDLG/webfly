@@ -36,10 +36,9 @@ class LauncherPage extends HookWidget {
     useEffect(() {
       if (urls.isEmpty) return null;
       if (urlController.text.isEmpty) {
-        // Fill with full URL (url + path)
+        // Default to first entry
         final firstEntry = urls.first;
-        urlController.text =
-            '${firstEntry.url}${firstEntry.path == '/' ? '' : firstEntry.path}';
+        urlController.text = firstEntry.url;
         pathController.text = firstEntry.path;
       }
       return null;
@@ -58,10 +57,10 @@ class LauncherPage extends HookWidget {
     }, [isRouteFocused.value, cacheControllers]);
 
     void openWebF(String url, [String? customPath]) {
-      // Normalize URL: remove trailing slashes
-      final normalizedUrl = url.endsWith('/')
-          ? url.substring(0, url.length - 1)
-          : url;
+      // Normalize URL: Use the input as single source of truth
+      final normalizedUrl = url;
+      // We always treat the input as the full URL, so path is default '/'
+      // The user sees the full URL in the history and inputs.
       final path = customPath ?? '/';
 
       UrlHistoryOperations.addEntry(normalizedUrl, path);
@@ -121,9 +120,8 @@ class LauncherPage extends HookWidget {
       if (result != null) {
         final url = result['url'] ?? '';
         final path = result['path'] ?? '/';
-        // Fill URL field with complete URL
+        // Fill URL field with complete URL including path
         urlController.text = '$url${path == '/' ? '' : path}';
-        pathController.text = path;
         highlightUrlInput();
       }
     }
@@ -135,7 +133,7 @@ class LauncherPage extends HookWidget {
         return;
       }
 
-      // Parse URL to extract base URL and path
+      // Parse URL
       try {
         final uri = Uri.parse(input);
         if (!uri.hasScheme || uri.host.isEmpty) {
@@ -143,19 +141,14 @@ class LauncherPage extends HookWidget {
           return;
         }
 
-        final baseUrl =
-            '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
-        final pathFromUrl = uri.path.isEmpty || uri.path == '/'
-            ? '/'
-            : uri.path;
-
+        // Use the input as the full bundle URL
+        final baseUrl = input;
+        
         // Path priority:
         // 1. If user manually edited path in Advanced (not default '/'), use it
-        // 2. Otherwise use path from URL
+        // 2. Otherwise default to '/'
         final pathInput = pathController.text.trim();
-        final finalPath = (pathInput.isNotEmpty && pathInput != '/')
-            ? pathInput
-            : pathFromUrl;
+        final finalPath = (pathInput.isNotEmpty) ? pathInput : '/';
 
         openWebF(baseUrl, finalPath);
       } catch (_) {
@@ -244,9 +237,7 @@ class LauncherPage extends HookWidget {
                             key: historyListKey,
                             onOpen: (url, path) => openWebF(url, path),
                             onTap: (url, path) {
-                              // Fill with complete URL for editing
-                              urlController.text =
-                                  '$url${path == '/' ? '' : path}';
+                              urlController.text = url;
                               pathController.text = path;
                               highlightUrlInput();
                             },

@@ -4,11 +4,13 @@ import { FlutterCupertinoButton, FlutterCupertinoAlert } from '@openwebf/react-c
 // Tailwind migration: replaced module CSS with utilities
 
 export const AlertPage: React.FC = () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const basicAlertRef = useRef<any>(null);
   const confirmAlertRef = useRef<any>(null);
   const customAlertRef = useRef<any>(null);
   const destructiveAlertRef = useRef<any>(null);
   const defaultButtonAlertRef = useRef<any>(null);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const showBasicAlert = () => {
     basicAlertRef.current?.show();

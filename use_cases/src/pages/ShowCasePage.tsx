@@ -5,6 +5,7 @@ import {CupertinoIcons, FlutterCupertinoButton, FlutterCupertinoIcon} from '@ope
 import styles from './ShowCasePage.module.css';
 
 export const ShowCasePage: React.FC = () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const basicShowcaseRef = useRef<any>(null);
   const interactiveShowcaseRef = useRef<any>(null);
   const nonInteractiveShowcaseRef = useRef<any>(null);
@@ -18,6 +19,7 @@ export const ShowCasePage: React.FC = () => {
   const step2ShowcaseButtonRef = useRef<any>(null);
   const step3ShowcaseButtonRef = useRef<any>(null);
   const buttonShowcaseRef = useRef<any>(null);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const startBasicShowcase = () => {
     basicShowcaseRef.current?.start();

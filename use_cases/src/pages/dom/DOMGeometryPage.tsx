@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 export const DOMGeometryPage: React.FC = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const support = typeof (globalThis as any).DOMMatrix !== 'undefined' && typeof (globalThis as any).DOMPoint !== 'undefined';
 
   // Interactive controls
@@ -15,7 +16,9 @@ export const DOMGeometryPage: React.FC = () => {
 
   const geom = useMemo(() => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const M = (globalThis as any).DOMMatrix;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const P = (globalThis as any).DOMPoint;
       const m = new M().translate(tx, ty).scale(sx, sy).rotate(0, 0, deg);
       const p = new P(px, py);
@@ -25,7 +28,9 @@ export const DOMGeometryPage: React.FC = () => {
       return {
         matrix: m,
         matrix2d: { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         is2D: (m as any).is2D,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         isIdentity: (m as any).isIdentity,
         point: { x: p.x, y: p.y },
         transformed: { x: p2.x, y: p2.y },

@@ -39,7 +39,7 @@ const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D
     }
   };
 
-  const onDetached = (event: Event) => {
+  const onDetached = () => {
     // Optional: Add specific cleanup if needed
     cancelAnimationFrame(rafId);
   };

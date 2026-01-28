@@ -7,7 +7,7 @@ const SectionHeader: React.FC<{ title: string }>= ({ title }) => (
 
 export const TransitionsPage: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [slow, setSlow] = useState(false);
+  // const [slow, setSlow] = useState(false);
 
   // Basics
   const [b1, setB1] = useState(false);
@@ -36,10 +36,10 @@ export const TransitionsPage: React.FC = () => {
   const [wWide, setWWide] = useState(false);
 
   // Group/child translation
-  const [g1, setG1] = useState(false);
+  // const [g1, setG1] = useState(false);
 
   // Filters and shadow
-  const [f1, setF1] = useState(false);
+  // const [f1, setF1] = useState(false);
   const [s1, setS1] = useState(false);
 
   return (

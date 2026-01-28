@@ -22,6 +22,10 @@ export const ListviewPage: React.FC = () => {
   const [refreshCount, setRefreshCount] = useState(0);
   const [loadCount, setLoadCount] = useState(0);
 
+  // Suppress unused variables for features not yet exposed in UI
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _unused = [setScrollDirection, setShrinkWrap, setRefreshStyle, setNextRefreshResult, setNextLoadResult, refreshCount, loadCount];
+
   const headerText = useMemo(() => {
     const styleLabel = refreshStyle === 'customCupertino' ? 'customCupertino' : 'default';
     return `${scrollDirection} · shrinkWrap=${String(shrinkWrap)} · refresh-style=${styleLabel}`;
@@ -90,6 +94,7 @@ export const ListviewPage: React.FC = () => {
       >
         {/* Custom refresh indicator (only visible when refresh-style="customCupertino") */}
         <div
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {...({ slotName: 'refresh-indicator' } as any)}
           className="hidden items-center justify-center py-2"
         >

@@ -18,6 +18,21 @@ function HomePage() {
 
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <h2 className="text-lg font-semibold text-white">💡 Dynamic UI Demo</h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Experience dynamic component loading with LED strip effects.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2 text-sm font-semibold text-white transition hover:from-indigo-400 hover:to-purple-500 active:scale-[0.98] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
+              onClick={() => navigate('/led')}
+            >
+              🌈 LED Strip Control
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
           <h2 className="text-lg font-semibold text-white">Imperative Navigation</h2>
           <p className="mt-2 text-sm text-slate-400">
             Use `useNavigate` to open new pages.

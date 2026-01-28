@@ -3,8 +3,6 @@ import { WebFListView } from '@openwebf/react-core-ui';
 import {
   WebFBluetooth,
   BluetoothScanResultPayload,
-  BluetoothConnectionStatePayload,
-  BluetoothNotificationPayload,
 } from '@openwebf/webf-bluetooth';
 
 // Local types for parsed service/characteristic data
@@ -80,6 +78,7 @@ export const WebFBluetoothPage: React.FC = () => {
         WebFBluetooth.disconnect(connectedDeviceId).catch(() => {});
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAdapterState = async () => {

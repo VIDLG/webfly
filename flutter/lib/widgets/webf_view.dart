@@ -59,8 +59,26 @@ Future<WebFController?> injectWebfBundleAsync({
     appLogger.d('[WebFView] Bundle injection complete');
     return controller;
   } catch (e, stackTrace) {
+    // Try to extract detailed network error info if available (e.g. DioException)
+    // ignore: avoid_dynamic_calls
+    final dynamic error = e;
+    String extraInfo = '';
+    try {
+      if (error?.response != null) {
+        extraInfo += '\nResponse: ${error.response}';
+        if (error.response?.statusCode != null) {
+          extraInfo += '\nStatus Code: ${error.response.statusCode}';
+        }
+      }
+      if (error?.requestOptions?.uri != null) {
+        extraInfo += '\nRequest URL: ${error.requestOptions.uri}';
+      }
+    } catch (_) {
+      // Ignore if properties don't exist
+    }
+
     appLogger.e(
-      '[WebFView] Failed to inject bundle',
+      '[WebFView] Failed to inject bundle$extraInfo',
       error: e,
       stackTrace: stackTrace,
     );

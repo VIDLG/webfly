@@ -142,9 +142,9 @@ class LauncherUrlInputSection extends HookWidget {
                   controller: pathController,
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
-                    labelText: 'Path (replaces base path)',
+                    labelText: 'App Path (Route)',
                     hintText: '/about or /user/123',
-                    helperText: 'Optional: overrides path from bundle URL',
+                    helperText: 'Appends to bundle URL for routing',
                     helperMaxLines: 2,
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(

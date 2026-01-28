@@ -2,6 +2,7 @@ import { WebFRouter } from '../router';
 
 class TabBarManager {
     private static instance: TabBarManager | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private tabBarRef: any = null;
     private currentPath = '';
     private tabBarPath = '/routing';
@@ -13,6 +14,7 @@ class TabBarManager {
       return TabBarManager.instance;
     }
   
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setTabBarRef(ref: any): void {
       this.tabBarRef = ref;
       console.log('TabBarManager: TabBar ref set', ref);

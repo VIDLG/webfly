@@ -3,10 +3,12 @@ import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoButton, FlutterCupertinoLoading } from '@openwebf/react-cupertino-ui';
 
 export const LoadingPage: React.FC = () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const basicLoadingRef = useRef<any>(null);
   const textLoadingRef = useRef<any>(null);
   const autoHideLoadingRef = useRef<any>(null);
   const maskClosableLoadingRef = useRef<any>(null);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const showBasicLoading = () => {
     basicLoadingRef.current?.show();

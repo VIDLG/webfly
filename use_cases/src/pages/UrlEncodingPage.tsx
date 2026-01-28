@@ -2,10 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 function tryBtoa(input: string): string {
-  try { return btoa(input); } catch (e: any) { return `Error: ${e?.message ?? e}`; }
+  try { return btoa(input); } catch (e: unknown) { return `Error: ${e instanceof Error ? e.message : String(e)}`; }
 }
 function tryAtob(input: string): string {
-  try { return atob(input); } catch (e: any) { return `Error: ${e?.message ?? e}`; }
+  try { return atob(input); } catch (e: unknown) { return `Error: ${e instanceof Error ? e.message : String(e)}`; }
 }
 
 export const UrlEncodingPage: React.FC = () => {
@@ -28,7 +28,7 @@ export const UrlEncodingPage: React.FC = () => {
       }
       u.hash = hash || '';
       return u;
-    } catch (e) {
+    } catch {
       return null;
     }
   }, [base, path, query, hash]);

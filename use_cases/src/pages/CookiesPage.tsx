@@ -38,6 +38,7 @@ export const CookiesPage: React.FC = () => {
   const [path, setPath] = useState<string>('/');
   const [message, setMessage] = useState<string>('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cookies = useMemo(() => parseCookies(), [message]);
 
   const onSet = () => {
