@@ -99,9 +99,9 @@ extension AdvertisementDataSerialization on fbp.AdvertisementData {
   /// - txPowerLevel: number | null
   /// - appearance: number | null
   /// - connectable: boolean
-  /// - manufacturerData: Map<string, List<int>> (key is stringified int)
-  /// - serviceData: Map<string, List<int>> (key is UUID string)
-  /// - serviceUuids: List<string>
+  /// - manufacturerData: `Map<string, List<int>>` (key is stringified int)
+  /// - serviceData: `Map<string, List<int>>` (key is UUID string)
+  /// - serviceUuids: `List<string>`
   Map<String, dynamic> toMap() {
     return {
       'advName': advName,

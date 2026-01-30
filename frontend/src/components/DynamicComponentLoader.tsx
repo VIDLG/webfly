@@ -92,8 +92,8 @@ export default function DynamicComponentLoader({ code, componentName }: DynamicC
 
   if (!Component) {
     return (
-      <div className="p-5 text-center text-gray-400">
-        <div className="inline-block w-10 h-10 border-4 border-slate-700 border-t-indigo-500 rounded-full animate-spin" />
+      <div className="p-5 text-center text-slate-600 dark:text-slate-400">
+        <div className="inline-block h-10 w-10 rounded-full border-4 border-slate-300 border-t-sky-500 animate-spin dark:border-slate-700 dark:border-t-sky-400" />
         <p className="mt-2.5">Compiling/Loading component...</p>
       </div>
     )

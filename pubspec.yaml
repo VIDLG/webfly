@@ -13,6 +13,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   webf: 0.24.9
+  webf_cupertino_ui: ^0.4.1
   webf_share: ^1.1.0
   webf_sqflite: ^1.0.1
   mobile_scanner: ^7.1.4

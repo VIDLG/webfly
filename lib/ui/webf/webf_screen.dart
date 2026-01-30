@@ -33,30 +33,25 @@ class WebFScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 48,
-        title: title != null
-            ? Text(title!, maxLines: 1, overflow: TextOverflow.ellipsis)
-            : Text(
-                '$url$routePath',
-                style: const TextStyle(fontSize: 14),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-      ),
-      body: Stack(
-        children: [
-          WebFView(
-            url: url,
-            controllerName: controllerName,
-            routePath: routePath,
-            cacheController: cacheController,
-            loadingBuilder: loadingBuilder,
-            errorBuilder: errorBuilder,
-          ),
-          const WebFInspectorOverlay(),
-        ],
+      // Ensure the scaffold background matches the app theme (WebF is transparent)
+      backgroundColor: colorScheme.surface,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            WebFView(
+              url: url,
+              controllerName: controllerName,
+              routePath: routePath,
+              cacheController: cacheController,
+              loadingBuilder: loadingBuilder,
+              errorBuilder: errorBuilder,
+            ),
+            const WebFInspectorOverlay(),
+          ],
+        ),
       ),
     );
   }

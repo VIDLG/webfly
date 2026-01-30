@@ -174,7 +174,7 @@ Future<List<fbp.BluetoothDevice>> bleBondedDevices() async {
 extension BleAdapterModule on BleWebfModule {
   /// Check if BLE is supported on this device
   Future<Map<String, dynamic>> isSupported() async {
-    final result = await bleIsSupported;
+    final result = await bleIsSupported();
     return returnOk(result);
   }
 

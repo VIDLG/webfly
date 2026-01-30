@@ -13,6 +13,7 @@ export default {
   corePlugins: {
     preflight: false,
   },
+  darkMode: 'media',
   theme: {
     extend: {},
   },

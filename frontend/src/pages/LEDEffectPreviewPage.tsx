@@ -110,40 +110,40 @@ export default function LEDEffectPreviewPage() {
   }, [effectId])
 
   return (
-    <div className="min-h-screen bg-slate-950 py-5 px-5">
+    <div className="min-h-screen bg-slate-50 px-5 py-5 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="text-white">
+          <div className="text-slate-900 dark:text-slate-100">
             <h1 className="text-2xl sm:text-3xl font-bold leading-tight drop-shadow">
               {manifest?.name ?? effectId ?? 'Unknown Effect'}
             </h1>
             {manifest?.description ? (
-              <p className="text-sm sm:text-base opacity-70 text-gray-300">{manifest.description}</p>
+              <p className="text-sm sm:text-base opacity-70 text-slate-600 dark:text-slate-400">{manifest.description}</p>
             ) : null}
           </div>
 
           <button
-            className="shrink-0 rounded-full bg-slate-800 border border-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 active:scale-[0.98]"
+            className="shrink-0 rounded-full border border-slate-300 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:opacity-95 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100"
             onClick={() => navigate(-1)}
           >
             ← Back
           </button>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl ring-1 ring-slate-800 shadow-xl min-h-[500px]">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-xl min-h-[500px] dark:border-slate-800 dark:bg-slate-900/60">
           {loading ? (
-            <div className="text-center py-16 text-gray-400">
-              <div className="inline-block w-12 h-12 border-4 border-slate-700 border-t-indigo-500 rounded-full animate-spin" />
+            <div className="text-center py-16 text-slate-600 dark:text-slate-400">
+              <div className="inline-block w-12 h-12 rounded-full border-4 border-slate-300 border-t-sky-500 animate-spin dark:border-slate-700 dark:border-t-sky-400" />
               <p className="mt-5 text-base">Loading effect...</p>
             </div>
           ) : loadError ? (
             <div className="p-5 bg-red-900/20 border-2 border-red-500/50 rounded-lg text-red-200 m-4">
               <h3 className="text-lg font-bold mb-2">❌ Failed to load effect source</h3>
-              <div className="text-center text-gray-400 p-8">
+              <div className="text-center text-slate-600 dark:text-slate-400 p-8">
                 <p className="font-semibold">Effect not found.</p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                   Looking for ID:{' '}
-                  <code className="bg-slate-800 px-1 py-0.5 rounded text-xs text-yellow-500">{String(effectId)}</code>
+                  <code className="rounded border border-slate-300 bg-white/70 px-1 py-0.5 text-xs text-yellow-500 dark:border-slate-700 dark:bg-slate-900/60">{String(effectId)}</code>
                 </p>
               </div>
               <p className="font-mono text-sm whitespace-pre-wrap break-words">{loadError}</p>
@@ -151,7 +151,7 @@ export default function LEDEffectPreviewPage() {
           ) : effectCode ? (
             <DynamicComponentLoader code={effectCode} componentName={effectId} />
           ) : (
-            <div className="text-center text-gray-400 p-8">
+            <div className="text-center text-slate-600 dark:text-slate-400 p-8">
               <p className="font-semibold">Select an effect to preview</p>
             </div>
           )}

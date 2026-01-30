@@ -1,5 +1,8 @@
 import { Route, Routes } from '@openwebf/react-router'
 import React, { Suspense, lazy } from 'react'
+import { ThemeProvider } from './hooks/theme'
+
+const routeTheme: 'material' | 'cupertino' = 'material'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
 const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'))
@@ -10,8 +13,11 @@ const LEDStripPage = lazy(() => import('./pages/LEDStripPage'))
 const LEDEffectPreviewPage = lazy(() => import('./pages/LEDEffectPreviewPage'))
 
 const withSuspense = (element: React.ReactNode) => (
-  <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
-    {element}
+  <Suspense fallback={<div className="p-4">Loading…</div>}>
+    {/* Ensure block level display to avoid WebF layout issues. */}
+    <div className="block h-screen w-full overflow-y-auto bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+      {element}
+    </div>
   </Suspense>
 )
 
@@ -37,13 +43,13 @@ class ErrorBoundary extends React.Component<
       const hash = typeof window !== 'undefined' ? window.location.hash : ''
 
       return (
-        <div style={{ padding: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>App crashed</div>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 12 }}>
+        <div className="p-4">
+          <div className="mb-2 text-base font-semibold">App crashed</div>
+          <div className="mb-3 text-xs opacity-80">
             A route chunk or render threw an error. This is usually more helpful than an infinite
             loading spinner.
           </div>
-          <pre style={{ fontSize: 12, whiteSpace: 'pre-wrap' }}>
+          <pre className="whitespace-pre-wrap text-xs">
             {JSON.stringify(
               {
                 location: { href, pathname, search, hash },
@@ -69,14 +75,14 @@ function NotFoundPage() {
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
 
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Route not found</div>
-      <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 12 }}>
-        If you deep-linked via Launcher Advanced path, ensure the route path is a pathname
-        like <code>/led</code> and use query like <code>?css=0</code> only if the runtime
-        preserves <code>window.location.search</code>.
+    <div className="p-4">
+      <div className="mb-2 text-base font-semibold">Route not found</div>
+      <div className="mb-3 text-xs opacity-80">
+        If you deep-linked via Launcher Advanced path, ensure the route path is a pathname like{' '}
+        <code>/led</code> and use query like <code>?css=0</code> only if the runtime preserves{' '}
+        <code>window.location.search</code>.
       </div>
-      <pre style={{ fontSize: 12, whiteSpace: 'pre-wrap' }}>
+      <pre className="whitespace-pre-wrap text-xs">
         {JSON.stringify({ href, pathname, search, hash }, null, 2)}
       </pre>
     </div>
@@ -84,21 +90,35 @@ function NotFoundPage() {
 }
 
 function App() {
+  const routes: Array<{ path: string; title: string; element: React.ReactNode }> = [
+    { path: '/', title: 'Home', element: <HomePage /> },
+    { path: '/index', title: 'Home', element: <HomePage /> },
+    { path: '/home', title: 'Home', element: <HomePage /> },
+    { path: '/led', title: 'LED Strip Demo', element: <LEDStripPage /> },
+    { path: '/led/:effectId', title: 'LED Effect', element: <LEDEffectPreviewPage /> },
+    { path: '/profile', title: 'Profile', element: <ProfilePage /> },
+    { path: '/settings', title: 'Settings', element: <SettingsPage /> },
+    { path: '/products', title: 'Products', element: <ProductListPage /> },
+    { path: '/product/:productId', title: 'Product Detail', element: <ProductDetailPage /> },
+  ]
+
   return (
-    <ErrorBoundary>
-      <Routes>
-        <Route path="/" element={withSuspense(<HomePage />)} title="Home" />
-        <Route path="/index" element={withSuspense(<HomePage />)} title="Home" />
-        <Route path="/home" element={withSuspense(<HomePage />)} title="Home" />
-        <Route path="/led" element={withSuspense(<LEDStripPage />)} title="LED Strip Demo" />
-        <Route path="/led/:effectId" element={withSuspense(<LEDEffectPreviewPage />)} title="LED Effect" />
-        <Route path="/profile" element={withSuspense(<ProfilePage />)} title="Profile" />
-        <Route path="/settings" element={withSuspense(<SettingsPage />)} title="Settings" />
-        <Route path="/products" element={withSuspense(<ProductListPage />)} title="Products" />
-        <Route path="/product/:productId" element={withSuspense(<ProductDetailPage />)} title="Product Detail" />
-        <Route path="*" element={<NotFoundPage />} title="Not Found" />
-      </Routes>
-    </ErrorBoundary>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <Routes>
+          {routes.map((r) => (
+            <Route
+              key={r.path}
+              path={r.path}
+              element={withSuspense(r.element)}
+              title={r.title}
+              theme={routeTheme}
+            />
+          ))}
+          <Route path="*" element={<NotFoundPage />} title="Not Found" theme={routeTheme} />
+        </Routes>
+      </ErrorBoundary>
+    </ThemeProvider>
   )
 }
 

@@ -4,6 +4,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 import 'package:webf/launcher.dart'
     show WebFControllerManager, WebFControllerManagerConfig;
 import 'package:webf/webf.dart' show WebF;
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart' show installWebFCupertinoUI;
 import 'native/ble/webf.dart' show BleWebfModule;
 import 'package:webf_share/webf_share.dart' show ShareModule;
 import 'package:webf_sqflite/webf_sqflite.dart' show SQFliteModule;
@@ -16,6 +17,9 @@ import 'services/url_history_service.dart' show initializeUrlHistory;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Register WebF Cupertino UI custom elements (required by @openwebf/react-cupertino-ui).
+  installWebFCupertinoUI();
 
   // Configure WebF controller manager
   WebFControllerManager.instance.initialize(

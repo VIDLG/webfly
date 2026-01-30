@@ -2,16 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* WebF router elements must be atomic in inline formatting contexts.
+/* WebF router elements are internal plumbing.
    Keep this OUTSIDE of @layer: WebF may not support cascade layers. */
-webf-router-link,
-webf-router-viewport,
-router_link,
-ROUTER_LINK {
-  display: inline-block !important;
-  width: 100%;
-  height: 100%;
-}
+
+/* Tailwind dark mode best-practice:
+   - Toggle `.dark` on the root element.
+   - Use `dark:` variants directly in component className.
+   - Keep only minimal global base styles here. */
 
 @layer base {
   :root {
@@ -24,7 +21,8 @@ ROUTER_LINK {
   }
 
   body {
-    @apply bg-slate-950 text-slate-100 min-h-screen;
+    @apply min-h-screen;
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
     font-size: 16px;
   }
 }

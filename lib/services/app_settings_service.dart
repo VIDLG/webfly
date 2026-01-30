@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' show ThemeMode;
+import 'package:flutter/widgets.dart' show Brightness, WidgetsBinding;
 import 'package:signals_flutter/signals_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferences;
@@ -114,20 +115,34 @@ class AppSettingsModule extends WebFBaseModule {
   String get name => 'AppSettings';
 
   @override
-  dynamic invoke(String method, List<dynamic> arguments) {
-    switch (method) {
-      case 'setTheme':
-        if (arguments.isEmpty) {
-          appLogger.w('[AppSettingsModule] setTheme requires a theme argument');
-          return Future.value(false);
-        }
-        final theme = arguments[0] as String;
-        return _setTheme(theme);
-      case 'getTheme':
-        return _getTheme();
-      default:
-        appLogger.w('[AppSettingsModule] Unknown method: $method');
-        return Future.value(false);
+  Future<dynamic> invoke(String method, List<dynamic> arguments) async {
+    if (method == 'setTheme') {
+      if (arguments.isEmpty) {
+        appLogger.w('[AppSettingsModule] setTheme requires a theme argument');
+        return false;
+      }
+      final theme = arguments[0] as String;
+      return await _setTheme(theme);
+    } else if (method == 'getTheme') {
+      return _getTheme();
+    } else if (method == 'getSystemTheme') {
+      return _getSystemTheme();
+    } else {
+      appLogger.w('[AppSettingsModule] Unknown method: $method');
+      return false;
+    }
+  }
+
+  /// Gets current platform (system) theme.
+  ///
+  /// Returns: 'light' | 'dark'
+  String _getSystemTheme() {
+    try {
+      final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      return brightness == Brightness.dark ? 'dark' : 'light';
+    } catch (e) {
+      appLogger.w('[AppSettingsModule] Failed to get system theme: $e');
+      return 'light';
     }
   }
 
