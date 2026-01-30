@@ -11,6 +11,23 @@ set dotenv-load
 default:
     @just --list
 
+# -----------------------------
+# Web frontend (Vite/React)
+# -----------------------------
+
+# Run the unified WebF CSS checks (Tailwind blacklist + CSS property whitelist).
+# Usage examples:
+# - just webf-check-css
+# - just webf-check-css -- --scan-source
+# - just webf-check-css -- --only css-props --scan-source
+webf-check-css *ARGS:
+    cd frontend && pnpm -s build
+    cd frontend && set -- {{ARGS}}; if [ "$1" = "--" ]; then shift; fi; rust-script scripts/check-webf-constraints.rs "$@"
+
+# Alias for convenience
+webf-check *ARGS:
+    just webf-check-css {{ARGS}}
+
 # Run on Android device (auto-detects first Android device)
 # Usage: just android [debug|release] [--verbose]
 android MODE='debug' *FLAGS:
@@ -57,8 +74,8 @@ bump-version PART:
     just gen-platforms
     just gen-logo
 
-# One-shot refresh: update use cases + regenerate platforms + regenerate logos
-# Requires .env: WEBF_USE_CASES_DIR
+# One-shot refresh: update web assets + regenerate platforms + regenerate logos
+# Requires .env: WEB_BUILD_SRC_DIR or WEBF_USE_CASES_DIR
 refresh-all:
     just use-cases-refresh
     just gen-platforms
@@ -84,16 +101,8 @@ clean:
 upgrade *ARGS:
     flutter pub upgrade --major-versions {{ARGS}}
 
-# Build upstream WebF use_cases in external folder (requires .env: WEBF_USE_CASES_DIR)
-use-cases-build:
-    rust-script tools/manage_use_cases.rs build --src "$WEBF_USE_CASES_DIR"
-
-# Copy upstream use_cases build output into assets/use_cases
-use-cases-copy:
-    rust-script tools/manage_use_cases.rs copy --src "$WEBF_USE_CASES_DIR" --dst assets/use_cases
-
-# One-shot refresh: build upstream + copy assets
+# Build web project and copy assets to Flutter (requires .env: WEB_BUILD_SRC_DIR or WEBF_USE_CASES_DIR)
 use-cases-refresh:
-    rust-script tools/manage_use_cases.rs refresh --src "$WEBF_USE_CASES_DIR" --dst assets/use_cases
+    flutter_tools/web_build.rs refresh --src "${WEB_BUILD_SRC_DIR:-${WEBF_USE_CASES_DIR}}" --dst assets/use_cases
 
 

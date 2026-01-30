@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useLocation, useParams, WebFRouter } from '@openwebf/react-router'
-import DynamicComponentLoader from '../components/DynamicComponentLoader'
 import { getEffectManifest, type LedEffectManifest } from '../led/effectsRegistry'
+import DynamicComponentLoader from '../components/DynamicComponentLoader'
 
 function tryExtractInnerPathFromHybridUrl(maybeHybridUrl: string | undefined): string | undefined {
   if (!maybeHybridUrl) return undefined
@@ -86,7 +86,7 @@ export default function LEDEffectPreviewPage() {
         // 2. Fetch Code (Logic + UI)
         const [logicRes, uiRes] = await Promise.all([
           fetch(`/effects/${effectId}/logic.ts`),
-          fetch(`/effects/${effectId}/ui.tsx`)
+          fetch(`/effects/${effectId}/ui.tsx`),
         ])
 
         if (!logicRes.ok) throw new Error(`Failed to load logic.ts for ${effectId}`)
@@ -98,7 +98,6 @@ export default function LEDEffectPreviewPage() {
         // Combine logic and UI
         // We prepend logic so the hook is available in scope for the component
         setEffectCode(`${logicCode}\n\n${uiCode}`)
-
       } catch (e) {
         console.error('Failed to load effect:', e)
         setLoadError(e instanceof Error ? e.message : String(e))
@@ -111,7 +110,7 @@ export default function LEDEffectPreviewPage() {
   }, [effectId])
 
   return (
-    <div className="h-screen overflow-y-auto bg-slate-950 py-5 px-5">
+    <div className="min-h-screen bg-slate-950 py-5 px-5">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div className="text-white">
@@ -131,7 +130,7 @@ export default function LEDEffectPreviewPage() {
           </button>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl ring-1 ring-slate-800 shadow-xl overflow-hidden min-h-[500px]">
+        <div className="bg-slate-900 rounded-2xl ring-1 ring-slate-800 shadow-xl min-h-[500px]">
           {loading ? (
             <div className="text-center py-16 text-gray-400">
               <div className="inline-block w-12 h-12 border-4 border-slate-700 border-t-indigo-500 rounded-full animate-spin" />
@@ -143,7 +142,8 @@ export default function LEDEffectPreviewPage() {
               <div className="text-center text-gray-400 p-8">
                 <p className="font-semibold">Effect not found.</p>
                 <p className="mt-1 text-sm text-gray-500">
-                  Looking for ID: <code className="bg-slate-800 px-1 py-0.5 rounded text-xs text-yellow-500">{String(effectId)}</code>
+                  Looking for ID:{' '}
+                  <code className="bg-slate-800 px-1 py-0.5 rounded text-xs text-yellow-500">{String(effectId)}</code>
                 </p>
               </div>
               <p className="font-mono text-sm whitespace-pre-wrap break-words">{loadError}</p>
@@ -151,9 +151,9 @@ export default function LEDEffectPreviewPage() {
           ) : effectCode ? (
             <DynamicComponentLoader code={effectCode} componentName={effectId} />
           ) : (
-             <div className="text-center text-gray-400 p-8">
-                <p className="font-semibold">Select an effect to preview</p>
-             </div>
+            <div className="text-center text-gray-400 p-8">
+              <p className="font-semibold">Select an effect to preview</p>
+            </div>
           )}
         </div>
       </div>

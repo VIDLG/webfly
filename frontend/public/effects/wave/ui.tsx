@@ -12,7 +12,7 @@ export default function WaveEffect() {
           {leds.map((isOn: boolean, index: number) => (
             <div
               key={index}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-all duration-200 ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-colors duration-200 ${
                 isOn
                   ? 'bg-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.8)] border-emerald-300'
                   : 'bg-slate-800'

@@ -1,9 +1,9 @@
 import { useNavigate } from '@openwebf/react-router'
-import { useState } from 'react'
+import { useTheme } from '../hooks/theme'
 
 function SettingsPage() {
   const { navigate } = useNavigate()
-  const [darkMode, setDarkMode] = useState(true)
+  const { theme, themePreference, setThemePreference } = useTheme()
 
   const handleSave = () => {
     navigate('/home', { state: { from: 'settings' }, replace: true })
@@ -19,16 +19,40 @@ function SettingsPage() {
       </header>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-        <h2 className="text-lg font-semibold text-white">Dark Mode</h2>
-        <div className="mt-3">
+        <h2 className="text-lg font-semibold text-white">Theme</h2>
+        <p className="mt-1 text-xs text-slate-400">
+          Current: {theme} {themePreference === 'system' && '(system)'}
+        </p>
+        <div className="mt-3 space-y-3">
           <label className="flex items-center gap-3">
             <input
-              type="checkbox"
-              checked={darkMode}
-              onChange={(e) => setDarkMode(e.target.checked)}
+              type="radio"
+              name="theme"
+              checked={themePreference === 'light'}
+              onChange={() => setThemePreference('light')}
               className="h-5 w-5"
             />
-            <span className="text-sm text-slate-300">Enabled</span>
+            <span className="text-sm text-slate-300">Light</span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input
+              type="radio"
+              name="theme"
+              checked={themePreference === 'dark'}
+              onChange={() => setThemePreference('dark')}
+              className="h-5 w-5"
+            />
+            <span className="text-sm text-slate-300">Dark</span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input
+              type="radio"
+              name="theme"
+              checked={themePreference === 'system'}
+              onChange={() => setThemePreference('system')}
+              className="h-5 w-5"
+            />
+            <span className="text-sm text-slate-300">System</span>
           </label>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
-import 'package:signals_flutter/signals_flutter.dart';
+import 'package:signals/signals.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferences;
 

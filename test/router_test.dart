@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:webfly/router/config.dart';
+import 'package:webfly/ui/router/config.dart';
 
 void main() {
   group('Router URL Generation Tests', () {
@@ -120,8 +120,8 @@ void main() {
     });
 
     test('Route paths are correctly defined', () {
-      expect(kLauncherPath, equals('/'));
-      expect(kScannerPath, equals('/scanner'));
+      expect(kLauncherPath, equals('/_'));
+      expect(kScannerPath, equals('/_/scanner'));
       expect(kWebfRoutePath, equals('/webf'));
       expect(kAppRoutePath, equals('/app'));
     });

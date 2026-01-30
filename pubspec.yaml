@@ -2,7 +2,7 @@ name: webfly
 description: "WebFly is like webf go / expo go, focused on rendering target web pages"
 homepage: "https://github.com/vidlg/webfly"
 publish_to: 'none'
-version: 0.3.0+1
+version: 0.3.1+1
 
 environment:
   sdk: ^3.10.7
@@ -12,12 +12,12 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  webf: ^0.24.8+1
-  webf_bluetooth: ^1.0.0
+  webf: 0.24.9
   webf_share: ^1.1.0
   webf_sqflite: ^1.0.1
   mobile_scanner: ^7.1.4
   shared_preferences: ^2.5.4
+  signals: ^6.3.0
   signals_flutter: ^6.3.0
   flutter_hooks: ^0.21.3
   go_router: ^17.0.1
@@ -25,7 +25,9 @@ dependencies:
   shelf: ^1.4.2
   shelf_static: ^1.1.3
   permission_handler: ^12.0.1
-  flutter_blue_plus: ^1.36.0
+  flutter_blue_plus: ^2.1.0
+  anyhow: ^3.0.1
+  catcher_2: ^2.1.5
 
 dev_dependencies:
   flutter_test:

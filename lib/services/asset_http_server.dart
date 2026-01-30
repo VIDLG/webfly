@@ -3,7 +3,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:logger/logger.dart';
-import '../router/config.dart' show kAssetHttpServerPort;
+import '../ui/router/config.dart' show kAssetHttpServerPort;
 
 /// HTTP server that serves embedded assets
 /// Allows WebF to load assets via http://localhost:port/

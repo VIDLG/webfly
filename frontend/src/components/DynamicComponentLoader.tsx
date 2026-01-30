@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import * as ReactNamespace from 'react'
 import * as CupertinoComponents from '@openwebf/react-cupertino-ui'
+import * as Babel from '@babel/standalone'
 
 type BabelOptions = {
   filename?: string
@@ -39,14 +40,12 @@ export default function DynamicComponentLoader({ code, componentName }: DynamicC
 
         ;(window as unknown as { React: typeof ReactNamespace }).React = ReactNamespace
 
-        const imported = await import('@babel/standalone')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const Babel: BabelStandaloneApi = ((imported as any).default ?? imported) as any
+        const babelApi = Babel as unknown as BabelStandaloneApi
 
         // In WebF environment, Babel/standalone might try to scan <script type="text/babel">; explicitly disable this
-        Babel.disableScriptTags?.()
+        babelApi.disableScriptTags?.()
 
-        const result = Babel.transform(code, {
+        const result = babelApi.transform(code, {
           filename: `${componentName}.tsx`,
           // IMPORTANT:
           // - runtime: 'classic' avoids injecting "react/jsx-runtime" import (new Function cannot execute import)

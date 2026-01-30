@@ -8,16 +8,16 @@ typealias Org = String(matches(Regex(#"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0
 
 local pubspecYaml = read("pubspec.yaml")
 local pubspecData = new yaml.Parser { useMapping = true }.parse(pubspecYaml)
+local version = pubspecData["version"] as String
 
 project_name: ProjectName = pubspecData["name"] as String
 org: Org = "org.vidlg"
 description: String(length > 0) = "webfly is like webf go / expo go, focused on rendering target web pages"
-output_file_name_pattern: String = "\(project_name)-v{version}-${name}.apk"
 
 pubspec {
   name = pubspecData["name"] as String
   description = pubspecData["description"] as String
-  version = pubspecData["version"] as String
+  version = version
   homepage = pubspecData["homepage"] as String
 }
 
@@ -37,7 +37,7 @@ android {
     build {
       application_id = "\(org).\(project_name)"
       namespace = "\(org).\(project_name)"
-      // output_file_name will be auto-generated from pubspec.yaml version
+      output_file_name = "\(project_name)-v\(version)-${name}.apk"
       abi_filters = List("armeabi-v7a", "arm64-v8a")
       // 禁用 Kotlin 增量编译以避免跨盘符路径问题
       kotlin_incremental = false
@@ -69,6 +69,8 @@ android {
 windows {
   // Windows platform configuration (minimal - using defaults from flutter create)
   enabled = true
+  window_width = 720
+  window_height = 1280
 }
 
 ios = null

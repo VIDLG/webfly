@@ -1,16 +1,17 @@
+import 'package:catcher_2/catcher_2.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 import 'package:webf/launcher.dart'
     show WebFControllerManager, WebFControllerManagerConfig;
 import 'package:webf/webf.dart' show WebF;
-import 'package:webf_bluetooth/webf_bluetooth.dart' show BluetoothModule;
+import 'native/ble/webf.dart' show BleWebfModule;
 import 'package:webf_share/webf_share.dart' show ShareModule;
 import 'package:webf_sqflite/webf_sqflite.dart' show SQFliteModule;
 import 'package:permission_handler/permission_handler.dart';
-import 'router/app_router.dart' show kGoRouter;
+import 'ui/router/app_router.dart' show kGoRouter;
 import 'services/asset_http_server.dart';
 import 'services/app_settings_service.dart'
-    show initializeAppSettings, themeModeSignal;
+    show initializeAppSettings, themeModeSignal, AppSettingsModule;
 import 'services/url_history_service.dart' show initializeUrlHistory;
 
 void main() async {
@@ -30,25 +31,12 @@ void main() async {
   );
 
   // Register WebF native plugin modules
-  WebF.defineModule((context) => BluetoothModule(context));
+  WebF.defineModule((context) => BleWebfModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
+  WebF.defineModule((context) => AppSettingsModule(context));
 
   // Request Bluetooth permissions at startup
-  await _requestBluetoothPermissions();
-
-  // Start asset HTTP server for serving use case files
-  await AssetHttpServer().start();
-
-  // Initialize app settings and URL history
-  await initializeAppSettings();
-  await initializeUrlHistory();
-
-  runApp(const MyApp());
-}
-
-Future<void> _requestBluetoothPermissions() async {
-  // Request Bluetooth permissions based on Android API level
   if (await Permission.bluetoothScan.isDenied) {
     await Permission.bluetoothScan.request();
   }
@@ -59,6 +47,33 @@ Future<void> _requestBluetoothPermissions() async {
   if (await Permission.locationWhenInUse.isDenied) {
     await Permission.locationWhenInUse.request();
   }
+
+  // Start asset HTTP server for serving use case files
+  await AssetHttpServer().start();
+
+  // Initialize app settings and URL history
+  await initializeAppSettings();
+  await initializeUrlHistory();
+
+  // Catcher2 will call runApp internally
+  Catcher2(
+    rootWidget: const MyApp(),
+    debugConfig: Catcher2Options(
+      DialogReportMode(),
+      [
+        ConsoleHandler(),
+      ],
+    ),
+    releaseConfig: Catcher2Options(
+      SilentReportMode(),
+      [
+        ConsoleHandler(),
+        // Add SentryHandler, HttpHandler, etc. as needed
+        // SentryHandler(sentryClient),
+        // HttpHandler(HttpRequestType.post, Uri.parse('https://your-error-server.com/api/errors')),
+      ],
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -67,25 +82,49 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Watch((context) {
-      final themeMode = themeModeSignal.value;
+      try {
+        ThemeMode themeMode;
+        try {
+          themeMode = themeModeSignal.value;
+        } catch (_) {
+          themeMode = ThemeMode.system;
+        }
 
-      return MaterialApp.router(
-        title: 'WebFly',
-        routerConfig: kGoRouter,
-        themeMode: themeMode,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.indigo,
-            brightness: Brightness.light,
+        return MaterialApp.router(
+          title: 'WebFly',
+          routerConfig: kGoRouter,
+          themeMode: themeMode,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.indigo,
+              brightness: Brightness.light,
+            ),
           ),
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.indigo,
-            brightness: Brightness.dark,
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.indigo,
+              brightness: Brightness.dark,
+            ),
           ),
-        ),
-      );
+        );
+      } catch (e, st) {
+        debugPrint('[MyApp] root build failed: $e');
+        debugPrint('$st');
+        
+        // 手动上报给 Catcher2
+        Catcher2.reportCheckedError(e, st);
+
+        return MaterialApp(
+          title: 'WebFly (fallback)',
+          home: Scaffold(
+            appBar: AppBar(title: const Text('Startup Error')),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Text('Startup Error: $e\n\n$st'),
+            ),
+          ),
+        );
+      }
     });
   }
 }

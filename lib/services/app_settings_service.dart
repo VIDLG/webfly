@@ -2,6 +2,8 @@ import 'package:flutter/material.dart' show ThemeMode;
 import 'package:signals_flutter/signals_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart'
     show SharedPreferences;
+import 'package:webf/webf.dart' show WebFBaseModule;
+import '../utils/app_logger.dart';
 
 class AppSettingsStorage {
   static const _showInspectorKey = 'show_webf_inspector';
@@ -21,6 +23,9 @@ class AppSettingsStorage {
   bool getCacheControllers() => _prefs.getBool(_cacheControllersKey) ?? false;
   ThemeMode getThemeMode() {
     final index = _prefs.getInt(_themeModeKey) ?? 0;
+    if (index < 0 || index >= ThemeMode.values.length) {
+      return ThemeMode.system;
+    }
     return ThemeMode.values[index];
   }
 
@@ -42,28 +47,143 @@ AppSettingsStorage? _storage;
 
 // Initialize app settings from storage and setup auto-save
 Future<void> initializeAppSettings() async {
-  _storage = await AppSettingsStorage.create();
+  try {
+    _storage = await AppSettingsStorage.create();
+  } catch (_) {
+    _storage = null;
+  }
 
   // Load initial settings without triggering effects
   untracked(() {
-    showWebfInspectorSignal.value = _storage!.getShowWebfInspector();
-    cacheControllersSignal.value = _storage!.getCacheControllers();
-    themeModeSignal.value = _storage!.getThemeMode();
+    showWebfInspectorSignal.value = _storage?.getShowWebfInspector() ?? false;
+    cacheControllersSignal.value = _storage?.getCacheControllers() ?? false;
+    themeModeSignal.value = _storage?.getThemeMode() ?? ThemeMode.system;
   });
 
   // Setup auto-save effects for each setting
   effect(() {
-    _storage?.setShowWebfInspector(showWebfInspectorSignal.value);
+    final storage = _storage;
+    if (storage == null) return;
+    try {
+      storage
+          .setShowWebfInspector(showWebfInspectorSignal.value)
+          .catchError((_) {});
+    } catch (_) {}
   });
 
   effect(() {
-    _storage?.setCacheControllers(cacheControllersSignal.value);
+    final storage = _storage;
+    if (storage == null) return;
+    try {
+      storage
+          .setCacheControllers(cacheControllersSignal.value)
+          .catchError((_) {});
+    } catch (_) {}
   });
 
   effect(() {
-    _storage?.setThemeMode(themeModeSignal.value);
+    final storage = _storage;
+    if (storage == null) return;
+    try {
+      storage.setThemeMode(themeModeSignal.value).catchError((_) {});
+    } catch (_) {}
   });
 }
 
 // Direct signal access - no need for convenience methods
 // Usage: showWebfInspectorSignal.value = true;
+
+/// WebF Native Module for app settings
+/// Allows JavaScript to update app settings directly via webf.invokeModule
+/// 
+/// Usage in JavaScript:
+/// ```javascript
+/// // Get current theme
+/// const theme = await webf.invokeModule('AppSettings', 'getTheme');
+/// // Returns: 'light' | 'dark' | 'system'
+/// 
+/// // Set theme
+/// await webf.invokeModule('AppSettings', 'setTheme', ['light']);
+/// await webf.invokeModule('AppSettings', 'setTheme', ['dark']);
+/// await webf.invokeModule('AppSettings', 'setTheme', ['system']);
+/// ```
+class AppSettingsModule extends WebFBaseModule {
+  AppSettingsModule(super.manager);
+
+  @override
+  String get name => 'AppSettings';
+
+  @override
+  dynamic invoke(String method, List<dynamic> arguments) {
+    switch (method) {
+      case 'setTheme':
+        if (arguments.isEmpty) {
+          appLogger.w('[AppSettingsModule] setTheme requires a theme argument');
+          return Future.value(false);
+        }
+        final theme = arguments[0] as String;
+        return _setTheme(theme);
+      case 'getTheme':
+        return _getTheme();
+      default:
+        appLogger.w('[AppSettingsModule] Unknown method: $method');
+        return Future.value(false);
+    }
+  }
+
+  /// Gets the current theme preference
+  /// 
+  /// Returns: 'light' | 'dark' | 'system'
+  String _getTheme() {
+    final themeMode = themeModeSignal.value;
+    switch (themeMode) {
+      case ThemeMode.light:
+        return 'light';
+      case ThemeMode.dark:
+        return 'dark';
+      case ThemeMode.system:
+        return 'system';
+    }
+  }
+
+  /// Sets the theme preference from WebF JavaScript
+  /// 
+  /// Parameters:
+  /// - theme: 'light' | 'dark' | 'system'
+  /// 
+  /// Returns: true if successful
+  Future<bool> _setTheme(String theme) async {
+    try {
+      ThemeMode newThemeMode;
+      switch (theme.toLowerCase()) {
+        case 'light':
+          newThemeMode = ThemeMode.light;
+          break;
+        case 'dark':
+          newThemeMode = ThemeMode.dark;
+          break;
+        case 'system':
+          newThemeMode = ThemeMode.system;
+          break;
+        default:
+          appLogger.w('[AppSettingsModule] Invalid theme: $theme');
+          return false;
+      }
+
+      if (themeModeSignal.value != newThemeMode) {
+        appLogger.d('[AppSettingsModule] Theme changed from WebF: $theme');
+        themeModeSignal.value = newThemeMode;
+        return true;
+      }
+      return true; // Already set to this theme
+    } catch (e) {
+      appLogger.e('[AppSettingsModule] Error setting theme: $e');
+      return false;
+    }
+  }
+
+  @override
+  void dispose() {
+    // No cleanup needed
+  }
+}

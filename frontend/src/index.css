@@ -2,12 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* WebF router elements must be atomic in inline formatting contexts.
+   Keep this OUTSIDE of @layer: WebF may not support cascade layers. */
+webf-router-link,
+webf-router-viewport,
+router_link,
+ROUTER_LINK {
+  display: inline-block !important;
+  width: 100%;
+  height: 100%;
+}
+
 @layer base {
   :root {
     color-scheme: light dark;
+    font-size: 16px;
+  }
+
+  html {
+    font-size: 16px;
   }
 
   body {
     @apply bg-slate-950 text-slate-100 min-h-screen;
+    font-size: 16px;
   }
 }

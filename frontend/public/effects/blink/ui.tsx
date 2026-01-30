@@ -12,7 +12,7 @@ export default function BlinkEffect() {
           {leds.map((isOn: boolean, index: number) => (
             <div
               key={index}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-all duration-100 ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-colors duration-100 ${
                 isOn
                   ? 'bg-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.8)] border-fuchsia-400'
                   : 'bg-slate-800'

@@ -2,7 +2,7 @@
   "sysroot_src": null,
   "crates": [
     {
-      "root_module": "tools/manage_use_cases.rs",
+      "root_module": "flutter_tools/web_build.rs",
       "edition": "2021",
       "deps": []
     }

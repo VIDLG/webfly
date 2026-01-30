@@ -12,7 +12,7 @@ export default function ChaseEffect() {
           {leds.map((isOn: boolean, index: number) => (
             <div
               key={index}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-all duration-150 ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-colors duration-150 ${
                 isOn
                   ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.8)] border-amber-300'
                   : 'bg-slate-800'

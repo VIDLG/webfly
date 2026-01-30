@@ -14,9 +14,12 @@ importers:
       '@babel/standalone':
         specifier: ^7.28.6
         version: 7.28.6
+      '@openwebf/react-core-ui':
+        specifier: 0.24.2
+        version: 0.24.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/react-cupertino-ui':
         specifier: ^0.4.1
-        version: 0.4.1(@openwebf/react-core-ui@0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 0.4.1(@openwebf/react-core-ui@0.24.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@openwebf/react-router':
         specifier: ^0.24.2
         version: 0.24.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -281,6 +284,12 @@ packages:
 
   '@openwebf/react-core-ui@0.2.13':
     resolution: {integrity: sha512-Cn8x5UJK+AZZKFPWSo2ow3aFg9zfY551UeIJPDEhfaQrnDCfIGcSI7wB5KCSqjc1F5znVSQNcfrLhYhUVGb4cQ==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@openwebf/react-core-ui@0.24.2':
+    resolution: {integrity: sha512-CBh1Gg/Fb5FfpNg/zYp3eRmL2gR/CwwoUKrGn+WSCFA76IQdWrghubTlVIOeCyu22WcBUYVF/QSA0NyqKu9Pkg==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -1637,9 +1646,14 @@ snapshots:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 
-  '@openwebf/react-cupertino-ui@0.4.1(@openwebf/react-core-ui@0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@openwebf/react-core-ui@0.24.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+
+  '@openwebf/react-cupertino-ui@0.4.1(@openwebf/react-core-ui@0.24.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@openwebf/react-core-ui': 0.24.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 

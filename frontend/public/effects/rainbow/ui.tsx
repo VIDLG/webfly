@@ -17,7 +17,7 @@ export default function RainbowEffect() {
             return (
               <div
                 key={index}
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-all duration-200"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-700 transition-colors duration-200"
                 style={{
                   backgroundColor: hasColor ? rgbColor : '#1e293b',
                   borderColor: hasColor ? `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)` : undefined,

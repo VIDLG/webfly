@@ -1,17 +1,32 @@
 import { useNavigate } from '@openwebf/react-router'
+import { useTheme } from '../hooks/theme'
 
 function HomePage() {
   const { navigate } = useNavigate()
+  const { theme, toggleTheme } = useTheme()
+
   return (
-    <div className="mx-auto flex h-screen max-w-5xl flex-col gap-8 overflow-y-auto px-6 py-12">
+    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-12">
       <header className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.35em] text-slate-400">
-          WebFly Demo Hub
-        </p>
-        <h1 className="text-4xl font-semibold text-white sm:text-5xl">Feature Showcase</h1>
-        <p className="text-base text-slate-300">
-          Quick entry points to key demos: dynamic UI, routing, and feature pages.
-        </p>
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <p className="text-sm uppercase tracking-[0.35em] text-slate-400">
+              WebFly Demo Hub
+            </p>
+            <h1 className="text-4xl font-semibold text-white sm:text-5xl">Feature Showcase</h1>
+            <p className="text-base text-slate-300">
+              Quick entry points to key demos: dynamic UI, routing, and feature pages.
+            </p>
+          </div>
+          <button
+            onClick={toggleTheme}
+            className="rounded-full border border-slate-700 bg-slate-900/60 p-3 text-slate-300 transition hover:border-slate-500 hover:bg-slate-800/60 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/60"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            title={`Current: ${theme} theme`}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+        </div>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -58,7 +73,7 @@ function HomePage() {
         </div>
       </section>
 
-      <footer className="text-sm text-slate-500">
+      <footer className="mt-auto pb-4 text-sm text-slate-500">
         Tip: Use the system back gesture/button to return.
       </footer>
     </div>
