@@ -8,29 +8,39 @@ on:
 permissions:
   contents: write
 
+env:
+  JAVA_VERSION: '17'
+  FLUTTER_VERSION: '3.38.9'
+  ANDROID_API_LEVEL: '36'  # Android 16 beta
+  ANDROID_NDK_VERSION: '27.3.13750724'  # NDK r27d
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+  PKL_VERSION: '0.26.3'
+
 jobs:
   build:
     name: Build Android APK
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
+      # 1. Setup tools first (can be cached independently)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          ndk-version: ${{ env.ANDROID_NDK_VERSION }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.29.0' # Matches Dart 3.7+ usually, or use appropriate version
+          flutter-version: ${{ env.FLUTTER_VERSION }}
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -42,28 +52,32 @@ jobs:
 
       - name: Install pkl
         run: |
-          curl -L -o pkl https://github.com/apple/pkl/releases/download/0.26.3/pkl-linux-amd64
-          chmod +x pkl
-          sudo mv pkl /usr/local/bin/
+          mkdir -p ~/.local/bin
+          curl -L -o ~/.local/bin/pkl https://github.com/apple/pkl/releases/download/${{ env.PKL_VERSION }}/pkl-linux-amd64
+          chmod +x ~/.local/bin/pkl
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 9
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Install uv
-        run: pip install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
+      # 2. Checkout code after tools are ready
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      # 3. Install project dependencies
       - name: Get dependencies
         run: flutter pub get
 
