@@ -2,6 +2,9 @@
   "rust-analyzer.linkedProjects": [
     ".vscode/rust-project.json"
   ],
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
   "rust-analyzer.checkOnSave": false,
   "files.eol": "\n"
 }
