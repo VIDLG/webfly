@@ -68,12 +68,10 @@ analyze PATH='lib test' *ARGS:
 doctor *ARGS:
     yes | flutter doctor --android-licenses {{ARGS}}
 
-# Bump version and regenerate platform config
+# Bump version
 # Usage: just bump-version [major|minor|patch|build]
 bump-version PART:
     rust-script flutter_tools/bump_version.rs {{PART}}
-    just gen-platforms
-    just gen-logo
 
 # Tag the current version in git (e.g. v1.2.3)
 # Usage: just tag-version
