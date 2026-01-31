@@ -6,6 +6,7 @@ import '../native_diagnostics/native_diagnostics_logs_screen.dart';
 import '../native_diagnostics/native_diagnostics_screen.dart';
 import '../scanner_screen.dart';
 import '../webf/webf_screen.dart';
+import '../use_cases_menu_screen.dart';
 import 'go_router_delegate.dart';
 import 'config.dart';
 import '../../utils/app_logger.dart';
@@ -59,6 +60,12 @@ final kGoRouter = GoRouter(
     GoRoute(
       path: kScannerPath,
       builder: (context, state) => const ScannerScreen(),
+    ),
+
+    // Use Cases Menu
+    GoRoute(
+      path: kUseCasesMenuPath,
+      builder: (context, state) => const UseCasesMenuScreen(),
     ),
 
     // Use Cases page with fixed title

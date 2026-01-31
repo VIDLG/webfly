@@ -14,6 +14,7 @@ const String kNativeDiagnosticsPath = '$kFlutterPrefix/native-diagnostics';
 const String kNativeDiagnosticsLogsPath = '$kNativeDiagnosticsPath/logs';
 const String kBleDiagnosticsPath = '$kNativeDiagnosticsPath/ble';
 const String kWebfRoutePath = '/webf';
+const String kUseCasesMenuPath = '$kFlutterPrefix/use_cases_menu';
 const String kUseCasesPath = '$kFlutterPrefix/usecases'; // Dedicated wrapper route for use cases
 const String kAppRoutePath =
   '/app'; // Hybrid routing uses query params instead of path params

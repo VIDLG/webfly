@@ -4,9 +4,6 @@
 set shell := ["sh", "-c"]
 set windows-shell := ["sh", "-c"]
 
-# Load environment variables from .env
-set dotenv-load
-
 # List all available commands
 default:
     @just --list
@@ -59,6 +56,10 @@ kill-android:
 build-apk *FLAGS:
     rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{FLAGS}}
 
+# Install and run the built release APK on Android (skips build)
+install-release:
+    DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found." 1>&2; exit 1; fi; flutter run -d "$DEVICE_ID" --release --use-application-binary=build/app/outputs/flutter-apk/app-release.apk
+
 # Analyze Dart code for syntax and semantic issues
 analyze PATH='lib test' *ARGS:
     flutter analyze {{PATH}} {{ARGS}}
@@ -79,12 +80,20 @@ bump-version PART:
 tag-version:
     rust-script flutter_tools/git_tag_version.rs
 
-# One-shot refresh: update web assets + regenerate platforms + regenerate logos
-# Requires .env: WEB_BUILD_SRC_DIR or WEBF_USE_CASES_DIR
-refresh-all:
+
+# -----------------------------
+# CI / Automation
+# -----------------------------
+
+# Run CI pipeline (Android): Install deps -> Gen Config -> Analyze -> Test -> Build APK
+# Usage: just ci
+ci:
     just use-cases-refresh
     just gen-platforms
     just gen-logo
+    just analyze
+    just test
+    just build-apk
 
 # List all connected devices
 devices *ARGS:
@@ -106,8 +115,9 @@ clean:
 upgrade *ARGS:
     flutter pub upgrade --major-versions {{ARGS}}
 
-# Build web project and copy assets to Flutter (requires .env: WEB_BUILD_SRC_DIR or WEBF_USE_CASES_DIR)
+# Build web project and copy assets to Flutter
 use-cases-refresh:
-    flutter_tools/web_build.rs refresh --src "${WEB_BUILD_SRC_DIR:-${WEBF_USE_CASES_DIR}}" --dst assets/use_cases
+    flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/use_cases/react
+    flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/use_cases/vue -o dist
 
 

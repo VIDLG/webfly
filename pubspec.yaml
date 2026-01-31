@@ -2,7 +2,7 @@ name: webfly
 description: "WebFly is like webf go / expo go, focused on rendering target web pages"
 homepage: "https://github.com/vidlg/webfly"
 publish_to: 'none'
-version: 0.4.0+1
+version: 0.4.1+1
 
 environment:
   sdk: ^3.10.7
@@ -42,9 +42,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/gen/
-    - assets/use_cases/index.html
-    - assets/use_cases/favicon.ico
-    - assets/use_cases/assets/
+    - assets/use_cases/react/
+    - assets/use_cases/react/assets/
+    - assets/use_cases/vue/
+    - assets/use_cases/vue/assets/
 
 gen-logo:
   source: assets/logo/webfly_logo.png

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../services/asset_http_server.dart';
-import '../../../services/url_history_service.dart';
-import '../../router/config.dart' show kUseCasesPath, buildWebFRouteUrl;
+import '../../router/config.dart' show kUseCasesMenuPath;
 import '../../../utils/app_logger.dart';
 
 /// Use Cases card
@@ -14,24 +12,8 @@ class LauncherUseCasesCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     void onTap() {
-      // Open use cases from local HTTP server
-      final server = AssetHttpServer();
-      if (!server.isRunning) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Asset server not running')),
-        );
-        return;
-      }
-
-      final useCaseUrl = '${server.baseUrl}/';
-      UrlHistoryOperations.addEntry(useCaseUrl, '/');
-      final routeUrl = buildWebFRouteUrl(
-        url: useCaseUrl,
-        route: kUseCasesPath,
-        path: '/',
-      );
-      appLogger.d('[LauncherScreen] Opening use cases: $routeUrl');
-      context.push(routeUrl, extra: {'initial': true, 'url': useCaseUrl});
+      appLogger.d('[LauncherScreen] Opening use cases menu');
+      context.push(kUseCasesMenuPath);
     }
 
     return Card(
@@ -67,7 +49,7 @@ class LauncherUseCasesCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'React examples powered by WebF',
+                      'React & Vue examples powered by WebF',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
