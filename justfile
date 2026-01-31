@@ -39,6 +39,11 @@ windows MODE='debug' *FLAGS:
 gen-platforms:
     cargo run --manifest-path flutter_tools/flutter_gen_platforms/Cargo.toml -- --config app.pkl
 
+# Generate all image assets (branding first, then logos with launcher icons/splash)
+gen-assets:
+    uv run --script flutter_tools/flutter_gen_branding.py
+    uv run --script flutter_tools/flutter_gen_logo.py
+
 # Generate logo variants + apply to launcher icons/splash
 gen-logo:
     uv run --script flutter_tools/flutter_gen_logo.py
@@ -46,6 +51,10 @@ gen-logo:
 # Generate logo variants only (without applying to launcher icons)
 logo:
     uv run --script flutter_tools/flutter_gen_logo.py --no-apply
+
+# Generate branding images (light and dark theme)
+gen-branding:
+    uv run --script flutter_tools/flutter_gen_branding.py
 
 # Kill processes locking Android directory
 kill-android:
@@ -88,7 +97,7 @@ tag-version *FLAGS:
 ci:
     just use-cases-refresh
     just gen-platforms
-    just gen-logo
+    just gen-assets
     just analyze
     just test
     just build-apk
@@ -111,15 +120,16 @@ clean:
 
 update:
     flutter pub get
-    
+
 # Upgrade packages to latest major versions
 upgrade *ARGS:
     flutter pub upgrade --major-versions {{ARGS}}
 
 # Build web project and copy assets to Flutter
 use-cases-refresh:
-    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/use_cases/react
-    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/use_cases/vue -o dist
+    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/gen/use_cases/react
+    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/gen/use_cases/vue -o dist
+    sh -c 'mkdir -p assets/gen/use_cases && cp assets/use_cases/index.html assets/gen/use_cases/index.html'
 
 
 

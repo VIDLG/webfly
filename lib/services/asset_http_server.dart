@@ -103,7 +103,7 @@ class AssetHttpServer {
   Future<shelf.Response> _handleRootRequest() async {
     try {
       // Load the root index.html from assets
-      final bytes = await rootBundle.load('assets/use_cases/index.html');
+      final bytes = await rootBundle.load('assets/gen/use_cases/index.html');
       final htmlContent = String.fromCharCodes(bytes.buffer.asUint8List());
 
       return shelf.Response.ok(
@@ -146,9 +146,9 @@ class AssetHttpServer {
   /// Map request path to actual asset path
   String _mapRequestPath(String path) {
     // Handle framework directory access patterns:
-    // /react -> assets/use_cases/react/index.html
-    // /react/ -> assets/use_cases/react/index.html
-    // /react -> assets/use_cases/react/index.html
+    // /react -> assets/gen/use_cases/react/index.html
+    // /react/ -> assets/gen/use_cases/react/index.html
+    // /react -> assets/gen/use_cases/react/index.html
     
     // Strip trailing slash if present
     final cleanPath = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
@@ -157,11 +157,11 @@ class AssetHttpServer {
     // If the path contains no internal slashes and doesn't have an extension, 
     // assume it's a framework directory and redirect to index.html
     if (!cleanPath.contains('/') && !cleanPath.contains('.')) {
-      return 'assets/use_cases/$cleanPath/index.html';
+      return 'assets/gen/use_cases/$cleanPath/index.html';
     }
     
-    // All other paths -> direct mapping to use_cases
-    return 'assets/use_cases/$path';
+    // All other paths -> direct mapping to gen/use_cases
+    return 'assets/gen/use_cases/$path';
   }
 
   /// Get MIME content type based on file extension

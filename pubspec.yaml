@@ -42,41 +42,58 @@ flutter:
   uses-material-design: true
   assets:
     - assets/gen/
-    - assets/use_cases/
-    - assets/use_cases/react/
-    - assets/use_cases/react/assets/
-    - assets/use_cases/vue/
-    - assets/use_cases/vue/assets/
+    - assets/gen/logo/
+    - assets/gen/branding/
+    - assets/gen/use_cases/
+    - assets/gen/use_cases/react/
+    - assets/gen/use_cases/react/assets/
+    - assets/gen/use_cases/vue/
+    - assets/gen/use_cases/vue/assets/
 
 gen-logo:
   source: assets/logo/webfly_logo.png
-  output_dir: assets/gen
+  output_dir: assets/gen/logo
   target_size: 256
   padding: 60
+  # Output filename pattern (use {name} for source name, {theme} for light/dark/neutral)
+  # Default: {name}_{theme}.png (e.g., webfly_logo_light.png)
+  output_pattern: "{name}_{theme}.png"
+
+gen-branding:
+  text: "WebFly"
+  output_dir: assets/gen/branding
+  width: 400
+  height: 120
+  font_size: 48
+  light_color: "#323232"
+  dark_color: "#DCDCDC"
+  # Output filename pattern (use {text} for branding text, {theme} for light/dark)
+  # Default: {text}_branding_{theme}.png (e.g., webfly_branding_light.png)
+  output_pattern: "{text}_branding_{theme}.png"
 
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/gen/webfly_logo_dark.png"
+  image_path: "assets/gen/logo/webfly_logo_dark.png"
   adaptive_icon_background: "#121212"
-  adaptive_icon_foreground: "assets/gen/webfly_logo_dark.png"
-  image_path_android_light: "assets/gen/webfly_logo_light.png"
+  adaptive_icon_foreground: "assets/gen/logo/webfly_logo_dark.png"
+  image_path_android_light: "assets/gen/logo/webfly_logo_light.png"
   adaptive_icon_background_light: "#ffffff"
-  adaptive_icon_foreground_light: "assets/gen/webfly_logo_light.png"
+  adaptive_icon_foreground_light: "assets/gen/logo/webfly_logo_light.png"
 
 flutter_native_splash:
   color: "#ffffff"
-  image: assets/gen/webfly_logo_light.png
+  image: assets/gen/logo/webfly_logo_light.png
   color_dark: "#121212"
-  image_dark: assets/gen/webfly_logo_dark.png
+  image_dark: assets/gen/logo/webfly_logo_dark.png
   android: true
   ios: false
   fullscreen: false
   android_gravity: center
   android_12:
     color: "#ffffff"
-    image: assets/gen/webfly_logo_light.png
+    image: assets/gen/logo/webfly_logo_light.png
     color_dark: "#121212"
-    image_dark: assets/gen/webfly_logo_dark.png
-    branding: assets/gen/webfly_branding_light.png
-    branding_dark: assets/gen/webfly_branding_dark.png
+    image_dark: assets/gen/logo/webfly_logo_dark.png
+    branding: assets/gen/branding/webfly_branding_light.png
+    branding_dark: assets/gen/branding/webfly_branding_dark.png
