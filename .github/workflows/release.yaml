@@ -41,6 +41,7 @@ jobs:
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -69,6 +70,18 @@ jobs:
 
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      # Cache all installed tools
+      - name: Cache installed tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.local/bin
+            ~/.uv
+          key: ${{ runner.os }}-tools-${{ env.FLUTTER_VERSION }}-${{ env.PKL_VERSION }}-${{ env.PNPM_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-tools-
 
       # 2. Checkout code after tools are ready
       - name: Checkout code

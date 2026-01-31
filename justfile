@@ -41,11 +41,11 @@ gen-platforms:
 
 # Generate logo variants + apply to launcher icons/splash
 gen-logo:
-    flutter_tools/flutter_gen_logo.py
+    uv run --script flutter_tools/flutter_gen_logo.py
 
 # Generate logo variants only (without applying to launcher icons)
 logo:
-    flutter_tools/flutter_gen_logo.py --no-apply
+    uv run --script flutter_tools/flutter_gen_logo.py --no-apply
 
 # Kill processes locking Android directory
 kill-android:
@@ -115,7 +115,7 @@ upgrade *ARGS:
 
 # Build web project and copy assets to Flutter
 use-cases-refresh:
-    flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/use_cases/react
-    flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/use_cases/vue -o dist
+    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/use_cases/react
+    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/use_cases/vue -o dist
 
 
