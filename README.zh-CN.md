@@ -8,7 +8,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
-[![WebF](https://img.shields.io/badge/WebF-0.24.6-FF6B6B)](https://github.com/openwebf/webf)
+[![WebF](https://img.shields.io/badge/WebF-0.24.9-FF6B6B)](https://github.com/openwebf/webf)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **⭐ 如果觉得 WebFly 有用，请给个 Star 支持一下！⭐**
@@ -27,7 +27,7 @@
 
 WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运行时，集成了设备 API：
 
-- **🔵 蓝牙低功耗（BLE）** - 通过 `webf_bluetooth` 直接访问 BLE 设备
+- **🔵 蓝牙低功耗（BLE）** - 通过自定义 `Ble` 模块（基于 `flutter_blue_plus`）直接访问 BLE 设备
 - **💾 SQLite 数据库** - 使用 `webf_sqflite` 进行本地数据库存储
 - **🔗 原生分享** - 通过 `webf_share` 集成系统分享功能
 - **📱 原生 UI 组件** - 无缝的 Flutter-Web 混合界面
@@ -47,12 +47,14 @@ WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运�
 ## 📸 应用截图
 
 <div align="center">
-
-### 启动器界面
-<img src="docs/screenshots/homepage.png" alt="启动器" width="300" />
-
-*主启动器：URL 输入、二维码扫描和历史记录*
-
+  <img src="docs/screenshots/homepage.png" alt="主页" width="200" />
+  <img src="docs/screenshots/use_cases.png" alt="用例" width="200" />
+  <img src="docs/screenshots/settings.png" alt="设置" width="200" />
+  <img src="docs/screenshots/native_diagnostics.png" alt="原生诊断" width="200" />
+</div>
+<div align="center">
+  <img src="docs/screenshots/light_theme.png" alt="浅色模式" width="200" />
+   <img src="docs/screenshots/native_diag_ble.png" alt="BLE 诊断" width="200" />
 </div>
 
 ## 🎯 核心特性
@@ -172,18 +174,27 @@ if (window.webf?.share) {
 
 ```
 webfly/
-├── lib/                    # Flutter 应用代码
-│   ├── screens/            # 页面（launcher/webf/scanner/diagnostics 等）
-│   ├── services/           # 业务逻辑
-│   ├── widgets/            # 可复用组件
-│   └── router/             # 导航配置
-├── assets/                 # 图片、Logo、打包 use_cases
-├── platforms/              # 平台模板（source-of-truth）
-├── flutter_tools/          # 构建/开发工具（Rust + 脚本，git submodule）
-├── tools/                  # 仓库工具（Rust）
-├── frontend/               # Web 应用（Vite）
+├── lib/                    # Flutter 应用源码 (宿主应用)
+│   ├── main.dart           # 入口文件 & WebF 初始化
+│   ├── ui/                 # 应用页面 (启动器, 诊断页等)
+│   ├── services/           # 原生服务 (资源服务器, 设置等)
+│   └── native/             # WebF 原生模块 (BLE, 分享等)
+├── frontend/               # Web 前端应用 (React + Vite)
+│   ├── src/                # Web 源代码
+│   └── package.json        # Web 依赖配置
+├── assets/                 # 静态资源 & 打包的用例
+├── platforms/              # 平台相关 Runner 代码 (android, ios 等)
+├── docs/                   # 文档 & 截图
 └── pubspec.yaml            # Flutter 依赖
 ```
+
+### 架构概览
+
+WebFly 采用 **混合架构** 设计：
+1.  **Flutter 宿主**: 提供原生外壳，管理权限，访问硬件资源（BLE, 存储），并渲染原生 UI 框架（导航, 设置）。
+2.  **WebF 运行时**: 基于 Flutter 的高性能 Web 渲染引擎，负责渲染 Web 应用内容。
+3.  **本地资源服务器**: 内置 HTTP 服务器 (`shelf`)，从本地资源提供编译后的 Web 应用，确保离线可用性和快速加载。
+4.  **React 前端**: 业务逻辑和 UI 使用标准 Web 技术栈 (React, Vite) 和 UI 组件库 (`@openwebf/react-cupertino-ui`) 构建。
 
 ### 开发工具
 
@@ -267,12 +278,12 @@ flutter build appbundle --release
 ## 📦 依赖项
 
 ### 核心依赖
-- `webf: ^0.24.6` - Web 渲染引擎
-- `hooks_riverpod: ^3.2.0` - 状态管理
+- `webf: 0.24.9` - Web 渲染引擎
+- `signals_flutter: ^6.3.0` - 状态管理
 - `go_router: ^17.0.1` - 导航
 
 ### 原生能力
-- `webf_bluetooth: ^1.0.0` - BLE 支持
+- `flutter_blue_plus: ^2.1.0` - BLE 支持 (自定义模块)
 - `webf_sqflite: ^1.0.1` - SQLite 数据库
 - `webf_share: ^1.1.0` - 原生分享
 - `mobile_scanner: ^7.1.4` - 二维码扫描

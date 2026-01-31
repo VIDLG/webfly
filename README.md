@@ -8,7 +8,7 @@ English | [简体中文](README.zh-CN.md)
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
-[![WebF](https://img.shields.io/badge/WebF-0.24.6-FF6B6B)](https://github.com/openwebf/webf)
+[![WebF](https://img.shields.io/badge/WebF-0.24.9-FF6B6B)](https://github.com/openwebf/webf)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **⭐ If you find WebFly useful, please consider giving it a star! ⭐**
@@ -27,7 +27,7 @@ English | [简体中文](README.zh-CN.md)
 
 WebFly isn't just a web viewer - it's a fully-featured native runtime with integrated device APIs:
 
-- **🔵 Bluetooth Low Energy (BLE)** - Direct access to BLE devices via `webf_bluetooth`
+- **🔵 Bluetooth Low Energy (BLE)** - Direct access to BLE devices via custom `Ble` module (powered by `flutter_blue_plus`)
 - **💾 SQLite Database** - Local database storage with `webf_sqflite`
 - **🔗 Native Sharing** - System share sheet integration via `webf_share`
 - **📱 Native UI Components** - Seamless Flutter-Web hybrid interfaces
@@ -47,12 +47,14 @@ WebFly isn't just a web viewer - it's a fully-featured native runtime with integ
 ## 📸 Screenshots
 
 <div align="center">
-
-### Launcher Interface
-<img src="docs/screenshots/homepage.png" alt="Launcher" width="300" />
-
-*Main launcher with URL input, QR scanner, and recent history*
-
+  <img src="docs/screenshots/homepage.png" alt="Home Page" width="200" />
+  <img src="docs/screenshots/use_cases.png" alt="Use Cases" width="200" />
+  <img src="docs/screenshots/settings.png" alt="Settings" width="200" />
+  <img src="docs/screenshots/native_diagnostics.png" alt="Diagnostics" width="200" />
+</div>
+<div align="center">
+  <img src="docs/screenshots/light_theme.png" alt="Light Theme" width="200" />
+   <img src="docs/screenshots/native_diag_ble.png" alt="BLE Diagnostics" width="200" />
 </div>
 
 ## 🎯 Key Features
@@ -172,18 +174,27 @@ if (window.webf?.share) {
 
 ```
 webfly/
-├── lib/                    # Flutter app sources
-│   ├── screens/            # App screens (launcher, webf, scanner, diagnostics)
-│   ├── services/           # Business logic
-│   ├── widgets/            # Reusable components
-│   └── router/             # Navigation setup
-├── assets/                 # Images, logos, bundled use_cases
-├── platforms/              # Platform templates (source-of-truth)
-├── flutter_tools/          # Build automation tools (Rust + scripts, git submodule)
-├── tools/                  # Repo tools (Rust)
-├── frontend/               # Web app (Vite)
+├── lib/                    # Flutter app sources (Host Application)
+│   ├── main.dart           # App entry & WebF initialization
+│   ├── ui/                 # App screens (launcher, diagnostic, etc)
+│   ├── services/           # Native services (Asset Server, Settings, etc)
+│   └── native/             # WebF Native Modules (BLE, Share, etc)
+├── frontend/               # Web Application (React + Vite)
+│   ├── src/                # Web source code
+│   └── package.json        # Web dependencies
+├── assets/                 # Static assets & bundled use_cases
+├── platforms/              # Platform-specific runners (android, ios, etc)
+├── docs/                   # Documentation & screenshots
 └── pubspec.yaml            # Flutter dependencies
 ```
+
+### Architecture Overview
+
+WebFly adopts a **Hybrid Architecture**:
+1.  **Flutter Host**: Provides the native shell, manages permissions, accesses hardware (BLE, storage), and renders the UI chrome (navigation, settings).
+2.  **WebF Runtime**: A high-performance web rendering engine based on Flutter, responsible for rendering the web application content.
+3.  **Local Asset Server**: A built-in HTTP server (`shelf`) that serves the compiled web app from local assets, ensuring offline availability and fast load times.
+4.  **React Frontend**: The UI logic for the business application is built with standard web technologies (React, Vite) and UI components (`@openwebf/react-cupertino-ui`).
 
 ### Development Tools
 
@@ -269,12 +280,12 @@ For development, the built-in HTTP server serves assets from:
 ## 📦 Dependencies
 
 ### Core
-- `webf: ^0.24.8+1` - Web rendering engine
+- `webf: 0.24.9` - Web rendering engine
 - `signals_flutter: ^6.3.0` - State management
 - `go_router: ^17.0.1` - Navigation
 
 ### Native Capabilities
-- `webf_bluetooth: ^1.0.0` - BLE support
+- `flutter_blue_plus: ^2.1.0` - BLE support (Custom Module)
 - `webf_sqflite: ^1.0.1` - SQLite database
 - `webf_share: ^1.1.0` - Native sharing
 - `mobile_scanner: ^7.1.4` - QR code scanning
