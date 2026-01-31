@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebF Use Cases</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --button-bg: #007acc;
+            --button-hover: #005a9e;
+            --border-color: #e0e0e0;
+            --secondary-text: #666666;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #e0e0e0;
+                --button-bg: #0078d4;
+                --button-hover: #106ebe;
+                --border-color: #333333;
+                --secondary-text: #b0b0b0;
+            }
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 40px; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .framework { 
+            margin: 15px 0; 
+        }
+        
+        .framework button { 
+            display: inline-block; 
+            padding: 12px 24px; 
+            background: var(--button-bg); 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .framework button:hover { 
+            background: var(--button-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .framework button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--text-color);
+            margin-bottom: 8px;
+        }
+        
+        p {
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+        
+        small {
+            color: var(--secondary-text);
+            opacity: 0.8;
+        }
+        
+        .theme-info {
+            margin-top: 20px;
+            padding: 12px;
+            background: var(--border-color);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--secondary-text);
+        }
+    </style>
+</head>
+<body>
+    <h1>WebF Use Cases</h1>
+    <p>Select a framework to view demos:</p>
+    <div class="framework">
+        <button id="react-btn">React Use Cases</button>
+    </div>
+    <div class="framework">
+        <button id="vue-btn">Vue Use Cases</button>
+    </div>
+    <p><small>Add more frameworks by adding directories to assets/use_cases/</small></p>
+    
+    <div class="theme-info">
+        <span id="theme-status">Theme: Auto</span> | 
+        <span id="webf-status">WebF: Checking...</span>
+    </div>
+    
+    <script>
+        // Get WebF hybridHistory
+        function getHybridHistory() {
+            return globalThis?.webf?.hybridHistory;
+        }
+        
+        // Detect theme preference
+        function detectTheme() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                return 'dark';
+            }
+            return 'light';
+        }
+        
+        // Update theme status display
+        function updateThemeStatus() {
+            const theme = detectTheme();
+            const themeStatus = document.getElementById('theme-status');
+            if (themeStatus) {
+                themeStatus.textContent = 'Theme: ' + theme.charAt(0).toUpperCase() + theme.slice(1);
+            }
+        }
+        
+        // Update WebF status
+        function updateWebFStatus() {
+            const webfStatus = document.getElementById('webf-status');
+            const hybridHistory = getHybridHistory();
+            if (webfStatus) {
+                webfStatus.textContent = hybridHistory ? 'WebF: Available' : 'WebF: Not Available';
+            }
+        }
+        
+        // WebF router navigation function
+        function navigateToFramework(framework) {
+            console.log('navigateToFramework called with:', framework);
+            const hybridHistory = getHybridHistory();
+            console.log('hybridHistory available:', !!hybridHistory);
+            
+            if (hybridHistory) {
+                // Use WebF's hybridHistory for navigation to usecases route
+                // Format: /_/usecases?url=encoded_url&base=controller_name&path=framework_path
+                const url = encodeURIComponent('http://localhost:8765/' + framework + '/');
+                const base = 'webf-' + Date.now();
+                const path = encodeURIComponent('/');
+                const flutterRoute = '/_/usecases?url=' + url + '&base=' + base + '&path=' + path;
+                
+                console.log('WebF navigation route:', flutterRoute);
+                hybridHistory.pushNamed(flutterRoute);
+            } else {
+                // Fallback to regular navigation - should not happen in WebF
+                const fallbackUrl = 'http://localhost:8765/' + framework + '/';
+                console.log('Fallback navigation to:', fallbackUrl);
+                window.location.href = fallbackUrl;
+            }
+        }
+        
+        // Listen for theme changes
+        if (window.matchMedia) {
+            const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            darkModeQuery.addListener(updateThemeStatus);
+        }
+        
+        // Update status when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up event listeners');
+            
+            updateThemeStatus();
+            updateWebFStatus();
+            
+            // Add click event listeners
+            const reactBtn = document.getElementById('react-btn');
+            const vueBtn = document.getElementById('vue-btn');
+            
+            if (reactBtn) {
+                console.log('React button found, adding event listener');
+                reactBtn.addEventListener('click', function() {
+                    console.log('React button clicked');
+                    navigateToFramework('react');
+                });
+            } else {
+                console.log('React button not found');
+            }
+            
+            if (vueBtn) {
+                console.log('Vue button found, adding event listener');
+                vueBtn.addEventListener('click', function() {
+                    console.log('Vue button clicked');
+                    navigateToFramework('vue');
+                });
+            } else {
+                console.log('Vue button not found');
+            }
+        });
+        
+        // Delayed check for WebF availability (may need time to initialize)
+        setTimeout(updateWebFStatus, 500);
+    </script>
+</body>
+</html>

@@ -71,6 +71,9 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
+      - name: Install patch-package globally
+        run: npm install -g patch-package
+
       # Cache all installed tools
       - name: Cache installed tools
         uses: actions/cache@v4
@@ -96,6 +99,10 @@ jobs:
 
       - name: Run CI Pipeline
         run: just ci
+        env:
+          # Skip problematic postinstall scripts
+          DISABLE_OPENCOLLECTIVE: true
+          ADBLOCK: true
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

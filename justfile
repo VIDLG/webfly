@@ -57,7 +57,7 @@ build-apk *FLAGS:
     rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{FLAGS}}
 
 # Install and run the built release APK on Android (skips build)
-install-release:
+install-apk:
     DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found." 1>&2; exit 1; fi; flutter run -d "$DEVICE_ID" --release --use-application-binary=build/app/outputs/flutter-apk/app-release.apk
 
 # Analyze Dart code for syntax and semantic issues
@@ -74,9 +74,9 @@ bump-version PART:
     rust-script flutter_tools/bump_version.rs {{PART}}
 
 # Tag the current version in git (e.g. v1.2.3)
-# Usage: just tag-version
-tag-version:
-    rust-script flutter_tools/git_tag_version.rs
+# Usage: just tag-version [-f|--force]
+tag-version *FLAGS:
+    rust-script flutter_tools/git_tag_version.rs {{FLAGS}}
 
 
 # -----------------------------
@@ -109,6 +109,9 @@ format *ARGS:
 clean:
     flutter clean
 
+update:
+    flutter pub get
+    
 # Upgrade packages to latest major versions
 upgrade *ARGS:
     flutter pub upgrade --major-versions {{ARGS}}
@@ -117,5 +120,7 @@ upgrade *ARGS:
 use-cases-refresh:
     rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/use_cases/react
     rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/use_cases/vue -o dist
+
+
 
 

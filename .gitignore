@@ -55,7 +55,7 @@ app.*.map.json
 !.env.example
 /windows/
 
-assets/use_cases
+assets/use_cases/*/
 
 # Generated assets
 assets/gen/

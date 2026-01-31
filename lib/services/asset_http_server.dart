@@ -64,12 +64,16 @@ class AssetHttpServer {
   /// Handle HTTP requests by serving assets
   Future<shelf.Response> _handleRequest(shelf.Request request) async {
     final path = request.url.path;
-    _logger.d('Request: ${request.method} /$path');
+    _logger.i('🌐 HTTP Request: ${request.method} /$path');
 
-    // Default to index.html for root path
-    final assetPath = path.isEmpty || path == '/'
-        ? 'assets/use_cases/index.html'
-        : 'assets/use_cases/$path';
+    // Handle root path with a helpful response
+    if (path.isEmpty || path == '/') {
+      return _handleRootRequest();
+    }
+
+    // Handle other paths
+    final assetPath = _mapRequestPath(path);
+    _logger.i('📂 Mapped /$path -> $assetPath');
 
     try {
       // Load asset from bundle
@@ -78,6 +82,8 @@ class AssetHttpServer {
 
       // Determine content type
       final contentType = _getContentType(assetPath);
+      
+      _logger.i('✅ Serving $assetPath (${data.length} bytes) as $contentType');
 
       return shelf.Response.ok(
         data,
@@ -93,6 +99,71 @@ class AssetHttpServer {
     }
   }
 
+  /// Handle root path request with available frameworks
+  Future<shelf.Response> _handleRootRequest() async {
+    try {
+      // Load the root index.html from assets
+      final bytes = await rootBundle.load('assets/use_cases/index.html');
+      final htmlContent = String.fromCharCodes(bytes.buffer.asUint8List());
+
+      return shelf.Response.ok(
+        htmlContent,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+        },
+      );
+    } catch (e) {
+      _logger.w('Failed to load root index.html', error: e);
+      
+      // Fallback to a simple HTML response
+      const fallbackContent = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebF Use Cases</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>WebF Use Cases</h1>
+    <p>Framework selector not available.</p>
+    <p><a href="/react/">React Use Cases</a></p>
+    <p><a href="/vue/">Vue Use Cases</a></p>
+</body>
+</html>
+''';
+
+      return shelf.Response.ok(
+        fallbackContent,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+        },
+      );
+    }
+  }
+
+  /// Map request path to actual asset path
+  String _mapRequestPath(String path) {
+    // Handle framework directory access patterns:
+    // /react -> assets/use_cases/react/index.html
+    // /react/ -> assets/use_cases/react/index.html
+    // /react -> assets/use_cases/react/index.html
+    
+    // Strip trailing slash if present
+    final cleanPath = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
+    
+    // Check if this is a framework root access (e.g., /react, /vue)
+    // If the path contains no internal slashes and doesn't have an extension, 
+    // assume it's a framework directory and redirect to index.html
+    if (!cleanPath.contains('/') && !cleanPath.contains('.')) {
+      return 'assets/use_cases/$cleanPath/index.html';
+    }
+    
+    // All other paths -> direct mapping to use_cases
+    return 'assets/use_cases/$path';
+  }
+
   /// Get MIME content type based on file extension
   String _getContentType(String path) {
     if (path.endsWith('.html')) return 'text/html; charset=utf-8';
@@ -102,6 +173,7 @@ class AssetHttpServer {
     if (path.endsWith('.png')) return 'image/png';
     if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return 'image/jpeg';
     if (path.endsWith('.gif')) return 'image/gif';
+    if (path.endsWith('.webp')) return 'image/webp';
     if (path.endsWith('.svg')) return 'image/svg+xml';
     if (path.endsWith('.ico')) return 'image/x-icon';
     if (path.endsWith('.woff2')) return 'font/woff2';
