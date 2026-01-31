@@ -210,18 +210,9 @@ class BleDiagnosticsScreen extends HookWidget {
 
     useEffect(() {
       unawaited(() async {
-        final result = await bleIsSupported();
-        result.match(
-          ok: (supported) {
-            bleSupported.value = supported;
-            log.i('isSupported=$supported');
-          },
-          err: (error) {
-            log.w('isSupported check failed: $error');
-            appLogger.w('[BLE] isSupported check failed: $error');
-            bleSupported.value = null;
-          },
-        );
+        final supported = await bleIsSupported();
+        bleSupported.value = supported;
+        log.i('isSupported=$supported');
       }());
 
       final adapterSub = bleAdapterState.listen((state) {

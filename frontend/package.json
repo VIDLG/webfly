@@ -16,6 +16,7 @@
     "@openwebf/react-core-ui": "0.24.2",
     "@openwebf/react-cupertino-ui": "^0.4.1",
     "@openwebf/react-router": "^0.24.2",
+    "@openwebf/webf-share": "^1.0.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },

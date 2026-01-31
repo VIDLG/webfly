@@ -23,6 +23,9 @@ importers:
       '@openwebf/react-router':
         specifier: ^0.24.2
         version: 0.24.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@openwebf/webf-share':
+        specifier: ^1.0.1
+        version: 1.0.1(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -470,6 +473,9 @@ packages:
     peerDependenciesMeta:
       react:
         optional: true
+
+  '@openwebf/webf-share@1.0.1':
+    resolution: {integrity: sha512-wk+zXPrcJlE7zYSVEVFSQ4P0XkFVpFPPG8wvoXnwSsqi9BdzqB7v9cZ5UsHmwqVMJFGvjxV7RYS68bo3AO6Obw==}
 
   '@oxc-project/runtime@0.97.0':
     resolution: {integrity: sha512-yH0zw7z+jEws4dZ4IUKoix5Lh3yhqIJWF9Dc8PWvhpo7U7O+lJrv7ZZL4BeRO0la8LBQFwcCewtLBnVV7hPe/w==}
@@ -1911,6 +1917,12 @@ snapshots:
   '@openwebf/webf-enterprise-typings@0.23.7(react@19.2.3)':
     optionalDependencies:
       react: 19.2.3
+
+  '@openwebf/webf-share@1.0.1(react@19.2.3)':
+    dependencies:
+      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.3)
+    transitivePeerDependencies:
+      - react
 
   '@oxc-project/runtime@0.97.0': {}
 

@@ -7,6 +7,7 @@ import autoprefixer from 'autoprefixer'
 import qrcodeTerminal from 'qrcode-terminal'
 import os from 'os'
 import net from 'net'
+import path from 'path'
 
 // Helper to find next available port
 const getAvailablePort = async (startPort: number): Promise<number> => {
@@ -108,6 +109,11 @@ export default defineConfig(async ({ mode }) => {
       strictPort: true, // Fail if port is busy (it shouldn't be, we just checked)
       host: true, // Listen on all addresses
       allowedHosts: ['app.zhihaohuoyun.com'],
+    },
+    resolve: {
+      alias: {
+        '@native': path.resolve(__dirname, '../lib'),
+      },
     },
   }
 })

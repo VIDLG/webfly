@@ -9,8 +9,8 @@ import 'webf.dart';
 import '../../utils/stream_signal_context.dart';
 
 /// Check if Bluetooth is supported on this device
-Future<Result<bool>> bleIsSupported() async {
-  return guardAsync(() => fbp.FlutterBluePlus.isSupported);
+Future<bool> bleIsSupported() async {
+  return await fbp.FlutterBluePlus.isSupported;
 }
 
 /// Current adapter state.

@@ -11,6 +11,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const LEDStripPage = lazy(() => import('./pages/LEDStripPage'))
 const LEDEffectPreviewPage = lazy(() => import('./pages/LEDEffectPreviewPage'))
+const BleDemoPage = lazy(() => import('./pages/BleDemoPage'))
 
 const withSuspense = (element: React.ReactNode) => (
   <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -100,6 +101,7 @@ function App() {
     { path: '/settings', title: 'Settings', element: <SettingsPage /> },
     { path: '/products', title: 'Products', element: <ProductListPage /> },
     { path: '/product/:productId', title: 'Product Detail', element: <ProductDetailPage /> },
+    { path: '/ble', title: 'BLE Demo', element: <BleDemoPage /> },
   ]
 
   return (
