@@ -74,6 +74,11 @@ bump-version PART:
     just gen-platforms
     just gen-logo
 
+# Tag the current version in git (e.g. v1.2.3)
+# Usage: just tag-version
+tag-version:
+    rust-script flutter_tools/git_tag_version.rs
+
 # One-shot refresh: update web assets + regenerate platforms + regenerate logos
 # Requires .env: WEB_BUILD_SRC_DIR or WEBF_USE_CASES_DIR
 refresh-all:
