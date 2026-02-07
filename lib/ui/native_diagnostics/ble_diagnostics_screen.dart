@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_use/flutter_use.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -15,18 +16,6 @@ import 'core.dart';
 class BleDiagnosticsScreen extends HookWidget {
   const BleDiagnosticsScreen({super.key});
 
-  String _formatPermission(PermissionStatus? status) {
-    if (status == null) return 'unknown';
-    return switch (status) {
-      PermissionStatus.granted => 'granted',
-      PermissionStatus.denied => 'denied',
-      PermissionStatus.restricted => 'restricted',
-      PermissionStatus.limited => 'limited',
-      PermissionStatus.permanentlyDenied => 'permanentlyDenied',
-      PermissionStatus.provisional => 'provisional',
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -37,17 +26,19 @@ class BleDiagnosticsScreen extends HookWidget {
     final adapterState = useState<BluetoothAdapterState>(
       BluetoothAdapterState.unknown,
     );
-    final scanning = useState(false);
-    final requestingPermissions = useState(false);
-    final results = useState<List<ScanResult>>(<ScanResult>[]);
-    final permissionStatuses = useState<Map<String, PermissionStatus>>(
+    final scanning = useBoolean(false);
+    final requestingPermissions = useBoolean(false);
+    final results = useList<ScanResult>(const <ScanResult>[]);
+    final permissionStatuses = useMap<String, PermissionStatus>(
       <String, PermissionStatus>{},
     );
     final lastError = useState<String?>(null);
 
     void showSnack(String message) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
 
     Future<void> logEnvironmentSnapshot({required String reason}) async {
@@ -67,9 +58,9 @@ class BleDiagnosticsScreen extends HookWidget {
         log.i('adapterState=${adapterState.value}');
         log.i(
           'permissions: '
-          'scan=${permissionStatuses.value['bluetoothScan']}, '
-          'connect=${permissionStatuses.value['bluetoothConnect']}, '
-          'locWhenInUse=${permissionStatuses.value['locationWhenInUse']}',
+          'scan=${permissionStatuses.get('bluetoothScan')}, '
+          'connect=${permissionStatuses.get('bluetoothConnect')}, '
+          'locWhenInUse=${permissionStatuses.get('locationWhenInUse')}',
         );
         log.i('locationService=${locationService ?? 'unknown'}');
       } catch (e, st) {
@@ -86,14 +77,14 @@ class BleDiagnosticsScreen extends HookWidget {
       };
 
       if (!context.mounted) return;
-      permissionStatuses.value = statuses;
+      permissionStatuses.replace(statuses);
     }
 
     Future<void> requestPermissions() async {
       if (requestingPermissions.value) return;
 
       lastError.value = null;
-      requestingPermissions.value = true;
+      requestingPermissions.toggle(true);
 
       try {
         await refreshPermissions();
@@ -110,14 +101,14 @@ class BleDiagnosticsScreen extends HookWidget {
 
         log.i(
           'requestPermissions: done '
-          '(scan=${permissionStatuses.value['bluetoothScan']}, '
-          'connect=${permissionStatuses.value['bluetoothConnect']}, '
-          'loc=${permissionStatuses.value['locationWhenInUse']})',
+          '(scan=${permissionStatuses.get('bluetoothScan')}, '
+          'connect=${permissionStatuses.get('bluetoothConnect')}, '
+          'loc=${permissionStatuses.get('locationWhenInUse')})',
         );
 
-        final scan = permissionStatuses.value['bluetoothScan'];
-        final connect = permissionStatuses.value['bluetoothConnect'];
-        final loc = permissionStatuses.value['locationWhenInUse'];
+        final scan = permissionStatuses.get('bluetoothScan');
+        final connect = permissionStatuses.get('bluetoothConnect');
+        final loc = permissionStatuses.get('locationWhenInUse');
 
         if (scan == PermissionStatus.permanentlyDenied ||
             connect == PermissionStatus.permanentlyDenied ||
@@ -130,7 +121,7 @@ class BleDiagnosticsScreen extends HookWidget {
         log.e('Permission request error', e, st);
         lastError.value = 'Permission request failed: $e';
       } finally {
-        requestingPermissions.value = false;
+        requestingPermissions.toggle(false);
       }
     }
 
@@ -152,14 +143,15 @@ class BleDiagnosticsScreen extends HookWidget {
         err: (error) {
           log.w('turnOn failed: $error');
           appLogger.w('[BLE] turnOn not available/failed: $error');
-          lastError.value = 'Could not turn on Bluetooth automatically: ${error.toString()}';
+          lastError.value =
+              'Could not turn on Bluetooth automatically: ${error.toString()}';
         },
       );
     }
 
     Future<void> startScan() async {
       lastError.value = null;
-      results.value = const <ScanResult>[];
+      results.clear();
 
       if (bleSupported.value == false) {
         lastError.value = 'BLE is not supported on this device.';
@@ -167,13 +159,8 @@ class BleDiagnosticsScreen extends HookWidget {
         return;
       }
 
-      await refreshPermissions();
-
-      // If scan permission is denied, request it up front.
-      final scanStatus = permissionStatuses.value['bluetoothScan'];
-      if (scanStatus != PermissionStatus.granted) {
-        await requestPermissions();
-      }
+      // Request permissions if needed (no-op if already granted).
+      await requestPermissions();
 
       if (!context.mounted) return;
 
@@ -208,7 +195,7 @@ class BleDiagnosticsScreen extends HookWidget {
       );
     }
 
-    useEffect(() {
+    useEffectOnce(() {
       unawaited(() async {
         final supported = await bleIsSupported();
         bleSupported.value = supported;
@@ -221,21 +208,19 @@ class BleDiagnosticsScreen extends HookWidget {
       });
 
       final resultsSub = bleScanResults.listen((r) {
-        results.value = List<ScanResult>.unmodifiable(r);
+        results.clear();
+        results.addAll(r);
         log.d('scanResults=${r.length}');
       });
 
       final scanningSub = bleIsScanning.listen((isScanning) {
-        scanning.value = isScanning;
+        scanning.toggle(isScanning);
         log.d('isScanning=$isScanning');
       });
 
-      unawaited(refreshPermissions());
       unawaited(() async {
-        // Give permission refresh a moment to complete before snapshot.
-        await Future<void>.delayed(const Duration(milliseconds: 150));
-        if (!context.mounted) return;
         await refreshPermissions();
+        if (!context.mounted) return;
         await logEnvironmentSnapshot(reason: 'screen_open');
       }());
 
@@ -245,11 +230,11 @@ class BleDiagnosticsScreen extends HookWidget {
         resultsSub.cancel();
         scanningSub.cancel();
       };
-    }, const []);
+    });
 
-    final scanPerm = permissionStatuses.value['bluetoothScan'];
-    final connectPerm = permissionStatuses.value['bluetoothConnect'];
-    final locPerm = permissionStatuses.value['locationWhenInUse'];
+    final scanPerm = permissionStatuses.get('bluetoothScan');
+    final connectPerm = permissionStatuses.get('bluetoothConnect');
+    final locPerm = permissionStatuses.get('locationWhenInUse');
 
     final adapterOk = adapterState.value == BluetoothAdapterState.on;
     final supportedOk = bleSupported.value != false;
@@ -257,14 +242,13 @@ class BleDiagnosticsScreen extends HookWidget {
     Widget section({required Widget child}) {
       return Card(
         margin: const EdgeInsets.symmetric(vertical: 8),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: child,
-        ),
+        child: Padding(padding: const EdgeInsets.all(12), child: child),
       );
     }
 
-    Widget actionGrid({required List<Widget> Function(bool twoColumns) buildButtons}) {
+    Widget actionGrid({
+      required List<Widget> Function(bool twoColumns) buildButtons,
+    }) {
       return LayoutBuilder(
         builder: (context, constraints) {
           // Two columns on wider layouts to reduce vertical scrolling.
@@ -371,9 +355,9 @@ class BleDiagnosticsScreen extends HookWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(' bluetoothScan: ${_formatPermission(scanPerm)}'),
-                Text(' bluetoothConnect: ${_formatPermission(connectPerm)}'),
-                Text(' locationWhenInUse: ${_formatPermission(locPerm)}'),
+                Text(' bluetoothScan: ${scanPerm?.name ?? 'unknown'}'),
+                Text(' bluetoothConnect: ${connectPerm?.name ?? 'unknown'}'),
+                Text(' locationWhenInUse: ${locPerm?.name ?? 'unknown'}'),
               ],
             ),
           ),
@@ -395,20 +379,25 @@ class BleDiagnosticsScreen extends HookWidget {
 
                     return [
                       FilledButton.icon(
-                        onPressed:
-                            requestingPermissions.value ? null : requestPermissions,
+                        onPressed: requestingPermissions.value
+                            ? null
+                            : requestPermissions,
                         icon: requestingPermissions.value
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.lock_open),
                         label: label(
                           requestingPermissions.value
                               ? 'Requesting permissions...'
                               : 'Request permissions',
-                          requestingPermissions.value ? 'Requesting…' : 'Permissions',
+                          requestingPermissions.value
+                              ? 'Requesting…'
+                              : 'Permissions',
                         ),
                       ),
                       FilledButton.icon(
@@ -472,7 +461,7 @@ class BleDiagnosticsScreen extends HookWidget {
                       ),
                     ),
                     Text(
-                      '${results.value.length}',
+                      '${results.list.length}',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -480,7 +469,7 @@ class BleDiagnosticsScreen extends HookWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (results.value.isEmpty)
+                if (results.list.isEmpty)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -499,7 +488,7 @@ class BleDiagnosticsScreen extends HookWidget {
                     ),
                   )
                 else
-                  ...results.value.map((r) {
+                  ...results.list.map((r) {
                     final device = r.device;
                     final name = device.platformName.isNotEmpty
                         ? device.platformName
@@ -524,6 +513,3 @@ class BleDiagnosticsScreen extends HookWidget {
     );
   }
 }
-
-
-

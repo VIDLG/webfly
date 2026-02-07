@@ -24,10 +24,7 @@ class _TestAssetBundle extends CachingAssetBundle {
 void main() {
   testWidgets('Launcher smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(
-      DefaultAssetBundle(
-        bundle: _TestAssetBundle(),
-        child: const MyApp(),
-      ),
+      DefaultAssetBundle(bundle: _TestAssetBundle(), child: const MyApp()),
     );
 
     await tester.pumpAndSettle();

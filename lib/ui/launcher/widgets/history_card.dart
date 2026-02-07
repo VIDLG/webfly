@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../services/url_history_service.dart';
+import '../../../store/url_history.dart';
 
 /// Individual history card widget
 class HistoryCard extends StatelessWidget {
@@ -37,8 +37,8 @@ class HistoryCard extends StatelessWidget {
       color: isEditMode && isSelected
           ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
           : isSelected
-              ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
-              : null,
+          ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
+          : null,
       child: InkWell(
         onTap: isEditMode ? onToggleSelect : onTap,
         onLongPress: isEditMode ? null : onLongPress,

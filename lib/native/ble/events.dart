@@ -19,7 +19,8 @@ typedef BleOnBondStateChangedEvent = fbp.OnBondStateChangedEvent;
 
 /// Access to all global Bluetooth events as streams.
 class BleEvents {
-  static Stream<BleOnConnectionStateChangedEvent> get onConnectionStateChanged =>
+  static Stream<BleOnConnectionStateChangedEvent>
+  get onConnectionStateChanged =>
       fbp.FlutterBluePlus.events.onConnectionStateChanged;
 
   static Stream<BleOnMtuChangedEvent> get onMtuChanged =>
@@ -34,7 +35,8 @@ class BleEvents {
   static Stream<BleOnDiscoveredServicesEvent> get onDiscoveredServices =>
       fbp.FlutterBluePlus.events.onDiscoveredServices;
 
-  static Stream<BleOnCharacteristicReceivedEvent> get onCharacteristicReceived =>
+  static Stream<BleOnCharacteristicReceivedEvent>
+  get onCharacteristicReceived =>
       fbp.FlutterBluePlus.events.onCharacteristicReceived;
 
   static Stream<BleOnCharacteristicWrittenEvent> get onCharacteristicWritten =>

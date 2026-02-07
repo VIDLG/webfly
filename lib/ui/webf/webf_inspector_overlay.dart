@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:signals_flutter/signals_flutter.dart';
-import 'package:webf/devtools.dart' show WebFInspectorFloatingPanel;
-import '../../services/app_settings_service.dart' show showWebfInspectorSignal;
+import 'package:webf/devtools.dart';
+import '../../store/app_settings.dart';
 
 class WebFInspectorOverlay extends HookWidget {
   const WebFInspectorOverlay({super.key});

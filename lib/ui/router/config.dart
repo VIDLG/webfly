@@ -15,9 +15,10 @@ const String kNativeDiagnosticsLogsPath = '$kNativeDiagnosticsPath/logs';
 const String kBleDiagnosticsPath = '$kNativeDiagnosticsPath/ble';
 const String kWebfRoutePath = '/webf';
 const String kUseCasesMenuPath = '$kFlutterPrefix/use_cases_menu';
-const String kUseCasesPath = '$kFlutterPrefix/usecases'; // Dedicated wrapper route for use cases
+const String kUseCasesPath =
+    '$kFlutterPrefix/usecases'; // Dedicated wrapper route for use cases
 const String kAppRoutePath =
-  '/app'; // Hybrid routing uses query params instead of path params
+    '/app'; // Hybrid routing uses query params instead of path params
 
 // WebF inner router root path (used inside the `path` query param for hybrid routes).
 const String kWebfInnerRootPath = '/';
@@ -85,7 +86,17 @@ String buildWebFUrl(String url) {
   return '$kWebfRoutePath?$kUrlParam=$encodedUrl';
 }
 
-/// Build WebF Hybrid Routing URL
+/// Builds the full URL for a WebF hybrid route.
+///
+/// In hybrid routing, Flutter stays on a wrapper route ([route], e.g. [kAppRoutePath])
+/// and the WebF app is loaded with [url]. The WebF inner route is passed via the
+/// [kPathParam] query parameter ([path]). Optional [base] is used as the controller
+/// name; if omitted, it is derived from [url]. Optional [title] is exposed as a
+/// query param for the AppBar.
+///
+/// Returns a string like: `$route?url=<encoded>&base=<encoded>&path=<encoded>`
+/// (and `&title=<encoded>` when [title] is set). All query values are
+/// [Uri.encodeComponent]-encoded.
 String buildWebFRouteUrl({
   required String url,
   required String route,

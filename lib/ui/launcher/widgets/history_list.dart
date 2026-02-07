@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:signals_flutter/signals_flutter.dart';
-import '../../../services/url_history_service.dart';
+import 'package:signals_hooks/signals_hooks.dart';
+import '../../../store/url_history.dart';
 import 'history_card.dart';
 
 class UrlHistoryList extends HookWidget {
@@ -9,7 +9,9 @@ class UrlHistoryList extends HookWidget {
   final void Function(String url, String path) onTap;
   final void Function(String url, String path) onLongPress;
   final void Function(bool isEditMode)? onEditModeChanged;
-  final ValueNotifier<bool>? editModeNotifier;
+
+  /// When parent calls this, child exits edit mode (e.g. back key).
+  final void Function(void Function() requestExit)? onRegisterExitEditMode;
 
   const UrlHistoryList({
     super.key,
@@ -17,33 +19,30 @@ class UrlHistoryList extends HookWidget {
     required this.onTap,
     required this.onLongPress,
     this.onEditModeChanged,
-    this.editModeNotifier,
+    this.onRegisterExitEditMode,
   });
 
   @override
   Widget build(BuildContext context) {
     final urls = urlHistorySignal.watch(context);
-    final isEditMode = useState(false);
-    final selectedEntries = useState<Set<UrlHistoryEntry>>({});
-    final isDragging = useState(false);
+    final isEditMode = useSignal(false);
+    final selectedEntries = useSignal<Set<UrlHistoryEntry>>(
+      <UrlHistoryEntry>{},
+    );
+    final isDragging = useSignal(false);
 
-    // Listen to external edit mode changes
-    useEffect(() {
-      if (editModeNotifier != null) {
-        void listener() {
-          if (!editModeNotifier!.value && isEditMode.value) {
-            // External request to exit edit mode
-            isEditMode.value = false;
-            selectedEntries.value = {};
-            onEditModeChanged?.call(false);
-          }
-        }
-
-        editModeNotifier!.addListener(listener);
-        return () => editModeNotifier!.removeListener(listener);
+    void exitEditMode() {
+      if (isEditMode.value) {
+        isEditMode.value = false;
+        selectedEntries.value = <UrlHistoryEntry>{};
+        onEditModeChanged?.call(false);
       }
-      return null;
-    }, [editModeNotifier]);
+    }
+
+    useEffect(() {
+      onRegisterExitEditMode?.call(exitEditMode);
+      return () => onRegisterExitEditMode?.call(() {});
+    }, const []);
 
     if (urls.isEmpty) {
       return const SizedBox.shrink();
@@ -53,14 +52,14 @@ class UrlHistoryList extends HookWidget {
       final confirmed = await _showClearHistoryDialog(context);
 
       if (confirmed == true) {
-        await UrlHistoryOperations.clearHistory();
+        clearUrlHistory();
         isEditMode.value = false;
-        selectedEntries.value = {};
+        selectedEntries.value = <UrlHistoryEntry>{};
       }
     }
 
     void handleDelete(UrlHistoryEntry entry) {
-      UrlHistoryOperations.removeEntry(entry);
+      removeUrlHistoryEntry(entry);
       selectedEntries.value = {...selectedEntries.value}..remove(entry);
     }
 
@@ -73,14 +72,14 @@ class UrlHistoryList extends HookWidget {
       );
       if (confirmed == true) {
         for (final entry in selectedEntries.value) {
-          await UrlHistoryOperations.removeEntry(entry);
+          removeUrlHistoryEntry(entry);
         }
-        selectedEntries.value = {};
+        selectedEntries.value = <UrlHistoryEntry>{};
       }
     }
 
     void handleReorder(int oldIndex, int newIndex) {
-      UrlHistoryOperations.reorderEntries(oldIndex, newIndex);
+      reorderUrlHistoryEntries(oldIndex, newIndex);
     }
 
     void toggleSelection(UrlHistoryEntry entry) {
@@ -95,7 +94,7 @@ class UrlHistoryList extends HookWidget {
 
     void toggleSelectAll() {
       if (selectedEntries.value.length == urls.length) {
-        selectedEntries.value = {};
+        selectedEntries.value = <UrlHistoryEntry>{};
       } else {
         selectedEntries.value = urls.toSet();
       }
@@ -181,7 +180,7 @@ class UrlHistoryList extends HookWidget {
               onPressed: () {
                 isEditMode.value = !isEditMode.value;
                 if (!isEditMode.value) {
-                  selectedEntries.value = {};
+                  selectedEntries.value = <UrlHistoryEntry>{};
                 }
                 onEditModeChanged?.call(isEditMode.value);
               },

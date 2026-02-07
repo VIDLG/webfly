@@ -24,16 +24,18 @@ class NativeDiagnosticsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          ...NativeTestRegistry.tests.expand((t) sync* {
-            yield ListTile(
-              leading: Icon(t.icon),
-              title: Text(t.title),
-              subtitle: Text(t.subtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(t.routePath),
-            );
-            yield const Divider(height: 1);
-          }),
+          ...NativeTestRegistry.tests.expand(
+            (t) => [
+              ListTile(
+                leading: Icon(t.icon),
+                title: Text(t.title),
+                subtitle: Text(t.subtitle),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(t.routePath),
+              ),
+              const Divider(height: 1),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(

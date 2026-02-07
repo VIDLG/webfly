@@ -2,136 +2,126 @@ import 'dart:async';
 
 import 'package:anyhow/anyhow.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fbp;
-import 'serialization.dart';
-import 'webf.dart';
+
+import 'characteristic.dart';
+import '../../utils/stream_signal_context.dart';
 import 'options.dart';
 
+/// Reactive context for device connection state (cached per device).
+class BleConnectionStateContext
+    extends StreamSignalContext<fbp.BluetoothConnectionState> {
+  BleConnectionStateContext(this._device)
+    : super(
+        _device.connectionState,
+        _device.isConnected
+            ? fbp.BluetoothConnectionState.connected
+            : fbp.BluetoothConnectionState.disconnected,
+      ) {
+    start();
+  }
+
+  final fbp.BluetoothDevice _device;
+
+  @override
+  void onValue(fbp.BluetoothConnectionState value) {
+    if (value == fbp.BluetoothConnectionState.disconnected) {
+      Future.microtask(() => releaseBleDeviceContexts(_device));
+    }
+  }
+}
+
+/// Reactive context for device MTU (cached per device).
+class BleMtuContext extends StreamSignalContext<int> {
+  BleMtuContext(fbp.BluetoothDevice device) : super(device.mtu, device.mtuNow) {
+    start();
+  }
+}
+
+final _bleConnectionStateContexts = Expando<BleConnectionStateContext>();
+final _bleMtuContexts = Expando<BleMtuContext>();
+
+/// Release device and its characteristic contexts (cancel subscriptions).
+/// Called when connection state becomes disconnected.
+void releaseBleDeviceContexts(fbp.BluetoothDevice device) {
+  final conn = _bleConnectionStateContexts[device];
+  if (conn != null && !conn.isDisposed) conn.dispose();
+  final mtu = _bleMtuContexts[device];
+  if (mtu != null && !mtu.isDisposed) mtu.dispose();
+  releaseBleCharacteristicContextsForDevice(device);
+}
+
 extension BleDeviceExtensions on fbp.BluetoothDevice {
+  /// Stream of connection state changes (our app ↔ device).
+  Stream<fbp.BluetoothConnectionState> get bleConnectionState =>
+      connectionState;
+
+  /// Reactive connection state context (cached per device).
+  BleConnectionStateContext bleConnectionStateContext() {
+    final ctx = _bleConnectionStateContexts[this];
+    if (ctx != null && !ctx.isDisposed) return ctx;
+    final n = BleConnectionStateContext(this);
+    _bleConnectionStateContexts[this] = n;
+    return n;
+  }
+
+  /// Stream of MTU changes.
+  Stream<int> get bleMtu => mtu;
+
+  /// Reactive MTU context (cached per device).
+  BleMtuContext bleMtuContext() {
+    final ctx = _bleMtuContexts[this];
+    if (ctx != null && !ctx.isDisposed) return ctx;
+    final n = BleMtuContext(this);
+    _bleMtuContexts[this] = n;
+    return n;
+  }
+
   /// Connect to a BLE device
-  /// 
+  ///
   /// Parameters:
   /// - options: ConnectOptions including timeout, mtu, autoConnect, license
   Future<Result<void>> bleConnect(ConnectOptions? options) async {
     final opts = options ?? const ConnectOptions();
-    return guardAsync(() => connect(
-      license: opts.license,
-      timeout: opts.timeout,
-      mtu: opts.mtu,
-      autoConnect: opts.autoConnect,
-    )).context('Failed to connect to device: ${remoteId.str}');
+    return guardAsync(
+      () => connect(
+        license: opts.license,
+        timeout: opts.timeout,
+        mtu: opts.mtu,
+        autoConnect: opts.autoConnect,
+      ),
+    ).context('Failed to connect to device: ${remoteId.str}');
   }
 
   /// Disconnect from a BLE device
-  /// 
+  ///
   /// Parameters:
   /// - options: DisconnectOptions including timeout, queue, androidDelay
   Future<Result<void>> bleDisconnect(DisconnectOptions? options) async {
     final opts = options ?? const DisconnectOptions();
-    return guardAsync(() => disconnect(
-      timeout: opts.timeout,
-      queue: opts.queue,
-      androidDelay: opts.androidDelay,
-    )).context('Failed to disconnect from device: ${remoteId.str}');
+    return guardAsync(
+      () => disconnect(
+        timeout: opts.timeout,
+        queue: opts.queue,
+        androidDelay: opts.androidDelay,
+      ),
+    ).context('Failed to disconnect from device: ${remoteId.str}');
   }
 
   /// Discover services for a connected device
-  /// 
+  ///
   /// Parameters:
   /// - options: DiscoverServicesOptions
-  /// 
+  ///
   /// Note: discoverServices must be re-called after every connection!
-  Future<Result<List<fbp.BluetoothService>>> bleDiscoverServices(DiscoverServicesOptions? options) async {
+  Future<Result<List<fbp.BluetoothService>>> bleDiscoverServices(
+    DiscoverServicesOptions? options,
+  ) async {
     final opts = options ?? const DiscoverServicesOptions();
-    return guardAsync(() => discoverServices(
-      subscribeToServicesChanged: opts.subscribeToServicesChanged,
-      timeout: opts.timeout,
-    )).context('Failed to discover services for device ${remoteId.str}');
-  }
-}
-
-// ----------------------------------------------------------------------------
-// Module Logic
-// ----------------------------------------------------------------------------
-
-Result<(String, Map<String, dynamic>?)> _parseDeviceArgs(List<dynamic> args, String methodName) {
-  if (args.isEmpty) {
-    return Err(Error('[BleModule] $methodName requires arguments'));
-  }
-
-  String? deviceId;
-  Map<String, dynamic>? optionsMap;
-
-  if (args[0] is String) {
-    deviceId = args[0] as String;
-    if (args.length > 1 && args[1] is Map) {
-      optionsMap = args[1] as Map<String, dynamic>;
-    }
-  } else if (args[0] is Map) {
-    final map = Map<String, dynamic>.from(args[0] as Map);
-    deviceId = map.remove('deviceId') as String?;
-    optionsMap = map.isEmpty ? null : map;
-  }
-
-  if (deviceId == null || deviceId.isEmpty) {
-    return Err(Error('[BleModule] $methodName requires deviceId'));
-  }
-
-  return Ok((deviceId, optionsMap));
-}
-
-
-extension BleDeviceModule on BleWebfModule {
-  /// Connect to a BLE device
-  ///
-  /// Arguments:
-  /// - Option 1: [deviceId, {options?}]
-  /// - Option 2: [{ deviceId: string, timeout?, mtu?, autoConnect? }]
-  Future<Map<String, dynamic>> connect(List<dynamic> arguments) async {
-    final parsed = _parseDeviceArgs(arguments, 'connect');
-    if (parsed.isErr()) {
-      return returnErr(parsed.unwrapErr().toString());
-    }
-
-    final (deviceId, optionsMap) = parsed.unwrap();
-    final options = ConnectOptions.fromMap(optionsMap);
-    final device = fbp.BluetoothDevice.fromId(deviceId);
-    final result = await device.bleConnect(options);
-    return result.toMap();
-  }
-
-  /// Disconnect from a BLE device
-  ///
-  /// Arguments:
-  /// - Option 1: [deviceId, {options?}]
-  /// - Option 2: [{ deviceId: string, timeout?, queue?, androidDelay? }]
-  Future<Map<String, dynamic>> disconnect(List<dynamic> arguments) async {
-    final parsed = _parseDeviceArgs(arguments, 'disconnect');
-    if (parsed.isErr()) {
-      return returnErr(parsed.unwrapErr().toString());
-    }
-
-    final (deviceId, optionsMap) = parsed.unwrap();
-    final options = DisconnectOptions.fromMap(optionsMap);
-    final device = fbp.BluetoothDevice.fromId(deviceId);
-    final result = await device.bleDisconnect(options);
-    return result.toMap();
-  }
-
-  /// Discover services for a connected device
-  ///
-  /// Arguments:
-  /// - Option 1: [deviceId, {options?}]
-  /// - Option 2: [{ deviceId: string, subscribeToServicesChanged?, timeout? }]
-  Future<Map<String, dynamic>> discoverServices(List<dynamic> arguments) async {
-    final parsed = _parseDeviceArgs(arguments, 'discoverServices');
-    if (parsed.isErr()) {
-      return returnErr(parsed.unwrapErr().toString());
-    }
-
-    final (deviceId, optionsMap) = parsed.unwrap();
-    final options = DiscoverServicesOptions.fromMap(optionsMap);
-    final device = fbp.BluetoothDevice.fromId(deviceId);
-    final result = await device.bleDiscoverServices(options);
-    return result.toMap((services) => services.toMap());
+    return guardAsync(
+      () => discoverServices(
+        subscribeToServicesChanged: opts.subscribeToServicesChanged,
+        timeout: opts.timeout,
+      ),
+    ).context('Failed to discover services for device ${remoteId.str}');
   }
 }

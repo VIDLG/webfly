@@ -1,26 +1,102 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'serialization.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'options.g.dart';
+
+// ---------- JSON converters ----------
+List<Guid> _guidListFromJson(List<dynamic>? list) =>
+    (list ?? []).map((e) => Guid(e as String)).toList();
+List<String> _guidListToJson(List<Guid> list) =>
+    list.map((e) => e.toString()).toList();
+
+String _guidToJson(Guid g) => g.toString();
+
+Duration? _durationSecondsFromJson(dynamic v) =>
+    v == null ? null : Duration(seconds: (v as num).toInt());
+int? _durationSecondsToJson(Duration? d) => d?.inSeconds;
+
+/// AndroidScanMode is not a Dart Enum (no .values/.name); it uses platform int (.value).
+AndroidScanMode _androidScanModeFromJson(dynamic v) {
+  if (v is! int) return AndroidScanMode.lowLatency;
+  const modes = [
+    AndroidScanMode.opportunistic,
+    AndroidScanMode.lowPower,
+    AndroidScanMode.balanced,
+    AndroidScanMode.lowLatency,
+  ];
+  for (final m in modes) {
+    if (m.value == v) return m;
+  }
+  return AndroidScanMode.lowLatency;
+}
+
+int _androidScanModeToJson(AndroidScanMode m) => m.value;
+
+// ---------- MsdFilterOption & ServiceDataFilterOption (JSON-serializable options for ScanOptions) ----------
+
+@JsonSerializable()
+class MsdFilterOption {
+  final int manufacturerId;
+  final List<int> data;
+
+  const MsdFilterOption({this.manufacturerId = 0, this.data = const []});
+
+  factory MsdFilterOption.fromJson(Map<String, dynamic> json) =>
+      _$MsdFilterOptionFromJson(json);
+  Map<String, dynamic> toJson() => _$MsdFilterOptionToJson(this);
+
+  MsdFilter toFbp() => MsdFilter(manufacturerId, data: data);
+}
+
+@JsonSerializable()
+class ServiceDataFilterOption {
+  @JsonKey(
+    name: 'serviceUuid',
+    fromJson: _serviceUuidFromJson,
+    toJson: _guidToJson,
+  )
+  final Guid service;
+  final List<int> data;
+
+  ServiceDataFilterOption({Guid? service, this.data = const []})
+    : service = service ?? Guid.empty();
+
+  factory ServiceDataFilterOption.fromJson(Map<String, dynamic> json) =>
+      _$ServiceDataFilterOptionFromJson(json);
+  Map<String, dynamic> toJson() => _$ServiceDataFilterOptionToJson(this);
+
+  ServiceDataFilter toFbp() => ServiceDataFilter(service, data: data);
+}
+
+Guid _serviceUuidFromJson(dynamic v) =>
+    v == null ? Guid.empty() : Guid(v as String);
+
+// ---------- ScanOptions ----------
+
+@JsonSerializable()
 class ScanOptions {
+  @JsonKey(fromJson: _guidListFromJson, toJson: _guidListToJson)
   final List<Guid> withServices;
   final List<String> withRemoteIds;
   final List<String> withNames;
   final List<String> withKeywords;
-  final List<MsdFilter> withMsd;
-  final List<ServiceDataFilter> withServiceData;
+  final List<MsdFilterOption> withMsd;
+  final List<ServiceDataFilterOption> withServiceData;
+  @JsonKey(fromJson: _durationSecondsFromJson, toJson: _durationSecondsToJson)
   final Duration? timeout;
+  @JsonKey(fromJson: _durationSecondsFromJson, toJson: _durationSecondsToJson)
   final Duration? removeIfGone;
   final bool continuousUpdates;
   final int continuousDivisor;
   final bool oneByOne;
   final bool androidLegacy;
+  @JsonKey(fromJson: _androidScanModeFromJson, toJson: _androidScanModeToJson)
   final AndroidScanMode androidScanMode;
   final bool androidUsesFineLocation;
   final bool androidCheckLocationServices;
+  @JsonKey(fromJson: _guidListFromJson, toJson: _guidListToJson)
   final List<Guid> webOptionalServices;
 
-  // Defaults
-  // No need to redeclare defaults in fromMap, as we use null checks + constructor
   const ScanOptions({
     this.withServices = const [],
     this.withRemoteIds = const [],
@@ -39,38 +115,14 @@ class ScanOptions {
     this.androidCheckLocationServices = true,
     this.webOptionalServices = const [],
   });
-  
-  // Create an empty instance once to reuse defaults
-  static const _defaults = ScanOptions();
 
-  factory ScanOptions.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const ScanOptions();
+  factory ScanOptions.fromJson(Map<String, dynamic> json) =>
+      _$ScanOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$ScanOptionsToJson(this);
 
-    return ScanOptions(
-      withServices: readList(map['withServices'], (x) => Guid(x as String)),
-      withRemoteIds: readList(map['withRemoteIds']),
-      withNames: readList(map['withNames']),
-      withKeywords: readList(map['withKeywords']),
-      withMsd: readList(map['withMsd'], _parseMsd),
-      withServiceData: readList(map['withServiceData'], _parseServiceData),
-      
-      timeout: readDuration(map['timeout']),
-      removeIfGone: readDuration(map['removeIfGone']),
-      
-      continuousUpdates: map['continuousUpdates'] as bool? ?? _defaults.continuousUpdates,
-      continuousDivisor: map['continuousDivisor'] as int? ?? _defaults.continuousDivisor,
-      oneByOne: map['oneByOne'] as bool? ?? _defaults.oneByOne,
-      androidLegacy: map['androidLegacy'] as bool? ?? _defaults.androidLegacy,
-      
-      // Special Parser for ScanMode
-      androidScanMode: _parseAndroidScanMode(map['androidScanMode']) ?? _defaults.androidScanMode,
-          
-      androidUsesFineLocation: map['androidUsesFineLocation'] as bool? ?? _defaults.androidUsesFineLocation,
-      androidCheckLocationServices: map['androidCheckLocationServices'] as bool? ?? _defaults.androidCheckLocationServices,
-      
-      webOptionalServices: readList(map['webOptionalServices'], (x) => Guid(x as String)),
-    );
-  }
+  List<MsdFilter> get fbpWithMsd => withMsd.map((e) => e.toFbp()).toList();
+  List<ServiceDataFilter> get fbpWithServiceData =>
+      withServiceData.map((e) => e.toFbp()).toList();
 
   Map<Symbol, dynamic> toSymbolMap() {
     return {
@@ -94,30 +146,34 @@ class ScanOptions {
   }
 }
 
+@JsonSerializable()
 class SetOptions {
   final bool showPowerAlert;
   final bool restoreState;
 
-  const SetOptions({
-    this.showPowerAlert = true,
-    this.restoreState = false,
-  });
+  const SetOptions({this.showPowerAlert = true, this.restoreState = false});
 
-  static const _defaults = SetOptions();
-
-  factory SetOptions.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const SetOptions();
-    return SetOptions(
-      showPowerAlert: map['showPowerAlert'] as bool? ?? _defaults.showPowerAlert,
-      restoreState: map['restoreState'] as bool? ?? _defaults.restoreState,
-    );
-  }
+  factory SetOptions.fromJson(Map<String, dynamic> json) =>
+      _$SetOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$SetOptionsToJson(this);
 }
 
+License _licenseFromJson(dynamic v) =>
+    v == 'commercial' ? License.commercial : License.free;
+String _licenseToJson(License l) =>
+    l == License.commercial ? 'commercial' : 'free';
+
+Duration _connectTimeoutFromJson(dynamic v) => v == null
+    ? const Duration(seconds: 35)
+    : Duration(seconds: (v as num).toInt());
+
+@JsonSerializable()
 class ConnectOptions {
+  @JsonKey(fromJson: _connectTimeoutFromJson, toJson: _durationSecondsToJson)
   final Duration timeout;
   final int mtu;
   final bool autoConnect;
+  @JsonKey(fromJson: _licenseFromJson, toJson: _licenseToJson)
   final License license;
 
   const ConnectOptions({
@@ -127,21 +183,12 @@ class ConnectOptions {
     this.license = License.free,
   });
 
-  static const _defaults = ConnectOptions();
-
-  factory ConnectOptions.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const ConnectOptions();
-
-    return ConnectOptions(
-      timeout: readDuration(map['timeout']) ?? _defaults.timeout,
-      mtu: map['mtu'] is int ? map['mtu'] : _defaults.mtu,
-      autoConnect: map['autoConnect'] is bool ? map['autoConnect'] : _defaults.autoConnect,
-      license: map['license'] == 'commercial' ? License.commercial : _defaults.license,
-    );
-  }
+  factory ConnectOptions.fromJson(Map<String, dynamic> json) =>
+      _$ConnectOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$ConnectOptionsToJson(this);
 }
 
-
+@JsonSerializable()
 class DisconnectOptions {
   final int timeout;
   final bool queue;
@@ -153,18 +200,12 @@ class DisconnectOptions {
     this.androidDelay = 2000,
   });
 
-  static const _defaults = DisconnectOptions();
-
-  factory DisconnectOptions.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const DisconnectOptions();
-    return DisconnectOptions(
-      timeout: map['timeout'] as int? ?? _defaults.timeout,
-      queue: map['queue'] as bool? ?? _defaults.queue,
-      androidDelay: map['androidDelay'] as int? ?? _defaults.androidDelay,
-    );
-  }
+  factory DisconnectOptions.fromJson(Map<String, dynamic> json) =>
+      _$DisconnectOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$DisconnectOptionsToJson(this);
 }
 
+@JsonSerializable()
 class DiscoverServicesOptions {
   final bool subscribeToServicesChanged;
   final int timeout;
@@ -174,38 +215,27 @@ class DiscoverServicesOptions {
     this.timeout = 15,
   });
 
-  static const _defaults = DiscoverServicesOptions();
-
-  factory DiscoverServicesOptions.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const DiscoverServicesOptions();
-    return DiscoverServicesOptions(
-      subscribeToServicesChanged: map['subscribeToServicesChanged'] as bool? ?? _defaults.subscribeToServicesChanged,
-      timeout: map['timeout'] as int? ?? _defaults.timeout,
-    );
-  }
+  factory DiscoverServicesOptions.fromJson(Map<String, dynamic> json) =>
+      _$DiscoverServicesOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$DiscoverServicesOptionsToJson(this);
 }
 
 // ----------------------------------------------------------------------------
 // Characteristic Options
 // ----------------------------------------------------------------------------
 
+@JsonSerializable()
 class ReadCharacteristicOptions {
   final int timeout;
 
-  const ReadCharacteristicOptions({
-    this.timeout = 15,
-  });
+  const ReadCharacteristicOptions({this.timeout = 15});
 
-  static const _defaults = ReadCharacteristicOptions();
-
-  factory ReadCharacteristicOptions.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const ReadCharacteristicOptions();
-    return ReadCharacteristicOptions(
-      timeout: map['timeout'] as int? ?? _defaults.timeout,
-    );
-  }
+  factory ReadCharacteristicOptions.fromJson(Map<String, dynamic> json) =>
+      _$ReadCharacteristicOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$ReadCharacteristicOptionsToJson(this);
 }
 
+@JsonSerializable()
 class WriteCharacteristicOptions {
   final bool withoutResponse;
   final bool allowLongWrite;
@@ -217,69 +247,22 @@ class WriteCharacteristicOptions {
     this.timeout = 15,
   });
 
-  static const _defaults = WriteCharacteristicOptions();
-
-  factory WriteCharacteristicOptions.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const WriteCharacteristicOptions();
-    return WriteCharacteristicOptions(
-      withoutResponse: map['withoutResponse'] as bool? ?? _defaults.withoutResponse,
-      allowLongWrite: map['allowLongWrite'] as bool? ?? _defaults.allowLongWrite,
-      timeout: map['timeout'] as int? ?? _defaults.timeout,
-    );
-  }
+  factory WriteCharacteristicOptions.fromJson(Map<String, dynamic> json) =>
+      _$WriteCharacteristicOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$WriteCharacteristicOptionsToJson(this);
 }
 
+@JsonSerializable()
 class NotifyCharacteristicOptions {
-    final int timeout;
-    final bool forceIndications;
+  final int timeout;
+  final bool forceIndications;
 
-    const NotifyCharacteristicOptions({
-        this.timeout = 15,
-        this.forceIndications = false,
-    });
+  const NotifyCharacteristicOptions({
+    this.timeout = 15,
+    this.forceIndications = false,
+  });
 
-    static const _defaults = NotifyCharacteristicOptions();
-
-    factory NotifyCharacteristicOptions.fromMap(Map<String, dynamic>? map) {
-        if (map == null) return const NotifyCharacteristicOptions();
-        return NotifyCharacteristicOptions(
-            timeout: map['timeout'] as int? ?? _defaults.timeout,
-            forceIndications: map['forceIndications'] as bool? ?? _defaults.forceIndications,
-        );
-    }
-}
-
-
-// ----------------------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------------------
-
-MsdFilter _parseMsd(dynamic item) {
-    if (item is! Map) return MsdFilter(0, data: []);
-    return MsdFilter(
-      item['manufacturerId'] as int,
-      data: readList<int>(item['data']),
-    );
-}
-
-ServiceDataFilter _parseServiceData(dynamic item) {
-    if (item is! Map) return ServiceDataFilter(Guid.empty(), data: []);
-    return ServiceDataFilter(
-      Guid(item['serviceUuid'] as String),
-      data: readList<int>(item['data']),
-    );
-}
-
-AndroidScanMode? _parseAndroidScanMode(dynamic value) {
-    if (value is! int) return null;
-    const modes = [
-      AndroidScanMode.opportunistic,
-      AndroidScanMode.lowPower,
-      AndroidScanMode.balanced,
-      AndroidScanMode.lowLatency,
-    ];
-    for (var m in modes) {
-      if (m.value == value) return m;
-    }
-    return null;
+  factory NotifyCharacteristicOptions.fromJson(Map<String, dynamic> json) =>
+      _$NotifyCharacteristicOptionsFromJson(json);
+  Map<String, dynamic> toJson() => _$NotifyCharacteristicOptionsToJson(this);
 }

@@ -11,8 +11,8 @@ import 'package:signals/signals.dart';
 /// - Call [dispose] to cancel the subscription.
 abstract class StreamSignalContext<T> {
   StreamSignalContext(this.stream, T initialValue)
-      : valueSignal = signal<T>(initialValue),
-        errorSignal = signal<AsyncError?>(null);
+    : valueSignal = signal<T>(initialValue),
+      errorSignal = signal<AsyncError?>(null);
 
   /// The source stream to listen to.
   final Stream<T> stream;
@@ -26,20 +26,21 @@ abstract class StreamSignalContext<T> {
   final Signal<AsyncError?> errorSignal;
 
   StreamSubscription<T>? _subscription;
+  bool _disposed = false;
 
   /// Current active subscription (if started).
   StreamSubscription<T>? get subscription => _subscription;
 
   bool get isListening => _subscription != null;
 
+  /// Whether [dispose] has been called (subscription cancelled).
+  bool get isDisposed => _disposed;
+
   /// Start listening (no-op if already started).
   void start() {
     if (_subscription != null) return;
 
-    _subscription = stream.listen(
-      _handleValue,
-      onError: _handleError,
-    );
+    _subscription = stream.listen(_handleValue, onError: _handleError);
   }
 
   void _handleValue(T value) {
@@ -61,6 +62,8 @@ abstract class StreamSignalContext<T> {
 
   /// Cancel the subscription.
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
     final subscription = _subscription;
     _subscription = null;
     await subscription?.cancel();

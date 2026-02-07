@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_use/flutter_use.dart';
 import 'package:go_router/go_router.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webf/launcher.dart' show WebFControllerManager;
 import '../hooks/use_route_focus.dart';
-import '../../services/app_settings_service.dart';
-import '../../services/url_history_service.dart';
+import '../../store/app_settings.dart';
+import '../../store/url_history.dart';
 import '../../utils/app_logger.dart';
 import 'widgets/history_list.dart';
 import '../webf/webf_inspector_overlay.dart';
-import 'widgets/settings.dart';
+import 'widgets/settings_dialog.dart';
 import 'widgets/launcher_header.dart';
 import 'widgets/launcher_inputs.dart';
 import 'widgets/launch_button.dart';
 import 'widgets/use_cases_card.dart';
 import '../router/config.dart'
-  show
-      kScannerPath,
-      kNativeDiagnosticsPath,
-      kAppRoutePath,
-      buildWebFRouteUrl,
-      normalizeWebfInnerPath;
+    show
+        kScannerPath,
+        kNativeDiagnosticsPath,
+        kAppRoutePath,
+        buildWebFRouteUrl,
+        normalizeWebfInnerPath;
 
 class LauncherScreen extends HookWidget {
   const LauncherScreen({super.key});
@@ -33,10 +35,21 @@ class LauncherScreen extends HookWidget {
     final errorMessage = useState<String?>(null);
     final cacheControllers = cacheControllersSignal.watch(context);
     final urls = urlHistorySignal.watch(context);
-    final isUrlHighlighted = useState(false);
-    final historyListEditMode = useState(false);
+    final isUrlHighlighted = useBoolean(false);
+    final historyListEditMode = useSignal(false);
+    final requestExitEditModeRef = useRef<void Function()?>(null);
     final historyListKey = useMemoized(() => GlobalKey());
     final urlInputKey = useMemoized(() => GlobalKey());
+
+    // Auto-clear the highlight after a short delay, with timer lifecycle managed
+    // by hooks (prevents delayed callbacks firing after unmount).
+    useDebounce(
+      () {
+        if (isUrlHighlighted.value) isUrlHighlighted.toggle(false);
+      },
+      const Duration(milliseconds: 800),
+      [isUrlHighlighted.value],
+    );
 
     useEffect(() {
       if (urls.isEmpty) return null;
@@ -55,7 +68,9 @@ class LauncherScreen extends HookWidget {
     final isRouteFocused = useRouteFocus();
     useEffect(() {
       if (isRouteFocused.value && !cacheControllers) {
-        appLogger.d('[LauncherScreen] Cache disabled: disposing all WebF controllers');
+        appLogger.d(
+          '[LauncherScreen] Cache disabled: disposing all WebF controllers',
+        );
         WebFControllerManager.instance.disposeAll();
       }
       return null;
@@ -68,7 +83,7 @@ class LauncherScreen extends HookWidget {
       // The user sees the full URL in the history and inputs.
       final path = normalizeWebfInnerPath(customPath ?? '/') ?? '/';
 
-      UrlHistoryOperations.addEntry(normalizedUrl, path);
+      addUrlHistoryEntry(normalizedUrl, path);
       errorMessage.value = null;
 
       // Always use hybrid routing mode (shared controller)
@@ -84,10 +99,7 @@ class LauncherScreen extends HookWidget {
     }
 
     void highlightUrlInput() {
-      isUrlHighlighted.value = true;
-      Future.delayed(const Duration(milliseconds: 800), () {
-        isUrlHighlighted.value = false;
-      });
+      isUrlHighlighted.toggle(true);
 
       // Scroll to input field and center it
       Future.delayed(const Duration(milliseconds: 50), () {
@@ -132,12 +144,18 @@ class LauncherScreen extends HookWidget {
       }
     }
 
-    String maybeStripInnerRouteFromBundleUrl(Uri bundleUri, String innerLocation) {
-      if (innerLocation.isEmpty || innerLocation == '/') return bundleUri.toString();
+    String maybeStripInnerRouteFromBundleUrl(
+      Uri bundleUri,
+      String innerLocation,
+    ) {
+      if (innerLocation.isEmpty || innerLocation == '/')
+        return bundleUri.toString();
 
       Uri inner;
       try {
-        inner = Uri.parse(innerLocation.startsWith('/') ? innerLocation : '/$innerLocation');
+        inner = Uri.parse(
+          innerLocation.startsWith('/') ? innerLocation : '/$innerLocation',
+        );
       } catch (_) {
         return bundleUri.toString();
       }
@@ -148,7 +166,10 @@ class LauncherScreen extends HookWidget {
       final bundlePath = bundleUri.path;
       if (!bundlePath.endsWith(innerPath)) return bundleUri.toString();
 
-      var newPath = bundlePath.substring(0, bundlePath.length - innerPath.length);
+      var newPath = bundlePath.substring(
+        0,
+        bundlePath.length - innerPath.length,
+      );
       if (newPath.isEmpty) newPath = '/';
 
       // If the bundle URL query exactly matches the inner route query, it's
@@ -199,10 +220,9 @@ class LauncherScreen extends HookWidget {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        // If in edit mode, exit edit mode instead of app
+        // If in edit mode, ask child to exit edit mode instead of app
         if (historyListEditMode.value) {
-          // Signal to exit edit mode
-          historyListEditMode.value = false;
+          requestExitEditModeRef.value?.call();
           return;
         }
 
@@ -239,7 +259,11 @@ class LauncherScreen extends HookWidget {
               onPressed: () => context.push(kNativeDiagnosticsPath),
               icon: const Icon(Icons.monitor_heart_outlined),
             ),
-            const LauncherSettingsButton(),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () => showSettingsDialog(context),
+            ),
           ],
         ),
         body: GestureDetector(
@@ -288,7 +312,9 @@ class LauncherScreen extends HookWidget {
                             },
                             onLongPress: (url, path) {},
                             onEditModeChanged: handleEditModeChanged,
-                            editModeNotifier: historyListEditMode,
+                            onRegisterExitEditMode: (requestExit) {
+                              requestExitEditModeRef.value = requestExit;
+                            },
                           ),
                       ],
                     ),

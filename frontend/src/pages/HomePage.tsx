@@ -60,6 +60,12 @@ function HomePage() {
             >
               🔍 Bluetooth Scanner
             </button>
+             <button
+              className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:from-amber-400 hover:to-orange-400 active:scale-[0.98] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70"
+              onClick={() => navigate('/permission')}
+            >
+              🔐 Permission Demo
+            </button>
           </div>
         </div>
 

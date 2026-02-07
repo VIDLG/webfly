@@ -57,6 +57,7 @@ app.*.map.json
 
 # Generated assets
 assets/gen/
+*.g.dart
 
 # Python / uv
 .venv/

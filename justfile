@@ -69,6 +69,11 @@ build-apk *FLAGS:
 install-apk:
     DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found." 1>&2; exit 1; fi; flutter run -d "$DEVICE_ID" --release --use-application-binary=build/app/outputs/flutter-apk/app-release.apk
 
+# Run Dart code generation (e.g. json_serializable for lib/native/ble/dto.dart)
+# Usage: just codegen [--watch]
+codegen *ARGS:
+    dart run build_runner build --delete-conflicting-outputs {{ARGS}}
+
 # Analyze Dart code for syntax and semantic issues
 analyze PATH='lib test' *ARGS:
     flutter analyze {{PATH}} {{ARGS}}
@@ -92,12 +97,15 @@ tag-version *FLAGS:
 # CI / Automation
 # -----------------------------
 
-# Run CI pipeline (Android): Install deps -> Gen Config -> Analyze -> Test -> Build APK
-# Usage: just ci
+# Run CI pipeline (Android): Deps -> Gen -> Codegen -> Analyze -> Test -> Build APK
+# Usage: just ci  (self-contained: runs pub get first)
 ci:
+    just update
     just use-cases-refresh
     just gen-platforms
     just gen-assets
+    just codegen
+    just format-check
     just analyze
     just test
     just build-apk
@@ -112,7 +120,11 @@ test *ARGS:
 
 # Format Dart code
 format *ARGS:
-    flutter format {{ARGS}} lib test
+    dart format {{ARGS}} lib test
+
+# Check that lib/ and test/ are formatted (CI gate)
+format-check:
+    dart format --set-exit-if-changed lib test
 
 # Clean build artifacts
 clean:

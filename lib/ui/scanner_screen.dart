@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_use/flutter_use.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart'
     show BarcodeCapture, MobileScanner, MobileScannerController;
@@ -11,9 +12,7 @@ class ScannerScreen extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = useMemoized(() => MobileScannerController());
-    useEffect(() {
-      return controller.dispose;
-    }, [controller]);
+    useUnmount(controller.dispose);
 
     void handleBarcode(BarcodeCapture capture) {
       final rawValue = capture.barcodes.isNotEmpty

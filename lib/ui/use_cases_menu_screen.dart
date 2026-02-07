@@ -25,20 +25,22 @@ class _UseCasesMenuScreenState extends State<UseCasesMenuScreen> {
     try {
       // In newer Flutter versions, AssetManifest.json is not directly loadable via rootBundle in debug mode sometimes,
       // or the path/format might vary. Using AssetManifest.loadFromAssetBundle is the modern, robust way.
-      final AssetManifest assetManifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final AssetManifest assetManifest =
+          await AssetManifest.loadFromAssetBundle(rootBundle);
       final List<String> assets = assetManifest.listAssets();
-      
+
       final useCases = <String>{};
-      
+
       for (final key in assets) {
-        if (key.startsWith('assets/use_cases/') && key.endsWith('index.html')) {
+        if (key.startsWith('assets/gen/use_cases/') &&
+            key.endsWith('index.html')) {
           // Extract the folder name
-          // e.g. assets/use_cases/react/index.html -> react
+          // e.g. assets/gen/use_cases/react/index.html -> react
           final parts = key.split('/');
-          if (parts.length >= 4) {
-            final folderName = parts[2];
-             // Filter out root index.html if it exists at use_cases/index.html
-             // (which would split to assets, use_cases, index.html -> length 3)
+          if (parts.length >= 5) {
+            final folderName = parts[3];
+            // Filter out root index.html if it exists at gen/use_cases/index.html
+            // (which would split to assets, gen, use_cases, index.html -> length 4)
             useCases.add(folderName);
           }
         }
@@ -68,12 +70,7 @@ class _UseCasesMenuScreenState extends State<UseCasesMenuScreen> {
     final url = '$serverUrl/$framework/index.html';
     // Navigate to WebF page
     context.push(
-      Uri(
-        path: kWebfRoutePath,
-        queryParameters: {
-          kUrlParam: url,
-        },
-      ).toString(),
+      Uri(path: kWebfRoutePath, queryParameters: {kUrlParam: url}).toString(),
     );
   }
 
@@ -90,27 +87,27 @@ class _UseCasesMenuScreenState extends State<UseCasesMenuScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _useCases.isEmpty
-              ? const Center(child: Text('No use cases found in assets.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: _useCases.length,
-                  itemBuilder: (context, index) {
-                    final useCase = _useCases[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12.0),
-                      child: ListTile(
-                        leading: _getIconForFramework(useCase),
-                        title: Text(
-                          useCase.toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text('Launch $useCase demo application'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _launchUseCase(useCase),
-                      ),
-                    );
-                  },
-                ),
+          ? const Center(child: Text('No use cases found in assets.'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: _useCases.length,
+              itemBuilder: (context, index) {
+                final useCase = _useCases[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12.0),
+                  child: ListTile(
+                    leading: _getIconForFramework(useCase),
+                    title: Text(
+                      useCase.toUpperCase(),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text('Launch $useCase demo application'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _launchUseCase(useCase),
+                  ),
+                );
+              },
+            ),
     );
   }
 
@@ -119,7 +116,10 @@ class _UseCasesMenuScreenState extends State<UseCasesMenuScreen> {
       case 'react':
         return const Icon(Icons.code, color: Colors.blue); // React blue-ish
       case 'vue':
-        return const Icon(Icons.data_object, color: Colors.green); // Vue green-ish
+        return const Icon(
+          Icons.data_object,
+          color: Colors.green,
+        ); // Vue green-ish
       default:
         return const Icon(Icons.web);
     }

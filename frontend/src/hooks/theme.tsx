@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
-import { invokeWebFModule } from '../utils/webf'
+import { getTheme as getAppTheme, setTheme as setAppTheme } from '@native/webf/app_settings'
+import { isWebfAvailable, isWebfError } from '@native/webf/bridge'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
@@ -19,9 +20,7 @@ export interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-// With Tailwind `darkMode: 'media'`, the actual styling is controlled by
-// `prefers-color-scheme` (in WebF, Flutter can override it via darkModeOverride).
-// We keep only a data attribute for debugging.
+// 官方要求 media 模式，Tailwind 由 prefers-color-scheme 驱动。仅设 data-theme 便于调试。
 function applyThemeHint(theme: ResolvedTheme) {
   document.documentElement.dataset.theme = theme
 }
@@ -49,32 +48,41 @@ function usePrefersColorScheme(): ColorScheme {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    const syncFromMedia = () => {
+      setColorScheme(
+        window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      )
+    }
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    
     const handleChange = (e: MediaQueryListEvent) => {
       setColorScheme(e.matches ? 'dark' : 'light')
     }
 
-    // Use modern addEventListener API if available
+    let legacyHandler: ((mql: MediaQueryList | MediaQueryListEvent) => void) | null = null
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleChange)
-      return () => {
-        mediaQuery.removeEventListener('change', handleChange)
-      }
-    } 
-    // Fallback to legacy addListener API 
-    // (WebF might implement this or older browsers)
-    else if (mediaQuery.addListener) {
-      // safe cast or wrapper to handle potential type mismatch if strict
-      const legacyHandler = (mql: MediaQueryList | MediaQueryListEvent) => {
-         setColorScheme(mql.matches ? 'dark' : 'light')
+    } else if (mediaQuery.addListener) {
+      legacyHandler = (mql: MediaQueryList | MediaQueryListEvent) => {
+        setColorScheme(mql.matches ? 'dark' : 'light')
       }
       mediaQuery.addListener(legacyHandler)
-      return () => {
+    }
+
+    // WebF: when Flutter sets darkModeOverride, WebF updates media query and
+    // dispatches 'colorschemchange'. Listen on both window and document (WebF may use either).
+    const onColorSchemeChange = () => syncFromMedia()
+    window.addEventListener('colorschemchange', onColorSchemeChange)
+    document.addEventListener('colorschemchange', onColorSchemeChange)
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange)
+      } else if (mediaQuery.removeListener && legacyHandler) {
         mediaQuery.removeListener(legacyHandler)
       }
-    } else {
-      console.warn('MediaQueryList.addEventListener and addListener are not supported')
+      window.removeEventListener('colorschemchange', onColorSchemeChange)
+      document.removeEventListener('colorschemchange', onColorSchemeChange)
     }
   }, [])
 
@@ -97,23 +105,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
 
       // Wait up to ~2s for WebF bridge and module invocation to be available.
       for (let attempt = 0; attempt < 40 && !cancelled; attempt += 1) {
-        const webf = (window as Window & { webf?: unknown }).webf as unknown as {
-          invokeModule?: unknown
-          invokeModuleAsync?: unknown
-        } | undefined
-
-        const bridgeReady = Boolean(webf?.invokeModuleAsync || webf?.invokeModule)
-        if (!bridgeReady) {
+        if (!isWebfAvailable()) {
           await new Promise<void>((resolve) => setTimeout(resolve, 50))
           continue
         }
 
         try {
-          const theme = await invokeWebFModule('AppSettings', 'getTheme')
-          const normalized = normalizeThemePreference(theme)
-          setThemePreferenceState(normalized)
-          initializedRef.current = true
-          return
+          const res = await getAppTheme()
+          if (isWebfError(res)) {
+            lastError = res
+            await new Promise<void>((resolve) => setTimeout(resolve, 50))
+            continue
+          }
+          if (res.result != null) {
+            const normalized = normalizeThemePreference(res.result)
+            setThemePreferenceState(normalized)
+            initializedRef.current = true
+            return
+          }
         } catch (e) {
           lastError = e
           await new Promise<void>((resolve) => setTimeout(resolve, 50))
@@ -132,35 +141,69 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
     }
   }, [])
 
-  // Use prefers-color-scheme hook to detect system theme
+  // 使用系统事件 colorschemchange（WebF 文档）：收到后从 Flutter 拉取 theme 偏好以保持同步。
+  // 同时在 window 和 document 上监听；visibilitychange 时再同步一次。
+  // 兜底：若事件未派发（如 evaluateJavaScripts 未执行），用短间隔轮询在可见时与 Flutter 同步。
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const syncPreferenceFromFlutter = () => {
+      getAppTheme().then((res) => {
+        if (res.result != null) {
+          setThemePreferenceState(normalizeThemePreference(res.result))
+        }
+      }).catch(() => {})
+    }
+
+    const onColorSchemeChange = () => syncPreferenceFromFlutter()
+    window.addEventListener('colorschemchange', onColorSchemeChange)
+    document.addEventListener('colorschemchange', onColorSchemeChange)
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') syncPreferenceFromFlutter()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    // Fallback: poll Flutter theme every 2s while visible so theme syncs even if event never fires
+    const pollInterval = 2000
+    const pollId = setInterval(() => {
+      if (document.visibilityState === 'visible') syncPreferenceFromFlutter()
+    }, pollInterval)
+
+    return () => {
+      window.removeEventListener('colorschemchange', onColorSchemeChange)
+      document.removeEventListener('colorschemchange', onColorSchemeChange)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      clearInterval(pollId)
+    }
+  }, [])
+
+  // system 时用 prefers-color-scheme；light/dark 时用用户偏好。
+  // WebF 文档：设置 darkModeOverride 后会更新 media 并派发 colorschemchange，Tailwind dark: 自动生效。
   const prefersColorScheme = usePrefersColorScheme()
+  const resolvedTheme: ResolvedTheme =
+    themePreference === 'system'
+      ? (prefersColorScheme === 'dark' ? 'dark' : 'light')
+      : themePreference
 
-  // With darkMode=media, CSS follows prefers-color-scheme.
-  const resolvedTheme: ResolvedTheme = prefersColorScheme === 'dark' ? 'dark' : 'light'
-
-  // Apply resolved theme
   useEffect(() => {
     applyThemeHint(resolvedTheme)
   }, [resolvedTheme])
 
-  // Sync theme preference to Flutter AppSettings when it changes
-  const setThemePreference = useCallback(async (preference: ThemePreference) => {
+  // 同步到 Flutter；Flutter 设置 darkModeOverride 后 WebF 更新 media + colorschemchange，无需 reload
+  const setThemePreference = useCallback(async (preference: ThemePreference): Promise<void> => {
     const normalized = normalizeThemePreference(preference)
     setThemePreferenceState(normalized)
-    
-    // Notify Flutter about theme change using WebF Native Module
-    // Native Module is the recommended way for JavaScript → Flutter communication
     try {
-      const ok = await invokeWebFModule('AppSettings', 'setTheme', normalized)
-      if (ok !== true) {
-        // Dart side is the source of truth. If it rejects, re-sync from Dart.
-        const theme = await invokeWebFModule('AppSettings', 'getTheme')
-        setThemePreferenceState(normalizeThemePreference(theme))
-        return
+      const res = await setAppTheme(normalized)
+      if (isWebfError(res) || res.result !== true) {
+        const themeRes = await getAppTheme()
+        if (themeRes.result != null) setThemePreferenceState(normalizeThemePreference(themeRes.result))
       }
-
     } catch (e) {
       console.warn('[ThemeContext] Failed to sync theme to Flutter:', e)
+      const themeRes = await getAppTheme()
+      if (themeRes.result != null) setThemePreferenceState(normalizeThemePreference(themeRes.result))
     }
   }, [])
 
@@ -183,10 +226,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
   )
 }
 
-export function useTheme() {
+/** Fallback when context is missing (e.g. during Vite HMR when theme.tsx is replaced and Provider identity changes). */
+const defaultThemeContext: ThemeContextType = {
+  theme: 'light',
+  themePreference: 'system',
+  setThemePreference: async () => {},
+  toggleTheme: async () => {},
+}
+
+export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext)
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider')
+    return defaultThemeContext
   }
   return context
 }

@@ -4,16 +4,17 @@ import 'package:signals_flutter/signals_flutter.dart';
 import 'package:webf/launcher.dart'
     show WebFControllerManager, WebFControllerManagerConfig;
 import 'package:webf/webf.dart' show WebF;
-import 'package:webf_cupertino_ui/webf_cupertino_ui.dart' show installWebFCupertinoUI;
-import 'native/ble/webf.dart' show BleWebfModule;
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart'
+    show installWebFCupertinoUI;
+import 'webf/webf.dart'
+    show AppSettingsModule, BleWebfModule, PermissionHandlerWebfModule;
 import 'package:webf_share/webf_share.dart' show ShareModule;
 import 'package:webf_sqflite/webf_sqflite.dart' show SQFliteModule;
 import 'package:permission_handler/permission_handler.dart';
 import 'ui/router/app_router.dart' show kGoRouter;
 import 'services/asset_http_server.dart';
-import 'services/app_settings_service.dart'
-    show initializeAppSettings, themeModeSignal, AppSettingsModule;
-import 'services/url_history_service.dart' show initializeUrlHistory;
+import 'store/app_settings.dart';
+import 'store/url_history.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,7 @@ void main() async {
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
   WebF.defineModule((context) => AppSettingsModule(context));
+  WebF.defineModule((context) => PermissionHandlerWebfModule(context));
 
   // Request Bluetooth permissions at startup
   if (await Permission.bluetoothScan.isDenied) {
@@ -62,21 +64,13 @@ void main() async {
   // Catcher2 will call runApp internally
   Catcher2(
     rootWidget: const MyApp(),
-    debugConfig: Catcher2Options(
-      DialogReportMode(),
-      [
-        ConsoleHandler(),
-      ],
-    ),
-    releaseConfig: Catcher2Options(
-      SilentReportMode(),
-      [
-        ConsoleHandler(),
-        // Add SentryHandler, HttpHandler, etc. as needed
-        // SentryHandler(sentryClient),
-        // HttpHandler(HttpRequestType.post, Uri.parse('https://your-error-server.com/api/errors')),
-      ],
-    ),
+    debugConfig: Catcher2Options(DialogReportMode(), [ConsoleHandler()]),
+    releaseConfig: Catcher2Options(SilentReportMode(), [
+      ConsoleHandler(),
+      // Add SentryHandler, HttpHandler, etc. as needed
+      // SentryHandler(sentryClient),
+      // HttpHandler(HttpRequestType.post, Uri.parse('https://your-error-server.com/api/errors')),
+    ]),
   );
 }
 
@@ -114,7 +108,7 @@ class MyApp extends StatelessWidget {
       } catch (e, st) {
         debugPrint('[MyApp] root build failed: $e');
         debugPrint('$st');
-        
+
         // 手动上报给 Catcher2
         Catcher2.reportCheckedError(e, st);
 

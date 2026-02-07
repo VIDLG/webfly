@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'webf_view.dart';
 import 'webf_inspector_overlay.dart';
 
-
 /// A complete WebF page with Scaffold and AppBar.
 ///
 /// This is a convenience wrapper around WebFView that provides a standard
@@ -14,7 +13,6 @@ class WebFScreen extends StatelessWidget {
     required this.controllerName,
     this.routePath = '/',
     this.title,
-    this.cacheController,
     this.loadingBuilder,
     this.errorBuilder,
   });
@@ -23,7 +21,6 @@ class WebFScreen extends StatelessWidget {
   final String controllerName;
   final String routePath;
   final String? title;
-  final bool? cacheController;
 
   /// Optional custom loading widget builder
   final Widget Function(BuildContext)? loadingBuilder;
@@ -45,7 +42,6 @@ class WebFScreen extends StatelessWidget {
               url: url,
               controllerName: controllerName,
               routePath: routePath,
-              cacheController: cacheController,
               loadingBuilder: loadingBuilder,
               errorBuilder: errorBuilder,
             ),

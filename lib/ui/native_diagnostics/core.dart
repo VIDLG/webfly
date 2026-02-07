@@ -1,7 +1,6 @@
 // Core infrastructure for native tests (registry, logging, models)
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 import '../router/config.dart';
 import '../../utils/app_logger.dart';
@@ -51,6 +50,19 @@ class NativeTestRegistry {
 
 enum TestLogLevel { trace, debug, info, warning, error }
 
+extension TestLogLevelX on TestLogLevel {
+  Color? color(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return switch (this) {
+      TestLogLevel.trace => colors.onSurfaceVariant,
+      TestLogLevel.debug => colors.primary,
+      TestLogLevel.info => colors.secondary,
+      TestLogLevel.warning => colors.tertiary,
+      TestLogLevel.error => colors.error,
+    };
+  }
+}
+
 @immutable
 class TestLogEntry {
   const TestLogEntry({
@@ -66,27 +78,25 @@ class TestLogEntry {
   final String message;
 }
 
-class TestLogBuffer extends ChangeNotifier {
+class TestLogBuffer {
   TestLogBuffer._();
 
   static final TestLogBuffer instance = TestLogBuffer._();
 
   static const int _capacity = 500;
-  final Queue<TestLogEntry> _entries = ListQueue<TestLogEntry>(_capacity);
+  final _entries = listSignal<TestLogEntry>([]);
 
-  List<TestLogEntry> get entries => List<TestLogEntry>.unmodifiable(_entries);
+  ListSignal<TestLogEntry> get entries => _entries;
 
   void clear() {
     _entries.clear();
-    notifyListeners();
   }
 
   void add(TestLogEntry entry) {
     if (_entries.length >= _capacity) {
-      _entries.removeFirst();
+      _entries.removeAt(0);
     }
-    _entries.addLast(entry);
-    notifyListeners();
+    _entries.add(entry);
   }
 }
 

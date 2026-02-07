@@ -1,89 +1,110 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:signals_flutter/signals_flutter.dart';
+import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webf/launcher.dart' show WebFController, WebFControllerManager;
 import 'package:webf/webf.dart' show WebFBundle;
 import 'package:webf/widget.dart' show WebF, WebFRouterView;
 import '../router/app_router.dart' show kGoRouterDelegate, kWebfRouteObserver;
-import '../../services/app_settings_service.dart' show cacheControllersSignal, themeModeSignal;
+import '../../store/app_settings.dart';
 import '../../utils/app_logger.dart';
-import '../../config.dart' show
-    kDefaultControllerLoadingTimeout,
-    kDefaultHybridRouteResolutionTimeout,
-    kDefaultHybridRoutePollInterval;
+import '../../config.dart'
+    show
+        kDefaultControllerLoadingTimeout,
+        kDefaultHybridRouteResolutionTimeout,
+        kDefaultHybridRoutePollInterval;
 import 'package:anyhow/anyhow.dart';
-import '../../errors.dart' show
-    extractAppError,
-    routeResolutionError,
-    TimeoutError,
-    webfControllerError;
+import '../../errors.dart' show routeResolutionError, webfControllerError;
 import '../../utils/network.dart' show extractPathOnly;
-import 'webf_theme_sync.dart' show syncThemeToWebF;
 import '../widgets/webfly_loading.dart';
 
-bool _canResolveHybridRoute(WebFController controller, String routePath) {
+void _syncThemeToWebF(WebFController controller, ThemeMode themeMode) {
+  // WebF automatically syncs with system theme when themeMode is ThemeMode.system.
+  // We only need to set darkModeOverride when user explicitly chooses light or dark.
+  switch (themeMode) {
+    case ThemeMode.light:
+      controller.darkModeOverride = false;
+      break;
+    case ThemeMode.dark:
+      controller.darkModeOverride = true;
+      break;
+    case ThemeMode.system:
+      // Clear override to let WebF automatically sync with system theme.
+      controller.darkModeOverride = null;
+      break;
+  }
+  // Ensure frontend receives theme change: WebF may not always dispatch
+  // 'colorschemchange', so we dispatch it from Flutter after setting darkModeOverride.
   try {
-    // WebF router only matches the path component, not query string or fragment
-    final pathOnly = extractPathOnly(routePath);
+    unawaited(
+      controller.view
+          .evaluateJavaScripts(
+            "try { var e = new Event('colorschemchange'); window.dispatchEvent(e); document.dispatchEvent(e); } catch (err) {}",
+          )
+          .catchError(
+            (e, st) => appLogger.w(
+              '[WebFView] colorschemchange dispatch failed: $e\n$st',
+            ),
+          ),
+    );
+  } catch (e, st) {
+    appLogger.w('[WebFView] evaluateJavaScripts for theme failed: $e\n$st');
+  }
+}
+
+bool _canResolveHybridRoute(
+  WebFController controller, {
+  required String fullPath,
+  required String pathOnly,
+}) {
+  try {
     final dynamic dynamicController = controller;
     final dynamic view = dynamicController.view;
     final dynamic result = view.getHybridRouterView(pathOnly);
-    final canResolve = result != null;
-    if (!canResolve && routePath != pathOnly) {
-      appLogger.d(
-        '[WebFView] Hybrid route check: fullPath=$routePath, pathOnly=$pathOnly, canResolve=$canResolve',
-      );
-    }
-    return canResolve;
+    return result != null;
   } catch (e) {
     appLogger.d('[WebFView] Hybrid route check failed: $e');
     return false;
   }
 }
 
-/// Injects a WebF bundle and returns a Result type
+/// Injects a WebF bundle and returns a Result type.
+///
+/// Theme sync is not done here; the caller should set [WebFController.onLoad]
+/// (and sync when [ThemeMode] changes) so theme is applied after load.
 Future<Result<WebFController>> injectWebfBundleAsync({
   required String controllerName,
   required String url,
   void Function(String)? onJSRuntimeError,
   Duration? timeout,
 }) async {
-  appLogger.d('[WebFView] Injecting: controller=$controllerName, url=$url');
-
   try {
-    WebFController? controller = await WebFControllerManager.instance.addWithPrerendering(
-      name: controllerName,
-      createController: () => WebFController(
-        routeObserver: kWebfRouteObserver,
-        onJSError: (String errorMessage) {
-          // Log full error stack
-          appLogger.e(
-            '❌ JavaScript Error in: $controllerName\n$errorMessage',
-            error: errorMessage,
-          );
-
-          // Update UI state to show the error
-          onJSRuntimeError?.call(errorMessage);
-        },
-      ),
-      bundle: WebFBundle.fromUrl(url),
-      timeout: timeout,
-      setup: (controller) {
-        controller.hybridHistory.delegate = kGoRouterDelegate;
-        
-        // Sync initial Flutter theme state to WebF using darkModeOverride
-        // Following WebF official recommendation
-        syncThemeToWebF(controller, themeModeSignal.value);
-        
-        appLogger.d('[WebFView] Controller setup complete');
-      },
-    );
+    WebFController? controller = await WebFControllerManager.instance
+        .addWithPrerendering(
+          name: controllerName,
+          createController: () => WebFController(
+            routeObserver: kWebfRouteObserver,
+            onJSError: (String errorMessage) {
+              appLogger.e(
+                '❌ JavaScript Error in: $controllerName\n$errorMessage',
+                error: errorMessage,
+              );
+              onJSRuntimeError?.call(errorMessage);
+            },
+          ),
+          bundle: WebFBundle.fromUrl(url),
+          timeout: timeout,
+          setup: (controller) {
+            controller.hybridHistory.delegate = kGoRouterDelegate;
+          },
+        );
 
     // WebFControllerManager may return null due to concurrency rules (another request won).
     // In that case, fetch the winner controller.
-    controller ??= await WebFControllerManager.instance.getController(controllerName);
+    controller ??= await WebFControllerManager.instance.getController(
+      controllerName,
+    );
 
     if (controller == null) {
       return webfControllerError<WebFController>(
@@ -93,11 +114,10 @@ Future<Result<WebFController>> injectWebfBundleAsync({
       );
     }
 
-    appLogger.d('[WebFView] Bundle injection complete');
     return Ok(controller);
   } catch (e, stackTrace) {
     return webfControllerError<WebFController>(
-      error: e,
+      cause: e,
       controllerName: controllerName,
       url: url,
       stackTrace: stackTrace,
@@ -201,7 +221,6 @@ class WebFView extends HookWidget {
     required this.url,
     required this.controllerName,
     this.routePath = '/',
-    this.cacheController,
     this.loadingBuilder,
     this.errorBuilder,
     this.controllerLoadingTimeout,
@@ -212,13 +231,6 @@ class WebFView extends HookWidget {
   final String url;
   final String controllerName;
   final String routePath;
-
-  /// Whether to cache the underlying WebF controller.
-  ///
-  /// - `true`: keep controller alive across navigation.
-  /// - `false`: dispose controller when this view is unmounted.
-  /// - `null` (default): follow global `cacheControllersSignal`.
-  final bool? cacheController;
 
   /// Optional custom loading widget builder
   final Widget Function(BuildContext)? loadingBuilder;
@@ -240,118 +252,118 @@ class WebFView extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initError = useState<Object?>(null);
-    final jsRuntimeError = useState<String?>(null); // JavaScript runtime errors
-    final controllerState = useState<WebFController?>(null);
+    final jsRuntimeError = useSignal<String?>(
+      null,
+    ); // JavaScript runtime errors
     final didMountRootWebF = useRef(false);
-    final hybridRouteReady = useState(false);
-    final timeoutError = useState<String?>(null);
-    final cacheControllers = cacheController ?? cacheControllersSignal.watch(context);
+    final hybridRouteReady = useSignal(false);
+    final hybridRouteTimeoutError = useSignal<Object?>(null);
+    final hybridRouteTimeoutGen = useRef(0);
+    final cacheControllers = useSignalValue(cacheControllersSignal);
+    final themeMode = useSignalValue(themeModeSignal);
 
-    final controller = controllerState.value;
+    final pathOnlyResult = extractPathOnly(routePath);
+    final Object? routePathParseError = pathOnlyResult.isErr()
+        ? pathOnlyResult.unwrapErr()
+        : null;
+    // Keep hook ordering stable: avoid early returns before all hooks.
+    // Use a safe placeholder value; UI will prioritize routePathParseError.
+    final String pathOnly = routePathParseError == null
+        ? pathOnlyResult.unwrap()
+        : '/';
+    final bool isRootPath = pathOnly == '/';
+
+    // Build controller via FutureSignal so loading/error/data is centralized.
+    // Using `lazy: false` ensures the injection starts even if the widget returns early.
+    final generation = useRef(0);
+    final controllerFuture = useFutureSignal<WebFController>(
+      () async {
+        final localGen = ++generation.value;
+
+        // Clear previous JS errors for the new load attempt.
+        jsRuntimeError.value = null;
+
+        // Reuse existing controller if already present.
+        final existing = WebFControllerManager.instance.getControllerSync(
+          controllerName,
+        );
+        if (existing != null && !existing.disposed) {
+          // Keep delegate wired even across rebuilds.
+          existing.hybridHistory.delegate = kGoRouterDelegate;
+          return existing;
+        }
+
+        final timeout =
+            controllerLoadingTimeout ?? kDefaultControllerLoadingTimeout;
+
+        final result = await injectWebfBundleAsync(
+          controllerName: controllerName,
+          url: url,
+          timeout: timeout,
+          onJSRuntimeError: (errorMessage) {
+            if (!context.mounted) return;
+            // Ignore stale callbacks from previous loads.
+            if (generation.value != localGen) return;
+            jsRuntimeError.value = errorMessage;
+          },
+        );
+
+        return result.match(
+          ok: (controller) => controller,
+          err: (error) {
+            // Log additional business context for debugging.
+            appLogger.d(
+              '[WebFView] Error context',
+              error:
+                  'route=$routePath, controller=$controllerName, '
+                  'url=$url, timeout=${timeout.inSeconds}s, '
+                  'cacheControllers=$cacheControllers, '
+                  'waitForHybridRoute=${routePath != '/'}',
+            );
+
+            // Preserve anyhow error chain + contexts.
+            throw error;
+          },
+        );
+      },
+      keys: [controllerName, url],
+      // If routePath is invalid, don't start controller work.
+      lazy: routePathParseError != null,
+      debugLabel: 'WebFView($controllerName)',
+    );
+
+    final controllerState = controllerFuture.value;
+    final controller = controllerState.map(
+      data: (c) => c,
+      loading: () => null,
+      error: (_, _) => null,
+    );
+    final initError = controllerState.map(
+      data: (_) => null,
+      loading: () => null,
+      error: (error, _) => error,
+    );
+
     final hasController = controller != null;
-    final shouldMountWebF = hasController &&
-      (routePath == '/' ||
-        controller.state == null ||
-        didMountRootWebF.value);
+    final shouldMountWebF =
+        hasController &&
+        (isRootPath || controller.state == null || didMountRootWebF.value);
 
     // Deep-link bootstrap: before mounting WebF with an initialRoute != '/', try to
     // wait until WebF can resolve the hybrid router view. This avoids transient
     // "Loading Error: the route path ... was not found" during router registration.
     final shouldWaitForHybridRoute =
-      shouldMountWebF && routePath != '/' && !didMountRootWebF.value;
+        shouldMountWebF && !isRootPath && !didMountRootWebF.value;
 
+    // Sync theme to WebF when themeMode or controller changes; set onLoad so
+    // theme is dispatched again when the page loads (frontend can then listen).
     useEffect(() {
-      var cancelled = false;
-      controllerState.value = null;
-      initError.value = null;
-      jsRuntimeError.value = null;
-      timeoutError.value = null;
-
-      final controllerNameForEffect = controllerName;
-
-      Future<void> run() async {
-        // Reuse existing controller if already present.
-        final existing = WebFControllerManager.instance.getControllerSync(
-          controllerNameForEffect,
-        );
-        if (existing != null && !existing.disposed) {
-          // Keep delegate wired even across rebuilds.
-          existing.hybridHistory.delegate = kGoRouterDelegate;
-          controllerState.value = existing;
-          return;
-        }
-
-        final timeout = controllerLoadingTimeout ?? kDefaultControllerLoadingTimeout;
-
-        final result = await injectWebfBundleAsync(
-          controllerName: controllerNameForEffect,
-          url: url,
-          timeout: timeout,
-          onJSRuntimeError: (errorMessage) {
-            if (!cancelled && context.mounted) {
-              jsRuntimeError.value = errorMessage;
-            }
-          },
-        );
-
-        if (cancelled) return;
-        if (!context.mounted) return;
-
-        result.match(
-          ok: (controller) {
-            controllerState.value = controller;
-          },
-          err: (error) {
-            // Extract AppError if possible for better error messages
-            // Base error is already logged in errors.dart at creation point
-            final appError = extractAppError(error);
-            final errorMessage = appError?.toString() ?? error.toString();
-            
-            // Log additional business context for debugging
-            appLogger.d(
-              '[WebFView] Error context',
-              error: 'route=$routePath, controller=$controllerNameForEffect, '
-                  'url=$url, timeout=${timeout.inSeconds}s, '
-                  'cacheControllers=$cacheControllers, '
-                  'waitForHybridRoute=$shouldWaitForHybridRoute',
-            );
-            
-            initError.value = errorMessage;
-            
-            // Check if it's a timeout error
-            if (appError is TimeoutError) {
-              timeoutError.value = errorMessage;
-            }
-          },
-        );
+      if (controller != null) {
+        _syncThemeToWebF(controller, themeMode);
+        controller.onLoad = (ctrl) => _syncThemeToWebF(ctrl, themeMode);
       }
-
-      run();
-      return () {
-        cancelled = true;
-      };
-    }, [controllerName, url]);
-
-    // Sync Flutter theme changes to WebF
-    useEffect(() {
-      if (controller == null) return null;
-
-      // Initial sync
-      syncThemeToWebF(controller, themeModeSignal.value);
-
-      // Listen to theme changes - effect automatically disposes when controller changes
-      effect(() {
-        final themeMode = themeModeSignal.value;
-        syncThemeToWebF(controller, themeMode);
-      });
-
       return null;
-    }, [controller]);
-
-    // Theme synchronization from WebF → Flutter is now handled via Native Module
-    // JavaScript calls webf.invokeModule('Theme', 'setTheme', ['light'|'dark'|'system'])
-    // No polling needed - direct method call is more efficient
+    }, [themeMode, controller]);
 
     // Disposal policy:
     // Only an instance that actually mounted a WebF widget (via WebF.fromControllerName)
@@ -372,136 +384,145 @@ class WebFView extends HookWidget {
     }, [controllerName, cacheControllers]);
 
     // Wait for hybrid router view to be resolvable before mounting WebF for deep-link.
-    // This effect is always registered to satisfy hooks ordering; it no-ops when not needed.
-    useEffect(() {
+    // Use a timer signal to drive polling without manual Timer management.
+    final routeTimeout =
+        hybridRouteResolutionTimeout ?? kDefaultHybridRouteResolutionTimeout;
+    final pollInterval =
+        hybridRoutePollInterval ?? kDefaultHybridRoutePollInterval;
+
+    final hybridPollTick =
+        useExistingSignal<AsyncState<TimerSignalEvent>, TimerSignal>(
+          timerSignal(
+            pollInterval,
+            debugLabel: 'WebFView($controllerName) HybridPoll',
+            autoDispose: true,
+          ),
+          keys: [pollInterval, controllerName],
+        );
+
+    final hybridReadyComputed = useComputed<bool>(
+      () {
+        if (!hasController) return false;
+        if (!shouldWaitForHybridRoute) return true;
+
+        // Subscribe to ticks while waiting.
+        hybridPollTick();
+
+        final ctrl = controller;
+        return _canResolveHybridRoute(
+          ctrl,
+          fullPath: routePath,
+          pathOnly: pathOnly,
+        );
+      },
+      keys: [hasController, shouldWaitForHybridRoute, controller, routePath],
+      debugLabel: 'WebFView($controllerName) HybridReady',
+    );
+
+    // Drive state + timeout based on the computed readiness.
+    useSignalEffect(() {
       if (!hasController) {
         hybridRouteReady.value = false;
-        return null;
+        hybridRouteTimeoutError.value = null;
+        return;
       }
 
       if (!shouldWaitForHybridRoute) {
         hybridRouteReady.value = true;
-        return null;
+        hybridRouteTimeoutError.value = null;
+        return;
       }
 
-      final ctrl = controller;
+      // Clear any previous timeout error for a new attempt.
+      hybridRouteTimeoutError.value = null;
 
-      hybridRouteReady.value = _canResolveHybridRoute(ctrl, routePath);
-      if (hybridRouteReady.value) {
-        return null;
+      final readyNow = hybridReadyComputed.value;
+      if (hybridRouteReady.value != readyNow) {
+        hybridRouteReady.value = readyNow;
       }
 
-      final routeTimeout = hybridRouteResolutionTimeout ?? kDefaultHybridRouteResolutionTimeout;
-      final pollInterval = hybridRoutePollInterval ?? kDefaultHybridRoutePollInterval;
+      if (readyNow) return;
 
-      // Set up timeout for hybrid route resolution
-      final timeoutTimer = Timer(routeTimeout, () {
+      final localGen = ++hybridRouteTimeoutGen.value;
+      unawaited(() async {
+        await Future<void>.delayed(routeTimeout);
         if (!context.mounted) return;
-        if (!hybridRouteReady.value) {
-          final result = routeResolutionError<void>(
-            message: 'Hybrid route resolution timeout',
-            routePath: routePath,
-            controllerName: controllerName,
-          );
-          // Error is already logged in errors.dart at creation point
-          final errorMessage = result.unwrapErr().toString();
-          
-          // Log additional business context for debugging
-          appLogger.d(
-            '[WebFView] Route timeout context',
-            error: 'route=$routePath, controller=$controllerName, '
-                'pollInterval=${pollInterval.inMilliseconds}ms, '
-                'timeout=${routeTimeout.inSeconds}s',
-          );
-          
-          timeoutError.value = errorMessage;
-        }
-      });
+        if (hybridRouteTimeoutGen.value != localGen) return;
+        if (hybridRouteReady.value) return;
 
-      final poll = Timer.periodic(pollInterval, (timer) {
-        if (!context.mounted) {
-          timer.cancel();
-          timeoutTimer.cancel();
-          return;
-        }
+        final result = routeResolutionError<void>(
+          message: 'Hybrid route resolution timeout',
+          routePath: routePath,
+          controllerName: controllerName,
+        );
+        final error = result.unwrapErr();
 
-        final ready = _canResolveHybridRoute(ctrl, routePath);
-        if (ready && !hybridRouteReady.value) {
-          hybridRouteReady.value = true;
-          timer.cancel();
-          timeoutTimer.cancel();
-        }
-      });
+        // Log additional business context for debugging
+        appLogger.d(
+          '[WebFView] Route timeout context',
+          error:
+              'route=$routePath, controller=$controllerName, '
+              'pollInterval=${pollInterval.inMilliseconds}ms, '
+              'timeout=${routeTimeout.inSeconds}s',
+        );
 
-      return () {
-        poll.cancel();
-        timeoutTimer.cancel();
-      };
-    }, [hasController, shouldWaitForHybridRoute, controller, routePath, controllerName]);
-
-    appLogger.d(
-      '[WebFView] build: controller=$controllerName, path=$routePath, url=$url',
-    );
-    // Error is already logged in errors.dart at creation point
+        // Preserve anyhow error chain + contexts for UI/debug.
+        hybridRouteTimeoutError.value = error;
+      }());
+    });
 
     // If we decided to mount root WebF, mark ownership without triggering rebuilds.
     // This is used for lifecycle ownership and to avoid branch-flips later.
-    if (shouldMountWebF && (!shouldWaitForHybridRoute || hybridRouteReady.value)) {
+    if (shouldMountWebF &&
+        (!shouldWaitForHybridRoute || hybridRouteReady.value)) {
       didMountRootWebF.value = true;
     }
 
-    final runtimeErrorMessage = jsRuntimeError.value;
-    final timeoutMsg = timeoutError.value;
-
-    if (initError.value != null) {
-      return errorBuilder?.call(context, initError.value) ??
-          _defaultErrorWidget(initError.value);
+    final routeOrInitOrTimeoutError =
+        routePathParseError ?? initError ?? hybridRouteTimeoutError.value;
+    if (routeOrInitOrTimeoutError != null) {
+      return errorBuilder?.call(context, routeOrInitOrTimeoutError) ??
+          _defaultErrorWidget(routeOrInitOrTimeoutError);
     }
 
-    if (timeoutMsg != null) {
-      return errorBuilder?.call(context, timeoutMsg) ??
-          _defaultErrorWidget(timeoutMsg);
-    }
-
-    if (runtimeErrorMessage != null) {
+    if (jsRuntimeError.value != null) {
       return _JavaScriptRuntimeErrorView(
-        message: runtimeErrorMessage,
+        message: jsRuntimeError.value!,
         onClose: () => jsRuntimeError.value = null,
       );
     }
 
-    if (controller == null) {
+    if (controller == null ||
+        (shouldWaitForHybridRoute && !hybridRouteReady.value)) {
       return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
     }
 
-    if (shouldWaitForHybridRoute && !hybridRouteReady.value) {
-      return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
+    // Memoize WebF widget so we don't create a new instance on every build.
+    // Otherwise webf package may re-run load and log "WebF: loading with controller" repeatedly.
+    final webFWidget = useMemoized(
+      () => WebF.fromControllerName(
+        controllerName: controllerName,
+        initialRoute: pathOnly,
+        loadingWidget: loadingBuilder?.call(context) ?? _defaultLoadingWidget(),
+        errorBuilder: (context, error) {
+          final resolvedError =
+              errorBuilder?.call(context, error) ?? _defaultErrorWidget(error);
+          return resolvedError;
+        },
+      ),
+      [controllerName, pathOnly],
+    );
+
+    if (shouldMountWebF) {
+      return webFWidget;
     }
 
-    return shouldMountWebF
-        ? WebF.fromControllerName(
-            controllerName: controllerName,
-            // If deep-linking directly to a sub-route, let WebF build the hybrid view.
-            // WebF's initialRoute only accepts the path component (without query string).
-            // Query string (e.g., ?css=0) is automatically available via window.location.search
-            // in the frontend, so we only pass the path part here.
-            initialRoute: extractPathOnly(routePath),
-            loadingWidget: loadingBuilder?.call(context) ?? _defaultLoadingWidget(),
-            errorBuilder: (context, error) {
-              final resolvedError = errorBuilder?.call(context, error) ??
-                  _defaultErrorWidget(error);
-
-              return resolvedError;
-            },
-          )
-        : WebFRouterView(
-            controller: controller,
-            // WebFRouterView's path parameter should only contain the path component,
-            // not query string or fragment. The query string is available via window.location.search.
-            path: extractPathOnly(routePath),
-            defaultViewBuilder: (context) {
-              return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
-            },
-          );
+    return WebFRouterView(
+      controller: controller,
+      path: pathOnly,
+      defaultViewBuilder: (context) {
+        return loadingBuilder?.call(context) ?? _defaultLoadingWidget();
+      },
+    );
   }
 }

@@ -82,7 +82,7 @@ class AssetHttpServer {
 
       // Determine content type
       final contentType = _getContentType(assetPath);
-      
+
       _logger.i('✅ Serving $assetPath (${data.length} bytes) as $contentType');
 
       return shelf.Response.ok(
@@ -115,7 +115,7 @@ class AssetHttpServer {
       );
     } catch (e) {
       _logger.w('Failed to load root index.html', error: e);
-      
+
       // Fallback to a simple HTML response
       const fallbackContent = '''
 <!DOCTYPE html>
@@ -149,17 +149,19 @@ class AssetHttpServer {
     // /react -> assets/gen/use_cases/react/index.html
     // /react/ -> assets/gen/use_cases/react/index.html
     // /react -> assets/gen/use_cases/react/index.html
-    
+
     // Strip trailing slash if present
-    final cleanPath = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
-    
+    final cleanPath = path.endsWith('/')
+        ? path.substring(0, path.length - 1)
+        : path;
+
     // Check if this is a framework root access (e.g., /react, /vue)
-    // If the path contains no internal slashes and doesn't have an extension, 
+    // If the path contains no internal slashes and doesn't have an extension,
     // assume it's a framework directory and redirect to index.html
     if (!cleanPath.contains('/') && !cleanPath.contains('.')) {
       return 'assets/gen/use_cases/$cleanPath/index.html';
     }
-    
+
     // All other paths -> direct mapping to gen/use_cases
     return 'assets/gen/use_cases/$path';
   }

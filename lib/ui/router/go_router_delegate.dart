@@ -45,7 +45,9 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
       currentUri = GoRouterState.of(context).uri;
     } catch (_) {
       assert(() {
-        debugPrint('[HybridNav] cannot read GoRouterState.uri, passthrough location=$location');
+        debugPrint(
+          '[HybridNav] cannot read GoRouterState.uri, passthrough location=$location',
+        );
         return true;
       }());
       // If we can't read current route context, fall back to raw location.
@@ -56,7 +58,9 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
     final url = currentUri.queryParameters[kUrlParam];
     if (url == null || url.isEmpty) {
       assert(() {
-        debugPrint('[HybridNav] missing url param in currentUri=$currentUri, passthrough');
+        debugPrint(
+          '[HybridNav] missing url param in currentUri=$currentUri, passthrough',
+        );
         return true;
       }());
       return location;
@@ -64,18 +68,21 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
 
     // WebF hybrid route expects the internal *location* in query param `path`.
     // Preserve query/fragment so advanced deep-links like `/led?css=0` work.
-    final innerLocation = '$path'
-      '${targetUri.hasQuery ? '?${targetUri.query}' : ''}'
-      '${targetUri.hasFragment ? '#${targetUri.fragment}' : ''}';
+    final innerLocation =
+        '$path'
+        '${targetUri.hasQuery ? '?${targetUri.query}' : ''}'
+        '${targetUri.hasFragment ? '#${targetUri.fragment}' : ''}';
     final normalizedPath =
-      normalizeWebfInnerPath(innerLocation) ?? kWebfInnerRootPath;
+        normalizeWebfInnerPath(innerLocation) ?? kWebfInnerRootPath;
     final wrapped = buildWebFRouteUrlFromUri(
       uri: currentUri,
       route: kAppRoutePath,
       path: normalizedPath,
     );
     assert(() {
-      debugPrint('[HybridNav] wrap path=$normalizedPath currentUri=$currentUri -> $wrapped');
+      debugPrint(
+        '[HybridNav] wrap path=$normalizedPath currentUri=$currentUri -> $wrapped',
+      );
       return true;
     }());
     return wrapped;
@@ -107,7 +114,9 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
       if (isHybridWrapperRoutePath(uri.path)) {
         final inner = extractHybridInnerPath(uri) ?? kWebfInnerRootPath;
         assert(() {
-          debugPrint('[HybridNav] path() wrapper route=${uri.path} inner=$inner');
+          debugPrint(
+            '[HybridNav] path() wrapper route=${uri.path} inner=$inner',
+          );
           return true;
         }());
         return inner;

@@ -19,6 +19,7 @@ module.exports = {
     placeholderOpacity: false,
     ringOpacity: false,
   },
+  // 官方要求使用 media 模式，见 OpenWebF Theming 文档。
   darkMode: 'media',
   theme: {
     extend: {},

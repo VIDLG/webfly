@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from '@openwebf/react-router';
-// Import the utility wrapper
-import { invokeWebFModule } from '../utils/webf';
-import type { BleResponse, ScanResult } from '@native/native/ble/ble_webf_module';
+import {
+  getAdapterState as getBleAdapterState,
+  getScanResults,
+  isBleError,
+  isSupported as isBleSupported,
+  startScan as startBleScan,
+  stopScan as stopBleScan,
+  type ScanResult,
+} from '@native/webf/ble';
+import { useBleEventLog, useBleConnectedDeviceIds } from '../hooks/useBle';
 
 const BleDemoPage: React.FC = () => {
   const { navigate } = useNavigate();
@@ -13,23 +20,25 @@ const BleDemoPage: React.FC = () => {
   const intervalRef = useRef<number | null>(null);
   const [adapterState, setAdapterState] = useState<string>('checking...');
 
+  const { logs: eventLogs, pushLog } = useBleEventLog(50);
+  const connectedDeviceIds = useBleConnectedDeviceIds();
+
   useEffect(() => {
     checkSupport();
     getAdapterState();
     return () => {
-      stopScan(); // Cleanup on unmount
+      stopScan();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAdapterState = async () => {
     try {
-      const response = await invokeWebFModule('Ble', 'getAdapterState') as BleResponse<string>;
-      // If result exists, use it. Otherwise, if there is an error code, display it inside state.
-      if (response.result) {
-        setAdapterState(response.result);
-      } else if (response.error) {
-         setAdapterState(`Error: ${response.error.code}`);
+      const res = await getBleAdapterState();
+      if (isBleError(res)) {
+        setAdapterState(`Error: ${res.error?.message ?? res.error?.code ?? 'Unknown'}`);
+      } else {
+        setAdapterState(res.result ?? 'unknown');
       }
     } catch (e: unknown) {
       console.error('getAdapterState failed:', e);
@@ -42,16 +51,15 @@ const BleDemoPage: React.FC = () => {
     try {
       console.log('Checking WebF BLE support...');
       try {
-        const response = await invokeWebFModule('Ble', 'isSupported') as BleResponse<boolean>;
-        
-        if (response.error) {
-            console.error('BLE support check error:', response.error);
+        const res = await isBleSupported();
+        if (isBleError(res)) {
+            console.error('BLE support check error:', res.error);
             setIsSupported(false);
-            setError(`BLE Error: ${response.error.message}`);
+            setError(`BLE Error: ${res.error?.message ?? 'Unknown'}`);
             return;
         }
 
-        const supported = response.result === true;
+        const supported = res.result === true;
         setIsSupported(supported);
         if (!supported) setError('BLE not supported on this device');
       } catch (err: unknown) {
@@ -77,14 +85,13 @@ const BleDemoPage: React.FC = () => {
 
   const updateResults = async () => {
     try {
-      const response = await invokeWebFModule('Ble', 'getScanResults') as BleResponse<ScanResult[]>;
-      
-      if (response.error) {
-           console.error('getScanResults error:', response.error);
+      const res = await getScanResults();
+      if (isBleError(res)) {
+           console.error('getScanResults error:', res.error);
            return;
       }
 
-      const scanResults = response.result;
+      const scanResults = Array.isArray(res.result) ? res.result : [];
       if (Array.isArray(scanResults)) {
         setResults((prev) => {
           const map = new Map<string, ScanResult>();
@@ -114,14 +121,14 @@ const BleDemoPage: React.FC = () => {
       setResults([]);
       // Start scanning
       // Pass arguments as positional args, invokeWebFModule handles spreading
-      const response = await invokeWebFModule('Ble', 'startScan', { timeout: 15 }) as BleResponse<void>;
-      
-      if (response.error) {
-          throw new Error(response.error.message);
+      const res = await startBleScan({ timeout: 15 });
+      if (isBleError(res)) {
+          throw new Error(res.error?.message ?? 'Start scan failed');
       }
 
       setIsScanning(true);
-      
+      pushLog('Scan started');
+
       // Poll for results every second
       // @ts-expect-error - setInterval return type mismatch in some envs
       intervalRef.current = setInterval(updateResults, 1000);
@@ -139,10 +146,11 @@ const BleDemoPage: React.FC = () => {
         intervalRef.current = null;
       }
       if (isScanning) {
-        const response = await invokeWebFModule('Ble', 'stopScan') as BleResponse<void>;
-        if (response.error) {
-             console.error('stopScan error:', response.error);
+        const res = await stopBleScan();
+        if (isBleError(res)) {
+             console.error('stopScan error:', res.error);
         }
+        pushLog('Scan stopped');
       }
       setIsScanning(false);
     } catch (e: unknown) {
@@ -199,8 +207,53 @@ const BleDemoPage: React.FC = () => {
                       {isSupported === null ? '...' : (isSupported ? 'YES' : 'NO')}
                   </div>
               </div>
+              <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Connected</div>
+                  <div className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {connectedDeviceIds.length}
+                  </div>
+              </div>
            </div>
         </div>
+
+        {/* BLE Events (useBleEventLog hook + pushLog for scan start/stop) */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">BLE Events</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            connectionStateChanged, characteristicReceived; Scan start/stop logged locally.
+          </p>
+          <div className="mt-4 max-h-48 overflow-y-auto rounded-xl bg-slate-900 px-3 py-2 font-mono text-xs text-slate-300">
+            {eventLogs.length === 0 ? (
+              <div className="text-slate-500">No events yet. Start scan or connect a device to see events.</div>
+            ) : (
+              eventLogs.map((line, i) => (
+                <div key={i} className="break-all py-0.5">
+                  {line}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Connected devices (event-driven: connectionStateChanged) */}
+        {connectedDeviceIds.length > 0 && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Connected Devices</h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Updated from connectionStateChanged events (useBleConnectedDeviceIds)
+            </p>
+            <ul className="mt-4 space-y-2">
+              {connectedDeviceIds.map((deviceId) => (
+                <li
+                  key={deviceId}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200"
+                >
+                  {deviceId}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3">
