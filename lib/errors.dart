@@ -32,7 +32,7 @@ Result<T> webfControllerError<T>({
   final contextMap = <String, Object?>{
     'controllerName': controllerName,
     'url': url,
-    if (message != null) 'message': message,
+    ...? (message != null ? {'message': message} : null),
   };
 
   return Err<T>(Error(rootCause))
@@ -65,7 +65,7 @@ Result<T> routeResolutionError<T>({
   final contextMap = <String, Object?>{
     'routePath': routePath,
     'controllerName': controllerName,
-    if (message != null) 'message': message,
+    ...? (message != null ? {'message': message} : null),
   };
 
   return Err<T>(Error(rootCause))

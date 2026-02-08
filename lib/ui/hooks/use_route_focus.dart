@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:signals_hooks/signals_hooks.dart';
-import '../router/app_router.dart' show kWebfRouteObserver;
+import '../router/app_router.dart';
 
 /// A hook that monitors when the current route gains or loses focus.
 ///

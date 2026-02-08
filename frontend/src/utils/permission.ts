@@ -1,21 +1,20 @@
 /**
  * WebF PermissionHandler module bridge.
- * Re-exports from @native/webf/permission with throw-on-error wrappers for compatibility.
+ * Re-exports from @webfly/permission with throw-on-error wrappers for compatibility.
  *
  * @see https://github.com/openwebf/webf/blob/main/skills/webf-native-plugin-dev/SKILL.md
  */
 
 import {
   checkStatus as checkStatusNative,
-  isWebfError,
   openAppSettings as openAppSettingsNative,
   request as requestNative,
   requestMultiple as requestMultipleNative,
   shouldShowRequestRationale as shouldShowRequestRationaleNative,
   type PermissionName,
   type PermissionStatus,
-} from '@native/webf/permission'
-import { isWebfAvailable } from '@native/webf/bridge'
+} from '@webfly/permission'
+import { isWebfAvailable } from '../../../lib/webf/bridge.ts'
 
 export type { PermissionName, PermissionStatus }
 
@@ -27,10 +26,8 @@ export async function checkStatus(
   permission: PermissionName | string
 ): Promise<PermissionStatus> {
   const res = await checkStatusNative(permission)
-  if (isWebfError(res)) {
-    throw new Error(res.error?.message ?? 'Permission check failed')
-  }
-  return res.result as PermissionStatus
+  if (res.isErr()) throw new Error(res.error ?? 'Permission check failed')
+  return res.value as PermissionStatus
 }
 
 /**
@@ -41,10 +38,8 @@ export async function request(
   permission: PermissionName | string
 ): Promise<PermissionStatus> {
   const res = await requestNative(permission)
-  if (isWebfError(res)) {
-    throw new Error(res.error?.message ?? 'Permission request failed')
-  }
-  return res.result as PermissionStatus
+  if (res.isErr()) throw new Error(res.error ?? 'Permission request failed')
+  return res.value as PermissionStatus
 }
 
 /**
@@ -55,10 +50,8 @@ export async function requestMultiple(
   permissions: (PermissionName | string)[]
 ): Promise<Record<string, PermissionStatus>> {
   const res = await requestMultipleNative(permissions)
-  if (isWebfError(res)) {
-    throw new Error(res.error?.message ?? 'Permission request failed')
-  }
-  return (res.result ?? {}) as Record<string, PermissionStatus>
+  if (res.isErr()) throw new Error(res.error ?? 'Permission request failed')
+  return (res.value ?? {}) as Record<string, PermissionStatus>
 }
 
 /**
@@ -66,8 +59,8 @@ export async function requestMultiple(
  */
 export async function openAppSettings(): Promise<boolean> {
   const res = await openAppSettingsNative()
-  if (isWebfError(res)) return false
-  return res.result === true
+  if (res.isErr()) return false
+  return res.value === true
 }
 
 /**
@@ -77,8 +70,8 @@ export async function shouldShowRequestRationale(
   permission: PermissionName | string
 ): Promise<boolean> {
   const res = await shouldShowRequestRationaleNative(permission)
-  if (isWebfError(res)) return false
-  return res.result === true
+  if (res.isErr()) return false
+  return res.value === true
 }
 
 /**

@@ -2,11 +2,11 @@
 //
 // Symbols (from which module):
 //   AppSettingsModule     <- app_settings.dart
-//   BleWebfModule         <- ble.dart
-//   PermissionHandlerWebfModule <- permission.dart
+//   BleWebfModule         <- package:webfly_ble
+//   PermissionHandlerWebfModule <- package:webfly_permission
 //
 // Usage: import 'webf/webf.dart' show AppSettingsModule, BleWebfModule, PermissionHandlerWebfModule;
 
 export 'app_settings.dart' show AppSettingsModule;
-export 'ble.dart' show BleWebfModule;
-export 'permission.dart' show PermissionHandlerWebfModule;
+export 'package:webfly_ble/webfly_ble.dart' show BleWebfModule;
+export 'package:webfly_permission/webfly_permission.dart' show PermissionHandlerWebfModule;

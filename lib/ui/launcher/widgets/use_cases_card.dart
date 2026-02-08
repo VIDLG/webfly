@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../router/config.dart' show kUseCasesMenuPath;
+import '../../router/config.dart';
 import '../../../utils/app_logger.dart';
 
 /// Use Cases card

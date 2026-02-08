@@ -1,15 +1,15 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_use/flutter_use.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:signals_hooks/signals_hooks.dart';
+import 'package:webfly_ble/webfly_ble.dart';
 
 import '../router/config.dart';
-import '../../native/ble/ble.dart';
 import '../../utils/app_logger.dart';
 import 'core.dart';
 
@@ -23,16 +23,36 @@ class BleDiagnosticsScreen extends HookWidget {
     final log = useMemoized(() => TestLogger('BLE'));
 
     final bleSupported = useState<bool?>(null);
-    final adapterState = useState<BluetoothAdapterState>(
-      BluetoothAdapterState.unknown,
+    final adapterStateSignal = useStreamSignal(
+      () => FlutterBluePlus.adapterState,
+      initialValue: FlutterBluePlus.adapterStateNow,
     );
-    final scanning = useBoolean(false);
+    final scanResultsSignal = useStreamSignal(
+      () => FlutterBluePlus.scanResults,
+      initialValue: FlutterBluePlus.lastScanResults,
+    );
+    final isScanningSignal = useStreamSignal(
+      () => FlutterBluePlus.isScanning,
+      initialValue: FlutterBluePlus.isScanningNow,
+    );
     final requestingPermissions = useBoolean(false);
-    final results = useList<ScanResult>(const <ScanResult>[]);
     final permissionStatuses = useMap<String, PermissionStatus>(
       <String, PermissionStatus>{},
     );
     final lastError = useState<String?>(null);
+
+    final adapterStateRaw = adapterStateSignal.value;
+    final adapterState = adapterStateRaw is AsyncData<BluetoothAdapterState>
+        ? adapterStateRaw.value
+        : FlutterBluePlus.adapterStateNow;
+    final resultsRaw = scanResultsSignal.value;
+    final resultsList = resultsRaw is AsyncData<List<ScanResult>>
+        ? resultsRaw.value
+        : FlutterBluePlus.lastScanResults;
+    final isScanningRaw = isScanningSignal.value;
+    final scanning = isScanningRaw is AsyncData<bool>
+        ? isScanningRaw.value
+        : FlutterBluePlus.isScanningNow;
 
     void showSnack(String message) {
       if (!context.mounted) return;
@@ -55,7 +75,7 @@ class BleDiagnosticsScreen extends HookWidget {
         log.i('osVersion=${Platform.operatingSystemVersion}');
 
         log.i('bleSupported=${bleSupported.value}');
-        log.i('adapterState=${adapterState.value}');
+        log.i('adapterState=$adapterState');
         log.i(
           'permissions: '
           'scan=${permissionStatuses.get('bluetoothScan')}, '
@@ -151,7 +171,6 @@ class BleDiagnosticsScreen extends HookWidget {
 
     Future<void> startScan() async {
       lastError.value = null;
-      results.clear();
 
       if (bleSupported.value == false) {
         lastError.value = 'BLE is not supported on this device.';
@@ -164,7 +183,7 @@ class BleDiagnosticsScreen extends HookWidget {
 
       if (!context.mounted) return;
 
-      log.i('startScan(adapter=${adapterState.value})');
+      log.i('startScan(adapter=$adapterState)');
       final result = await bleStartScan(
         const ScanOptions(timeout: Duration(seconds: 10)),
       );
@@ -197,26 +216,10 @@ class BleDiagnosticsScreen extends HookWidget {
 
     useEffectOnce(() {
       unawaited(() async {
-        final supported = await bleIsSupported();
+        final supported = await FlutterBluePlus.isSupported;
         bleSupported.value = supported;
         log.i('isSupported=$supported');
       }());
-
-      final adapterSub = bleAdapterState.listen((state) {
-        adapterState.value = state;
-        log.d('adapterState=$state');
-      });
-
-      final resultsSub = bleScanResults.listen((r) {
-        results.clear();
-        results.addAll(r);
-        log.d('scanResults=${r.length}');
-      });
-
-      final scanningSub = bleIsScanning.listen((isScanning) {
-        scanning.toggle(isScanning);
-        log.d('isScanning=$isScanning');
-      });
 
       unawaited(() async {
         await refreshPermissions();
@@ -225,10 +228,7 @@ class BleDiagnosticsScreen extends HookWidget {
       }());
 
       return () {
-        unawaited(bleStopScan());
-        adapterSub.cancel();
-        resultsSub.cancel();
-        scanningSub.cancel();
+        unawaited(FlutterBluePlus.stopScan());
       };
     });
 
@@ -236,7 +236,7 @@ class BleDiagnosticsScreen extends HookWidget {
     final connectPerm = permissionStatuses.get('bluetoothConnect');
     final locPerm = permissionStatuses.get('locationWhenInUse');
 
-    final adapterOk = adapterState.value == BluetoothAdapterState.on;
+    final adapterOk = adapterState == BluetoothAdapterState.on;
     final supportedOk = bleSupported.value != false;
 
     Widget section({required Widget child}) {
@@ -325,13 +325,13 @@ class BleDiagnosticsScreen extends HookWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Adapter: ${adapterState.value}',
+                        'Adapter: $adapterState',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    if (scanning.value)
+                    if (scanning)
                       const SizedBox(
                         width: 18,
                         height: 18,
@@ -409,12 +409,12 @@ class BleDiagnosticsScreen extends HookWidget {
                       ),
                       FilledButton.icon(
                         onPressed: supportedOk
-                            ? (scanning.value ? stopScan : startScan)
+                            ? (scanning ? stopScan : startScan)
                             : null,
-                        icon: Icon(scanning.value ? Icons.stop : Icons.search),
+                        icon: Icon(scanning ? Icons.stop : Icons.search),
                         label: label(
-                          scanning.value ? 'Stop scan' : 'Start scan (10s)',
-                          scanning.value ? 'Stop' : 'Scan',
+                          scanning ? 'Stop scan' : 'Start scan (10s)',
+                          scanning ? 'Stop' : 'Scan',
                         ),
                       ),
                       OutlinedButton.icon(
@@ -461,7 +461,7 @@ class BleDiagnosticsScreen extends HookWidget {
                       ),
                     ),
                     Text(
-                      '${results.list.length}',
+                      '${resultsList.length}',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -469,7 +469,7 @@ class BleDiagnosticsScreen extends HookWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (results.list.isEmpty)
+                if (resultsList.isEmpty)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -488,7 +488,7 @@ class BleDiagnosticsScreen extends HookWidget {
                     ),
                   )
                 else
-                  ...results.list.map((r) {
+                  ...resultsList.map((r) {
                     final device = r.device;
                     final name = device.platformName.isNotEmpty
                         ? device.platformName

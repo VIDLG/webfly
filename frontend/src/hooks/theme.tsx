@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
-import { getTheme as getAppTheme, setTheme as setAppTheme } from '@native/webf/app_settings'
-import { isWebfAvailable, isWebfError } from '@native/webf/bridge'
+import { getTheme as getAppTheme, setTheme as setAppTheme } from '../../../lib/webf/app_settings.ts'
+import { isWebfAvailable, isWebfError } from '../../../lib/webf/bridge.ts'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'

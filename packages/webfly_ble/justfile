@@ -1,0 +1,29 @@
+# webfly_ble package tasks (self-contained; run from this directory)
+
+set shell := ["sh", "-c"]
+set windows-shell := ["sh", "-c"]
+
+default:
+    @just --list
+
+# Run Dart code generation (dto.g.dart, options.g.dart)
+# Usage: just codegen [--watch]
+codegen *ARGS:
+    dart run build_runner build --delete-conflicting-outputs {{ARGS}}
+
+# Run tests
+test *ARGS:
+    flutter test {{ARGS}}
+
+# Validate package for publishing (no upload)
+publish-dry-run:
+    dart pub publish --dry-run
+
+# Publish to pub.dev (requires: 1) remove or change publish_to in pubspec 2) dart pub login)
+# Usage: just publish
+publish:
+    dart pub publish
+
+# Run analyzer
+lint *ARGS:
+    dart analyze {{ARGS}}

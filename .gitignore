@@ -1,4 +1,5 @@
 # Miscellaneous
+COMMIT_MSG.txt
 *.class
 *.log
 *.pyc

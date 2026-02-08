@@ -8,7 +8,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
-[![WebF](https://img.shields.io/badge/WebF-0.24.9-FF6B6B)](https://github.com/openwebf/webf)
+[![WebF](https://img.shields.io/badge/WebF-0.24.11-FF6B6B)](https://github.com/openwebf/webf)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **⭐ 如果觉得 WebFly 有用，请给个 Star 支持一下！⭐**
@@ -27,7 +27,8 @@
 
 WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运行时，集成了设备 API：
 
-- **🔵 蓝牙低功耗（BLE）** - 通过自定义 `Ble` 模块（基于 `flutter_blue_plus`）直接访问 BLE 设备
+- **🔵 蓝牙低功耗（BLE）** - 通过 `@webfly/ble`（`packages/webfly_ble`，基于 `flutter_blue_plus`）直接访问 BLE 设备
+- **🔐 权限** - 通过 `@webfly/permission` 按需请求运行时权限（不在一启动就弹窗，需要时再请求）
 - **💾 SQLite 数据库** - 使用 `webf_sqflite` 进行本地数据库存储
 - **🔗 原生分享** - 通过 `webf_share` 集成系统分享功能
 - **📱 原生 UI 组件** - 无缝的 Flutter-Web 混合界面
@@ -90,9 +91,9 @@ WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运�
 
 ### 前置要求
 
-- Flutter 3.38.7 或更高版本
-- Dart SDK ^3.10.7
+- Flutter SDK（Dart ^3.10.7）
 - Android SDK（用于 Android 构建）
+- pnpm（前端开发用；仅跑 Flutter 可省略）
 
 ### 安装步骤
 
@@ -145,28 +146,28 @@ WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运�
 
 ### 在 Web 应用中使用原生 API
 
+WebFly 通过 `webf.invokeModuleAsync(moduleName, method, ...args)` 暴露原生模块，前端使用 `@webfly/ble`、`@webfly/permission` 等类型化封装（Result 风格，neverthrow）。
+
+**BLE**（`@webfly/ble`）：
+
 ```javascript
-// 蓝牙 LE 扫描
-if (window.webf?.bluetooth) {
-  const devices = await window.webf.bluetooth.scan();
-  // 连接并与 BLE 设备交互
-}
+import { startScan, getScanResults, connect, addBleListener } from '@webfly/ble';
 
-// SQLite 数据库
-if (window.webf?.sqflite) {
-  const db = await window.webf.sqflite.openDatabase('mydb.db');
-  await db.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)');
-}
-
-// 原生分享
-if (window.webf?.share) {
-  await window.webf.share.share({
-    title: '看看这个！',
-    text: '具有原生功能的超棒 Web 应用',
-    url: 'https://example.com'
-  });
-}
+const res = await startScan({ timeout: 5000 });
+if (res.isOk()) { /* 可调用 getScanResults()、connect() 等 */ }
+// 使用 addBleListener 订阅事件，或 using bus = new BleEventBus()
 ```
+
+**权限**（`@webfly/permission`）：
+
+```javascript
+import { checkStatus, request } from '@webfly/permission';
+
+const status = await checkStatus('camera');
+const granted = await request('camera'); // 需要时会弹出系统权限框
+```
+
+**SQLite**（`webf_sqflite`）、**原生分享**（`webf_share`）等仍通过 `window.webf` 对应模块调用。
 
 ## 🛠️ 开发指南
 
@@ -174,18 +175,22 @@ if (window.webf?.share) {
 
 ```
 webfly/
-├── lib/                    # Flutter 应用源码 (宿主应用)
-│   ├── main.dart           # 入口文件 & WebF 初始化
-│   ├── ui/                 # 应用页面 (启动器, 诊断页等)
-│   ├── services/           # 原生服务 (资源服务器, 设置等)
-│   └── native/             # WebF 原生模块 (BLE, 分享等)
-├── frontend/               # Web 前端应用 (React + Vite)
-│   ├── src/                # Web 源代码
-│   └── package.json        # Web 依赖配置
-├── assets/                 # 静态资源 & 打包的用例
-├── platforms/              # 平台相关 Runner 代码 (android, ios 等)
-├── docs/                   # 文档 & 截图
-└── pubspec.yaml            # Flutter 依赖
+├── lib/                    # Flutter 应用源码（宿主应用）
+│   ├── main.dart           # 入口 & WebF 模块注册
+│   ├── ui/                 # 启动器、扫描、原生诊断、WebF 视图
+│   ├── services/           # 资源 HTTP 服务器
+│   ├── store/              # 应用设置、URL 历史
+│   └── webf/               # WebF 模块（AppSettings）与协议
+├── packages/               # 共享与功能包
+│   ├── webf_bridge/        # 共享 WebF 桥（Dart + TS）：报文格式、createModuleInvoker、WebfModuleEventBus
+│   ├── webfly_ble/         # BLE WebF 模块（Dart + TS），flutter_blue_plus
+│   └── webfly_permission/  # 权限 WebF 模块（Dart + TS），permission_handler
+├── frontend/               # Web 应用（React + Vite）
+│   └── src/                # 页面（BLE Demo、Permission Demo 等）、hooks、配置
+├── assets/                 # 静态资源与打包用例
+├── platforms/              # 平台模板（android 等）
+├── docs/                   # 文档与截图
+└── pubspec.yaml            # Flutter 依赖（webf_bridge、webfly_ble、webfly_permission）
 ```
 
 ### 架构概览
@@ -251,15 +256,24 @@ flutter build appbundle --release
 ### 自定义开发
 
 **添加自定义原生插件：**
-1. 将插件依赖添加到 `pubspec.yaml`
-2. 在 `services/` 中与 WebF bridge 集成
-3. 将 API 暴露到 JavaScript 上下文
+1. 在 `packages/` 下新建包（或往 `pubspec.yaml` 增加依赖）
+2. 使用 `webf_bridge`（Dart：`webfOk`/`webfErr`/`toWebfJson`；TS：`createModuleInvoker`、`WebfModuleEventBus`）做报文与事件总线
+3. 在 `lib/main.dart` 中 `WebF.defineModule(...)` 注册，并在前端提供类似 `@webfly/ble` 的封装
 
 **修改 UI 主题：**
 - 编辑 `lib/main.dart` 修改应用全局主题
-- 在 `screens/launcher/widgets/` 中自定义启动器组件
+- 在 `lib/ui/launcher/widgets/` 中自定义启动器组件
 
 ## ⚙️ 配置说明
+
+### 权限与 AndroidManifest
+
+- **Bluetooth、Notification 等**：已在 `android/app/src/main/AndroidManifest.xml` 和 `platforms/android/AndroidManifest.main.xml` 中声明（两者已同步维护）。包括 `BLUETOOTH_SCAN`、`BLUETOOTH_CONNECT`、`POST_NOTIFICATIONS`（Android 13+）等。
+- **运行时请求**：应用不会在启动时自动弹权限框。需要在**使用到该能力时**再请求，例如：
+  - 打开 **Permission Demo** 页，对「bluetooth」「notification」等点击 **Request**，系统会弹出授权框；
+  - 或在使用 BLE 功能时由业务代码调用 `request('bluetoothScan')` / `request('bluetoothConnect')` 等。
+- **若仍显示 denied**：先确认已在 Permission Demo 中对该权限点过 Request；若之前选过「拒绝且不再询问」，需到系统设置里为该应用手动开启对应权限。
+- **新增权限时**：在 `android/app/src/main/AndroidManifest.xml` 中增加 `<uses-permission>` 后，请同步修改 `platforms/android/AndroidManifest.main.xml`，保持两处一致。
 
 ### 应用设置
 
@@ -277,14 +291,18 @@ flutter build appbundle --release
 
 ## 📦 依赖项
 
-### 核心依赖
-- `webf: 0.24.9` - Web 渲染引擎
+### 核心
+- `webf: ^0.24.11` - Web 渲染引擎
 - `signals_flutter: ^6.3.0` - 状态管理
 - `go_router: ^17.0.1` - 导航
 
-### 原生能力
-- `flutter_blue_plus: ^2.1.0` - BLE 支持 (自定义模块)
-- `webf_sqflite: ^1.0.1` - SQLite 数据库
+### 包（本仓库）
+- `webf_bridge` - 共享桥：报文格式（Dart）、`createModuleInvoker` / `WebfModuleEventBus`（TS）
+- `webfly_ble` - BLE WebF 模块（Dart + TS），使用 `flutter_blue_plus`
+- `webfly_permission` - 权限 WebF 模块（Dart + TS），使用 `permission_handler`
+
+### 原生与 Web
+- `webf_sqflite: ^1.0.1` - SQLite
 - `webf_share: ^1.1.0` - 原生分享
 - `mobile_scanner: ^7.1.4` - 二维码扫描
 

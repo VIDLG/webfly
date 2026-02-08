@@ -69,14 +69,19 @@ build-apk *FLAGS:
 install-apk:
     DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found." 1>&2; exit 1; fi; flutter run -d "$DEVICE_ID" --release --use-application-binary=build/app/outputs/flutter-apk/app-release.apk
 
-# Run Dart code generation (e.g. json_serializable for lib/native/ble/dto.dart)
+# Run Dart code generation in root and all packages (e.g. webfly_ble dto/options).
 # Usage: just codegen [--watch]
 codegen *ARGS:
     dart run build_runner build --delete-conflicting-outputs {{ARGS}}
+    cd packages/webfly_ble && dart run build_runner build --delete-conflicting-outputs {{ARGS}}
 
 # Analyze Dart code for syntax and semantic issues
 analyze PATH='lib test' *ARGS:
     flutter analyze {{PATH}} {{ARGS}}
+
+# Run static analysis (flutter analyze)
+lint *ARGS:
+    flutter analyze {{ARGS}}
 
 # Check Flutter development environment and accept Android licenses
 doctor *ARGS:
@@ -97,7 +102,7 @@ tag-version *FLAGS:
 # CI / Automation
 # -----------------------------
 
-# Run CI pipeline (Android): Deps -> Gen -> Codegen -> Analyze -> Test -> Build APK
+# Run CI pipeline (Android): Deps -> Gen -> Codegen -> Analyze -> Lint -> Test -> Build APK
 # Usage: just ci  (self-contained: runs pub get first)
 ci:
     just update
@@ -107,6 +112,7 @@ ci:
     just codegen
     just format-check
     just analyze
+    just lint
     just test
     just build-apk
 

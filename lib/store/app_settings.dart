@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart' show ThemeMode;
-import 'package:shared_preferences/shared_preferences.dart'
-    show SharedPreferences;
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 /// App settings store: persistence (SharedPreferences) + reactive signals.

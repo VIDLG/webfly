@@ -2,9 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   addBleListener,
   type BleConnectionState,
-  type BleConnectionStateChangedData,
-  type BleCharacteristicReceivedData,
-} from '@native/webf/ble';
+  type BleConnectionStateChangedPayload,
+  type BleCharacteristicReceivedPayload,
+} from '@webfly/ble';
 
 const DEFAULT_MAX_EVENT_LOGS = 50;
 
@@ -16,7 +16,7 @@ export function useBleConnectionStates(): Record<string, BleConnectionState> {
   const [states, setStates] = useState<Record<string, BleConnectionState>>({});
 
   useEffect(() => {
-    const unsub = addBleListener('connectionStateChanged', (data: BleConnectionStateChangedData) => {
+    const unsub = addBleListener('connectionStateChanged', (data: BleConnectionStateChangedPayload) => {
       setStates((prev) => {
         const next = { ...prev, [data.deviceId]: data.connectionState };
         if (data.connectionState === 'disconnected') {
@@ -56,7 +56,7 @@ export function useBleCharacteristicValue(
   useEffect(() => {
     if (!deviceId || !serviceUuid || !characteristicUuid) return;
 
-    const unsub = addBleListener('characteristicReceived', (data: BleCharacteristicReceivedData) => {
+    const unsub = addBleListener('characteristicReceived', (data: BleCharacteristicReceivedPayload) => {
       if (
         data.deviceId !== deviceId ||
         data.serviceUuid !== serviceUuid ||
@@ -93,13 +93,13 @@ export function useBleEventLog(
   useEffect(() => {
     const unsubConnection = addBleListener(
       'connectionStateChanged',
-      (data: BleConnectionStateChangedData) => {
+      (data: BleConnectionStateChangedPayload) => {
         addLog(`Connection: ${data.deviceId} → ${data.connectionState}`);
       }
     );
     const unsubCharacteristic = addBleListener(
       'characteristicReceived',
-      (data: BleCharacteristicReceivedData) => {
+      (data: BleCharacteristicReceivedPayload) => {
         const hex = (b: number) => b.toString(16).padStart(2, '0');
         const valueStr =
           data.value.length <= 16

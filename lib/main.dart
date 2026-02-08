@@ -1,20 +1,15 @@
 import 'package:catcher_2/catcher_2.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
-import 'package:webf/launcher.dart'
-    show WebFControllerManager, WebFControllerManagerConfig;
-import 'package:webf/webf.dart' show WebF;
-import 'package:webf_cupertino_ui/webf_cupertino_ui.dart'
-    show installWebFCupertinoUI;
-import 'webf/webf.dart'
-    show AppSettingsModule, BleWebfModule, PermissionHandlerWebfModule;
-import 'package:webf_share/webf_share.dart' show ShareModule;
-import 'package:webf_sqflite/webf_sqflite.dart' show SQFliteModule;
-import 'package:permission_handler/permission_handler.dart';
-import 'ui/router/app_router.dart' show kGoRouter;
+import 'package:webf/webf.dart';
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
+import 'package:webf_share/webf_share.dart';
+import 'package:webf_sqflite/webf_sqflite.dart';
+import 'webf/webf.dart';
 import 'services/asset_http_server.dart';
 import 'store/app_settings.dart';
 import 'store/url_history.dart';
+import 'ui/router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,18 +36,6 @@ void main() async {
   WebF.defineModule((context) => SQFliteModule(context));
   WebF.defineModule((context) => AppSettingsModule(context));
   WebF.defineModule((context) => PermissionHandlerWebfModule(context));
-
-  // Request Bluetooth permissions at startup
-  if (await Permission.bluetoothScan.isDenied) {
-    await Permission.bluetoothScan.request();
-  }
-  if (await Permission.bluetoothConnect.isDenied) {
-    await Permission.bluetoothConnect.request();
-  }
-  // For older Android versions (<= API 30), also need location permission
-  if (await Permission.locationWhenInUse.isDenied) {
-    await Permission.locationWhenInUse.request();
-  }
 
   // Start asset HTTP server for serving use case files
   await AssetHttpServer().start();

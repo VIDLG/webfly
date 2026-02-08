@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart' show ThemeMode;
-import 'package:flutter/widgets.dart' show Brightness, WidgetsBinding;
-import 'package:webf/webf.dart' show WebFBaseModule;
+import 'package:flutter/material.dart';
+import 'package:webf/webf.dart';
 
 import '../store/app_settings.dart';
 import '../utils/app_logger.dart';

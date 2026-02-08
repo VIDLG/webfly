@@ -1,11 +1,12 @@
+// Defines PermissionHandlerWebfModule (WebF native module for permission_handler).
+// In app: import 'package:webfly_permission/webfly_permission.dart' show PermissionHandlerWebfModule;
+//         WebF.defineModule((context) => PermissionHandlerWebfModule(context));
+
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webf/webf.dart';
+import 'package:webf_bridge/webf_bridge.dart';
 
-import '../utils/app_logger.dart';
-import 'protocol.dart';
-
-/// Maps a permission name string (from JS) to [Permission].
-/// Supports camelCase names matching permission_handler constants.
 Permission? _permissionFromName(String name) {
   switch (name) {
     case 'camera':
@@ -89,26 +90,6 @@ Permission? _permissionFromName(String name) {
   }
 }
 
-/// WebF Native Module for permission_handler
-///
-/// Exposes permission check/request and app settings to JavaScript.
-///
-/// Usage in JavaScript:
-/// ```javascript
-/// // Check status (no UI)
-/// const status = await webf.invokeModule('PermissionHandler', 'checkStatus', ['camera']);
-/// // Returns: 'granted' | 'denied' | 'permanentlyDenied' | 'restricted' | 'limited' | 'provisional'
-///
-/// // Request permission (may show system dialog)
-/// const status = await webf.invokeModule('PermissionHandler', 'request', ['camera']);
-///
-/// // Request multiple permissions
-/// const result = await webf.invokeModule('PermissionHandler', 'requestMultiple', [['camera', 'microphone']]);
-/// // Returns: { camera: 'granted', microphone: 'denied' }
-///
-/// // Open app settings
-/// const opened = await webf.invokeModule('PermissionHandler', 'openAppSettings');
-/// ```
 class PermissionHandlerWebfModule extends WebFBaseModule {
   PermissionHandlerWebfModule(super.manager);
 
@@ -129,82 +110,67 @@ class PermissionHandlerWebfModule extends WebFBaseModule {
       case 'shouldShowRequestRationale':
         return _shouldShowRequestRationale(arguments);
       default:
-        appLogger.w('[PermissionHandlerWebfModule] Unknown method: $method');
-        return returnErr('Unknown method: $method', code: -32601);
+        debugPrint('[webfly_permission] Unknown method: $method');
+        return webfErr('Unknown method: $method');
     }
   }
 
-  /// Check current status without requesting.
-  /// Arguments: [permissionName] e.g. 'camera', 'bluetoothScan'
-  /// Returns: status string or error map.
   Future<dynamic> _checkStatus(List<dynamic> arguments) async {
     if (arguments.isEmpty) {
-      return returnErr('checkStatus requires permission name', code: -32602);
+      return webfErr('checkStatus requires permission name');
     }
     final name = arguments[0] as String?;
     if (name == null || name.isEmpty) {
-      return returnErr('checkStatus requires permission name', code: -32602);
+      return webfErr('checkStatus requires permission name');
     }
     final permission = _permissionFromName(name);
     if (permission == null) {
-      return returnErr('Unknown permission: $name', code: -32602);
+      return webfErr('Unknown permission: $name');
     }
     try {
       final status = await permission.status;
-      return returnOk(status.name);
+      return webfOk(status.name);
     } catch (e) {
-      appLogger.e('[PermissionHandlerWebfModule] checkStatus failed', error: e);
-      return returnErr(e.toString(), code: -32602);
+      debugPrint('[webfly_permission] checkStatus failed: $e');
+      return webfErr(e.toString());
     }
   }
 
-  /// Request permission (may show system dialog).
-  /// Arguments: [permissionName]
-  /// Returns: status string or error map.
   Future<dynamic> _request(List<dynamic> arguments) async {
     if (arguments.isEmpty) {
-      return returnErr('request requires permission name', code: -32602);
+      return webfErr('request requires permission name');
     }
     final name = arguments[0] as String?;
     if (name == null || name.isEmpty) {
-      return returnErr('request requires permission name', code: -32602);
+      return webfErr('request requires permission name');
     }
     final permission = _permissionFromName(name);
     if (permission == null) {
-      return returnErr('Unknown permission: $name', code: -32602);
+      return webfErr('Unknown permission: $name');
     }
     try {
       final status = await permission.request();
-      return returnOk(status.name);
+      return webfOk(status.name);
     } catch (e) {
-      appLogger.e('[PermissionHandlerWebfModule] request failed', error: e);
-      return returnErr(e.toString(), code: -32602);
+      debugPrint('[webfly_permission] request failed: $e');
+      return webfErr(e.toString());
     }
   }
 
-  /// Request multiple permissions at once.
-  /// Arguments: [permissionNames] e.g. ['camera', 'microphone']
-  /// Returns: `Map<permissionName, status string>` or error map.
   Future<dynamic> _requestMultiple(List<dynamic> arguments) async {
     if (arguments.isEmpty) {
-      return returnErr(
-        'requestMultiple requires list of permission names',
-        code: -32602,
-      );
+      return webfErr('requestMultiple requires list of permission names');
     }
     final list = arguments[0];
     if (list is! List) {
-      return returnErr(
-        'requestMultiple requires list of permission names',
-        code: -32602,
-      );
+      return webfErr('requestMultiple requires list of permission names');
     }
     final names = list.cast<String>();
     final result = <String, String>{};
     for (final name in names) {
       final permission = _permissionFromName(name);
       if (permission == null) {
-        result[name] = 'denied'; // treat unknown as denied
+        result[name] = 'denied';
         continue;
       }
       try {
@@ -214,59 +180,40 @@ class PermissionHandlerWebfModule extends WebFBaseModule {
         result[name] = 'denied';
       }
     }
-    return returnOk(result);
+    return webfOk(result);
   }
 
-  /// Whether to show rationale before requesting (Android).
-  /// Arguments: [permissionName]
-  /// Returns: boolean or error map.
   Future<dynamic> _shouldShowRequestRationale(List<dynamic> arguments) async {
     if (arguments.isEmpty) {
-      return returnErr(
-        'shouldShowRequestRationale requires permission name',
-        code: -32602,
-      );
+      return webfErr('shouldShowRequestRationale requires permission name');
     }
     final name = arguments[0] as String?;
     if (name == null || name.isEmpty) {
-      return returnErr(
-        'shouldShowRequestRationale requires permission name',
-        code: -32602,
-      );
+      return webfErr('shouldShowRequestRationale requires permission name');
     }
     final permission = _permissionFromName(name);
     if (permission == null) {
-      return returnErr('Unknown permission: $name', code: -32602);
+      return webfErr('Unknown permission: $name');
     }
     try {
       final value = await permission.shouldShowRequestRationale;
-      return returnOk(value);
+      return webfOk(value);
     } catch (e) {
-      appLogger.e(
-        '[PermissionHandlerWebfModule] shouldShowRequestRationale failed',
-        error: e,
-      );
-      return returnErr(e.toString(), code: -32602);
+      debugPrint('[webfly_permission] shouldShowRequestRationale failed: $e');
+      return webfErr(e.toString());
     }
   }
 
-  /// Open the app's settings page.
-  /// Returns: returnOk(true) if settings could be opened.
   Future<dynamic> _openAppSettings() async {
     try {
       final opened = await openAppSettings();
-      return returnOk(opened);
+      return webfOk(opened);
     } catch (e) {
-      appLogger.e(
-        '[PermissionHandlerWebfModule] openAppSettings failed',
-        error: e,
-      );
-      return returnErr(e.toString(), code: -32602);
+      debugPrint('[webfly_permission] openAppSettings failed: $e');
+      return webfErr(e.toString());
     }
   }
 
   @override
-  void dispose() {
-    // No resources to release
-  }
+  void dispose() {}
 }

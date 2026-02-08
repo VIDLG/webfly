@@ -6,10 +6,9 @@ import {
   requestMultiple,
   openAppSettings,
   shouldShowRequestRationale,
-  isWebfError,
   type PermissionName,
   type PermissionStatus,
-} from '@native/webf/permission';
+} from '@webfly/permission';
 
 const DEMO_PERMISSIONS: PermissionName[] = [
   'camera',
@@ -39,13 +38,13 @@ const PermissionDemoPage: React.FC = () => {
     setError(null);
     try {
       const res = await checkStatus(permission);
-      if (isWebfError(res)) {
+      if (res.isErr()) {
         setStatuses((prev) => ({
           ...prev,
-          [permission]: res.error?.message ?? res.error?.code ?? 'Error',
+          [permission]: res.error ?? 'Error',
         }));
       } else {
-        setStatuses((prev) => ({ ...prev, [permission]: res.result ?? 'unknown' }));
+        setStatuses((prev) => ({ ...prev, [permission]: res.value ?? 'unknown' }));
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -61,13 +60,13 @@ const PermissionDemoPage: React.FC = () => {
     setError(null);
     try {
       const res = await request(permission);
-      if (isWebfError(res)) {
+      if (res.isErr()) {
         setStatuses((prev) => ({
           ...prev,
-          [permission]: res.error?.message ?? res.error?.code ?? 'Error',
+          [permission]: res.error ?? 'Error',
         }));
       } else {
-        setStatuses((prev) => ({ ...prev, [permission]: res.result ?? 'unknown' }));
+        setStatuses((prev) => ({ ...prev, [permission]: res.value ?? 'unknown' }));
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -82,10 +81,10 @@ const PermissionDemoPage: React.FC = () => {
     setError(null);
     try {
       const res = await shouldShowRequestRationale(permission);
-      if (isWebfError(res)) {
+      if (res.isErr()) {
         setRationales((prev) => ({ ...prev, [permission]: false }));
       } else {
-        setRationales((prev) => ({ ...prev, [permission]: res.result === true }));
+        setRationales((prev) => ({ ...prev, [permission]: res.value === true }));
       }
     } catch {
       setRationales((prev) => ({ ...prev, [permission]: false }));
@@ -98,10 +97,10 @@ const PermissionDemoPage: React.FC = () => {
     setError(null);
     try {
       const res = await requestMultiple(perms);
-      if (isWebfError(res)) {
-        setError(res.error?.message ?? 'Request multiple failed');
-      } else if (res.result && typeof res.result === 'object') {
-        setStatuses((prev) => ({ ...prev, ...res.result }));
+      if (res.isErr()) {
+        setError(res.error ?? 'Request multiple failed');
+      } else if (res.value && typeof res.value === 'object') {
+        setStatuses((prev) => ({ ...prev, ...res.value }));
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -116,11 +115,11 @@ const PermissionDemoPage: React.FC = () => {
     setSettingsOpened(null);
     try {
       const res = await openAppSettings();
-      if (isWebfError(res)) {
+      if (res.isErr()) {
         setSettingsOpened(false);
         setError('Could not open app settings');
       } else {
-        setSettingsOpened(res.result === true);
+        setSettingsOpened(res.value === true);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -152,7 +151,7 @@ const PermissionDemoPage: React.FC = () => {
             Permission Demo
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Check and request permissions via WebF PermissionHandler module (@native/webf/permission).
+            Check and request permissions via WebF PermissionHandler module (@webfly/permission).
           </p>
         </div>
       </header>
@@ -199,6 +198,9 @@ const PermissionDemoPage: React.FC = () => {
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Tap Check to read current status; Request may show system dialog.
+          </p>
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800">
+            If Bluetooth or Notification show denied: tap <strong>Request</strong> next to that row to open the system permission dialog. If no dialog appears (e.g. you previously chose &quot;Don&apos;t ask again&quot;), open <strong>Settings → Apps → WebFly → Permissions</strong> and enable them there.
           </p>
           <ul className="mt-4 space-y-3">
             {DEMO_PERMISSIONS.map((perm) => (

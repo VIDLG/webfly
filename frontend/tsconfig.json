@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "ES2024", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -15,12 +15,15 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "skipLibCheck": true,
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "node", "@openwebf/webf-enterprise-typings"],
     "paths": {
-      "@native/*": ["../lib/*"]
+      "@webfly/ble": ["../packages/webfly_ble/lib/webfly_ble"],
+      "@webfly/permission": ["../packages/webfly_permission/lib/webfly_permission"],
+      "@openwebf/webf-enterprise-typings": ["./node_modules/@openwebf/webf-enterprise-typings"],
+      "neverthrow": ["./node_modules/neverthrow"]
     }
   },
-  "include": ["src", "vite.config.ts", "../lib"],
+  "include": ["src", "vite.config.ts", "../lib", "../packages/webf_bridge/lib", "../packages/webfly_ble/lib", "../packages/webfly_permission/lib"],
   "exclude": [
     "use_cases",
     "use_cases/**"

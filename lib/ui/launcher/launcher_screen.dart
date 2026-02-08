@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemNavigator;
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_use/flutter_use.dart';
 import 'package:go_router/go_router.dart';
-import 'package:signals_flutter/signals_flutter.dart';
 import 'package:signals_hooks/signals_hooks.dart';
-import 'package:webf/launcher.dart' show WebFControllerManager;
+import 'package:webf/launcher.dart';
 import '../hooks/use_route_focus.dart';
 import '../../store/app_settings.dart';
 import '../../store/url_history.dart';
@@ -148,8 +147,9 @@ class LauncherScreen extends HookWidget {
       Uri bundleUri,
       String innerLocation,
     ) {
-      if (innerLocation.isEmpty || innerLocation == '/')
+      if (innerLocation.isEmpty || innerLocation == '/') {
         return bundleUri.toString();
+      }
 
       Uri inner;
       try {
@@ -161,10 +161,14 @@ class LauncherScreen extends HookWidget {
       }
 
       final innerPath = inner.path;
-      if (innerPath.isEmpty || innerPath == '/') return bundleUri.toString();
+      if (innerPath.isEmpty || innerPath == '/') {
+        return bundleUri.toString();
+      }
 
       final bundlePath = bundleUri.path;
-      if (!bundlePath.endsWith(innerPath)) return bundleUri.toString();
+      if (!bundlePath.endsWith(innerPath)) {
+        return bundleUri.toString();
+      }
 
       var newPath = bundlePath.substring(
         0,

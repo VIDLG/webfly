@@ -1,6 +1,5 @@
-import 'dart:convert' show jsonDecode, jsonEncode;
-import 'package:shared_preferences/shared_preferences.dart'
-    show SharedPreferences;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 /// URL history entry with URL and path

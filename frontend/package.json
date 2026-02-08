@@ -17,11 +17,14 @@
     "@openwebf/react-cupertino-ui": "^0.4.1",
     "@openwebf/react-router": "^0.24.2",
     "@openwebf/webf-share": "^1.0.1",
+    "neverthrow": "^7.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@ninoseki/eslint-plugin-neverthrow": "^0.0.1",
+    "@openwebf/webf-enterprise-typings": "^0.23.7",
     "@types/babel__standalone": "^7.1.9",
     "@types/node": "^25.0.9",
     "@types/qrcode-terminal": "^0.12.2",

@@ -3,12 +3,11 @@ import { useNavigate } from '@openwebf/react-router';
 import {
   getAdapterState as getBleAdapterState,
   getScanResults,
-  isBleError,
   isSupported as isBleSupported,
   startScan as startBleScan,
   stopScan as stopBleScan,
   type ScanResult,
-} from '@native/webf/ble';
+} from '@webfly/ble';
 import { useBleEventLog, useBleConnectedDeviceIds } from '../hooks/useBle';
 
 const BleDemoPage: React.FC = () => {
@@ -35,10 +34,10 @@ const BleDemoPage: React.FC = () => {
   const getAdapterState = async () => {
     try {
       const res = await getBleAdapterState();
-      if (isBleError(res)) {
-        setAdapterState(`Error: ${res.error?.message ?? res.error?.code ?? 'Unknown'}`);
+      if (res.isErr()) {
+        setAdapterState(`Error: ${res.error}`);
       } else {
-        setAdapterState(res.result ?? 'unknown');
+        setAdapterState(res.value ?? 'unknown');
       }
     } catch (e: unknown) {
       console.error('getAdapterState failed:', e);
@@ -52,14 +51,14 @@ const BleDemoPage: React.FC = () => {
       console.log('Checking WebF BLE support...');
       try {
         const res = await isBleSupported();
-        if (isBleError(res)) {
+        if (res.isErr()) {
             console.error('BLE support check error:', res.error);
             setIsSupported(false);
-            setError(`BLE Error: ${res.error?.message ?? 'Unknown'}`);
+            setError(`BLE Error: ${res.error}`);
             return;
         }
 
-        const supported = res.result === true;
+        const supported = res.value === true;
         setIsSupported(supported);
         if (!supported) setError('BLE not supported on this device');
       } catch (err: unknown) {
@@ -86,12 +85,12 @@ const BleDemoPage: React.FC = () => {
   const updateResults = async () => {
     try {
       const res = await getScanResults();
-      if (isBleError(res)) {
+      if (res.isErr()) {
            console.error('getScanResults error:', res.error);
            return;
       }
 
-      const scanResults = Array.isArray(res.result) ? res.result : [];
+      const scanResults = Array.isArray(res.value) ? res.value : [];
       if (Array.isArray(scanResults)) {
         setResults((prev) => {
           const map = new Map<string, ScanResult>();
@@ -122,8 +121,8 @@ const BleDemoPage: React.FC = () => {
       // Start scanning
       // Pass arguments as positional args, invokeWebFModule handles spreading
       const res = await startBleScan({ timeout: 15 });
-      if (isBleError(res)) {
-          throw new Error(res.error?.message ?? 'Start scan failed');
+      if (res.isErr()) {
+          throw new Error(res.error);
       }
 
       setIsScanning(true);
@@ -147,7 +146,7 @@ const BleDemoPage: React.FC = () => {
       }
       if (isScanning) {
         const res = await stopBleScan();
-        if (isBleError(res)) {
+        if (res.isErr()) {
              console.error('stopScan error:', res.error);
         }
         pushLog('Scan stopped');

@@ -8,7 +8,7 @@ English | [简体中文](README.zh-CN.md)
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
-[![WebF](https://img.shields.io/badge/WebF-0.24.9-FF6B6B)](https://github.com/openwebf/webf)
+[![WebF](https://img.shields.io/badge/WebF-0.24.11-FF6B6B)](https://github.com/openwebf/webf)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **⭐ If you find WebFly useful, please consider giving it a star! ⭐**
@@ -27,7 +27,8 @@ English | [简体中文](README.zh-CN.md)
 
 WebFly isn't just a web viewer - it's a fully-featured native runtime with integrated device APIs:
 
-- **🔵 Bluetooth Low Energy (BLE)** - Direct access to BLE devices via custom `Ble` module (powered by `flutter_blue_plus`)
+- **🔵 Bluetooth Low Energy (BLE)** - Direct access to BLE devices via `@webfly/ble` (powered by `flutter_blue_plus` in `packages/webfly_ble`)
+- **🔐 Permissions** - Runtime permission requests via `@webfly/permission` (no startup prompts; request when needed)
 - **💾 SQLite Database** - Local database storage with `webf_sqflite`
 - **🔗 Native Sharing** - System share sheet integration via `webf_share`
 - **📱 Native UI Components** - Seamless Flutter-Web hybrid interfaces
@@ -90,9 +91,9 @@ WebFly isn't just a web viewer - it's a fully-featured native runtime with integ
 
 ### Prerequisites
 
-- Flutter 3.38.7 or higher
-- Dart SDK ^3.10.7
+- Flutter SDK (Dart ^3.10.7)
 - Android SDK (for Android builds)
+- pnpm (for frontend; optional if only running Flutter)
 
 ### Installation
 
@@ -145,26 +146,41 @@ WebFly isn't just a web viewer - it's a fully-featured native runtime with integ
 
 ### Native API Usage in Web Apps
 
+WebFly exposes native modules via `webf.invokeModuleAsync(moduleName, method, ...args)`. The frontend uses typed wrappers from `@webfly/ble` and `@webfly/permission` (Result-based, neverthrow).
+
+**BLE** (`@webfly/ble`):
+
 ```javascript
-// Bluetooth LE scanning
-if (window.webf?.bluetooth) {
-  const devices = await window.webf.bluetooth.scan();
-  // Connect and interact with BLE devices
-}
+import { startScan, getScanResults, connect, addBleListener } from '@webfly/ble';
 
-// SQLite database
-if (window.webf?.sqflite) {
-  const db = await window.webf.sqflite.openDatabase('mydb.db');
-  await db.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)');
-}
+const res = await startScan({ timeout: 5000 });
+if (res.isOk()) { /* use getScanResults(), connect(), etc. */ }
+using bus = new (await import('@webfly/ble')).BleEventBus(); // or addBleListener for single subscription
+```
 
-// Native sharing
+**Permissions** (`@webfly/permission`):
+
+```javascript
+import { checkStatus, request } from '@webfly/permission';
+
+const status = await checkStatus('camera');
+const granted = await request('camera'); // Shows system dialog when needed
+```
+
+**SQLite** (`webf_sqflite`):
+
+```javascript
+if (window.webf?.invokeModuleAsync) {
+  const db = await window.webf.invokeModuleAsync('Sqflite', 'openDatabase', 'mydb.db');
+  // ...
+}
+```
+
+**Native sharing** (`webf_share`):
+
+```javascript
 if (window.webf?.share) {
-  await window.webf.share.share({
-    title: 'Check this out!',
-    text: 'Amazing web app with native features',
-    url: 'https://example.com'
-  });
+  await window.webf.share.share({ title: '...', text: '...', url: '...' });
 }
 ```
 
@@ -175,17 +191,21 @@ if (window.webf?.share) {
 ```
 webfly/
 ├── lib/                    # Flutter app sources (Host Application)
-│   ├── main.dart           # App entry & WebF initialization
-│   ├── ui/                 # App screens (launcher, diagnostic, etc)
-│   ├── services/           # Native services (Asset Server, Settings, etc)
-│   └── native/             # WebF Native Modules (BLE, Share, etc)
+│   ├── main.dart           # App entry & WebF module registration
+│   ├── ui/                 # Launcher, scanner, native diagnostics, webf views
+│   ├── services/           # Asset HTTP server
+│   ├── store/              # App settings, URL history
+│   └── webf/               # WebF modules (AppSettings) & protocol
+├── packages/               # Shared & feature packages
+│   ├── webf_bridge/        # Shared WebF bridge (Dart + TS): wire format, createModuleInvoker, WebfModuleEventBus
+│   ├── webfly_ble/         # BLE WebF module (Dart + TS), flutter_blue_plus
+│   └── webfly_permission/  # Permission WebF module (Dart + TS), permission_handler
 ├── frontend/               # Web Application (React + Vite)
-│   ├── src/                # Web source code
-│   └── package.json        # Web dependencies
+│   └── src/                # Pages (BLE Demo, Permission Demo, etc.), hooks, config
 ├── assets/                 # Static assets & bundled use_cases
-├── platforms/              # Platform-specific runners (android, ios, etc)
+├── platforms/              # Platform templates (android, etc.)
 ├── docs/                   # Documentation & screenshots
-└── pubspec.yaml            # Flutter dependencies
+└── pubspec.yaml            # Flutter dependencies (webf_bridge, webfly_ble, webfly_permission)
 ```
 
 ### Architecture Overview
@@ -253,15 +273,22 @@ flutter build appbundle --release
 ### Customization
 
 **Add Custom Native Plugins:**
-1. Add plugin dependency to `pubspec.yaml`
-2. Integrate with WebF bridge in `services/`
-3. Expose API to JavaScript context
+1. Create a package under `packages/` (or add dependency to `pubspec.yaml`).
+2. Use `webf_bridge` (Dart: `webfOk`/`webfErr`/`toWebfJson`; TS: `createModuleInvoker`, `WebfModuleEventBus`) for wire format and event bus.
+3. Register the module in `lib/main.dart` with `WebF.defineModule(...)` and expose API to the frontend (e.g. `@webfly/ble`-style wrapper).
 
 **Modify UI Theme:**
-- Edit `lib/main.dart` for app-wide theme
-- Customize launcher widgets in `screens/launcher/widgets/`
+- Edit `lib/main.dart` for app-wide theme.
+- Customize launcher widgets in `lib/ui/launcher/widgets/`.
 
 ## ⚙️ Configuration
+
+### Permissions & AndroidManifest
+
+- **Bluetooth, notification, etc.** are declared in both `android/app/src/main/AndroidManifest.xml` and `platforms/android/AndroidManifest.main.xml` (kept in sync). This includes `BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`, `POST_NOTIFICATIONS` (Android 13+), and others.
+- **Runtime request**: The app does not request permissions at startup. Request when needed, e.g. open **Permission Demo**, tap **Request** for the desired permission (bluetooth, notification, etc.) to trigger the system dialog; or call `request('bluetoothScan')` / `request('notification')` from your code when using that feature.
+- **If still denied**: Make sure you tapped Request for that permission in Permission Demo; if you previously chose “Don’t ask again”, grant the permission in system **Settings → Apps → WebFly → Permissions**.
+- **Adding new permissions**: After adding `<uses-permission>` in `android/app/src/main/AndroidManifest.xml`, update `platforms/android/AndroidManifest.main.xml` the same way so both stay in sync.
 
 ### App Settings
 
@@ -280,12 +307,16 @@ For development, the built-in HTTP server serves assets from:
 ## 📦 Dependencies
 
 ### Core
-- `webf: 0.24.9` - Web rendering engine
+- `webf: ^0.24.11` - Web rendering engine
 - `signals_flutter: ^6.3.0` - State management
 - `go_router: ^17.0.1` - Navigation
 
-### Native Capabilities
-- `flutter_blue_plus: ^2.1.0` - BLE support (Custom Module)
+### Packages (monorepo)
+- `webf_bridge` - Shared bridge: wire format (Dart), `createModuleInvoker` / `WebfModuleEventBus` (TS)
+- `webfly_ble` - BLE WebF module (Dart + TS), uses `flutter_blue_plus`
+- `webfly_permission` - Permission WebF module (Dart + TS), uses `permission_handler`
+
+### Native & Web
 - `webf_sqflite: ^1.0.1` - SQLite database
 - `webf_share: ^1.1.0` - Native sharing
 - `mobile_scanner: ^7.1.4` - QR code scanning

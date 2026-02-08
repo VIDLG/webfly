@@ -1,24 +1,35 @@
+// Re-export flutter_blue_plus, wrappers, options, DTOs, and WebF BLE module.
+// Usage: import 'package:webfly_ble/webfly_ble.dart'; or show BleWebfModule for WebF only.
+
+export 'package:flutter_blue_plus/flutter_blue_plus.dart';
+export 'src/adapter.dart';
+export 'src/characteristic.dart';
+export 'src/device.dart';
+export 'src/dto.dart';
+export 'src/options.dart';
+
 import 'dart:async';
 
 import 'package:anyhow/anyhow.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fbp;
+import 'package:flutter/foundation.dart';
 import 'package:webf/webf.dart';
-
-import '../native/ble/ble.dart';
-import '../utils/app_logger.dart';
-import 'protocol.dart';
+import 'package:webf_bridge/webf_bridge.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:webfly_ble/src/adapter.dart';
+import 'package:webfly_ble/src/characteristic.dart';
+import 'package:webfly_ble/src/device.dart';
+import 'package:webfly_ble/src/dto.dart';
+import 'package:webfly_ble/src/options.dart';
 
 // ---------------------------------------------------------------------------
 // BLE event types (Dart side; matches ble.ts event payload types)
 // ---------------------------------------------------------------------------
 
-/// Event type names emitted to JS. Keep in sync with ble.ts BleEventType.
 abstract final class BleEventType {
   static const connectionStateChanged = 'connectionStateChanged';
   static const characteristicReceived = 'characteristicReceived';
 }
 
-/// Payload for connectionStateChanged. Matches BleConnectionStateChangedData in ble.ts.
 class BleConnectionStateChangedPayload {
   BleConnectionStateChangedPayload({
     required this.deviceId,
@@ -34,7 +45,6 @@ class BleConnectionStateChangedPayload {
   };
 }
 
-/// Payload for characteristicReceived. Matches BleCharacteristicReceivedData in ble.ts.
 class BleCharacteristicReceivedPayload {
   BleCharacteristicReceivedPayload({
     required this.deviceId,
@@ -60,30 +70,23 @@ class BleCharacteristicReceivedPayload {
 // Module
 // ---------------------------------------------------------------------------
 
-/// WebF Native Module for Bluetooth Low Energy (BLE) operations
-///
-/// All WebF logic (invoke routing, argument parsing, BLE calls, response shaping)
-/// is centralized here. adapter/device/characteristic expose only pure BLE APIs.
-///
-/// Events emitted to JS (listen via webf.on('Ble:eventName', (e) => e.detail)):
-/// - connectionStateChanged: { deviceId, connectionState }
-/// - characteristicReceived: { deviceId, serviceUuid, characteristicUuid, value }
 class BleWebfModule extends WebFBaseModule {
   BleWebfModule(super.manager);
 
-  StreamSubscription<fbp.OnConnectionStateChangedEvent>? _connectionStateSub;
-  StreamSubscription<fbp.OnCharacteristicReceivedEvent>?
-  _characteristicReceivedSub;
+  StreamSubscription<OnConnectionStateChangedEvent>? _connectionStateSub;
+  StreamSubscription<OnCharacteristicReceivedEvent>? _characteristicReceivedSub;
 
   @override
   String get name => 'Ble';
 
   @override
   Future<void> initialize() async {
-    _connectionStateSub = BleEvents.onConnectionStateChanged.listen(
+    _connectionStateSub =
+        FlutterBluePlus.events.onConnectionStateChanged.listen(
       _emitConnectionStateChanged,
     );
-    _characteristicReceivedSub = BleEvents.onCharacteristicReceived.listen(
+    _characteristicReceivedSub =
+        FlutterBluePlus.events.onCharacteristicReceived.listen(
       _emitCharacteristicReceived,
     );
   }
@@ -121,22 +124,22 @@ class BleWebfModule extends WebFBaseModule {
         return _setNotifyValue(arguments);
       default:
         final error = '[BleModule] Unknown method: $method';
-        appLogger.w(error);
-        return returnErr(error, code: -32601);
+        debugPrint('[webfly_ble] $error');
+        return webfErr(error);
     }
   }
 
   Future<dynamic> _isSupported() async {
-    return returnOk(await bleIsSupported());
+    return webfOk(await FlutterBluePlus.isSupported);
   }
 
   Future<dynamic> _getAdapterState() async {
-    return returnOk(bleAdapterStateNow.toJson());
+    return webfOk(FlutterBluePlus.adapterStateNow.name);
   }
 
   Future<dynamic> _turnOn() async {
     final result = await bleTurnOn();
-    return result.toJson();
+    return result.toWebfJson();
   }
 
   Future<dynamic> _startScan(List<dynamic> arguments) async {
@@ -147,27 +150,29 @@ class BleWebfModule extends WebFBaseModule {
         ? const ScanOptions()
         : ScanOptions.fromJson(map);
     final result = await bleStartScan(options);
-    return result.toJson();
+    return result.toWebfJson();
   }
 
   Future<dynamic> _stopScan() async {
     final result = await bleStopScan();
-    return result.toJson();
+    return result.toWebfJson();
   }
 
   Future<dynamic> _getScanResults() async {
-    return returnOk(
-      bleLastScanResults.map((r) => ScanResultDto.fromFbp(r).toJson()).toList(),
+    return webfOk(
+      FlutterBluePlus.lastScanResults
+          .map((r) => ScanResultDto.fromFbp(r).toJson())
+          .toList(),
     );
   }
 
   Future<dynamic> _isScanning() async {
-    return returnOk(bleIsScanningNow);
+    return webfOk(FlutterBluePlus.isScanningNow);
   }
 
   Future<dynamic> _getConnectedDevices() async {
-    return returnOk(
-      bleConnectedDevices
+    return webfOk(
+      FlutterBluePlus.connectedDevices
           .map((d) => BluetoothDeviceDto.fromFbp(d).toJson())
           .toList(),
     );
@@ -175,46 +180,45 @@ class BleWebfModule extends WebFBaseModule {
 
   Future<dynamic> _connect(List<dynamic> arguments) async {
     final parsed = _parseDeviceArgs(arguments, 'connect');
-    if (parsed.isErr()) return returnErr(parsed.unwrapErr().toString());
+    if (parsed.isErr()) return webfErr(parsed.unwrapErr().toString());
     final (deviceId, optionsMap) = parsed.unwrap();
     final options = optionsMap == null
         ? const ConnectOptions()
         : ConnectOptions.fromJson(optionsMap);
-    final device = fbp.BluetoothDevice.fromId(deviceId);
+    final device = BluetoothDevice.fromId(deviceId);
     final result = await device.bleConnect(options);
-    return result.toJson();
+    return result.toWebfJson();
   }
 
   Future<dynamic> _disconnect(List<dynamic> arguments) async {
     final parsed = _parseDeviceArgs(arguments, 'disconnect');
-    if (parsed.isErr()) return returnErr(parsed.unwrapErr().toString());
+    if (parsed.isErr()) return webfErr(parsed.unwrapErr().toString());
     final (deviceId, optionsMap) = parsed.unwrap();
     final options = optionsMap == null
         ? const DisconnectOptions()
         : DisconnectOptions.fromJson(optionsMap);
-    final device = fbp.BluetoothDevice.fromId(deviceId);
+    final device = BluetoothDevice.fromId(deviceId);
     final result = await device.bleDisconnect(options);
-    return result.toJson();
+    return result.toWebfJson();
   }
 
   Future<dynamic> _discoverServices(List<dynamic> arguments) async {
     final parsed = _parseDeviceArgs(arguments, 'discoverServices');
-    if (parsed.isErr()) return returnErr(parsed.unwrapErr().toString());
+    if (parsed.isErr()) return webfErr(parsed.unwrapErr().toString());
     final (deviceId, optionsMap) = parsed.unwrap();
     final options = optionsMap == null
         ? const DiscoverServicesOptions()
         : DiscoverServicesOptions.fromJson(optionsMap);
-    final device = fbp.BluetoothDevice.fromId(deviceId);
+    final device = BluetoothDevice.fromId(deviceId);
     final result = await device.bleDiscoverServices(options);
-    return result.toJson(
-      (services) =>
-          services.map((s) => BluetoothServiceDto.fromFbp(s).toJson()).toList(),
-    );
+    return result.toWebfJson((services) {
+      return services.map((s) => BluetoothServiceDto.fromFbp(s).toJson()).toList();
+    });
   }
 
   Future<dynamic> _readCharacteristic(List<dynamic> arguments) async {
     final parsed = _parseCharacteristicArgs(arguments, 'readCharacteristic');
-    if (parsed.isErr()) return returnErr(parsed.unwrapErr().toString());
+    if (parsed.isErr()) return webfErr(parsed.unwrapErr().toString());
     final (deviceId, serviceUuid, characteristicUuid, map) = parsed.unwrap();
     final options = map == null
         ? null
@@ -225,20 +229,20 @@ class BleWebfModule extends WebFBaseModule {
       characteristicUuid,
     );
     if (cResult.isErr()) {
-      return returnErr(cResult.unwrapErr().toString());
+      return webfErr(cResult.unwrapErr().toString());
     }
     final result = await cResult.unwrap().bleRead(options);
-    return result.toJson();
+    return result.toWebfJson();
   }
 
   Future<dynamic> _writeCharacteristic(List<dynamic> arguments) async {
     if (arguments.length < 4) {
-      return returnErr(
+      return webfErr(
         'writeCharacteristic requires [deviceId, serviceUuid, characteristicUuid, data, options?]',
       );
     }
     if (arguments[3] is! List) {
-      return returnErr('writeCharacteristic data (args[3]) must be number[]');
+      return webfErr('writeCharacteristic data (args[3]) must be number[]');
     }
     final deviceId = arguments[0] as String;
     final serviceUuid = arguments[1] as String;
@@ -259,20 +263,20 @@ class BleWebfModule extends WebFBaseModule {
       characteristicUuid,
     );
     if (cResult.isErr()) {
-      return returnErr(cResult.unwrapErr().toString());
+      return webfErr(cResult.unwrapErr().toString());
     }
     final result = await cResult.unwrap().bleWrite(data, options);
-    return result.toJson();
+    return result.toWebfJson();
   }
 
   Future<dynamic> _setNotifyValue(List<dynamic> arguments) async {
     if (arguments.length < 4) {
-      return returnErr(
+      return webfErr(
         'setNotifyValue requires [deviceId, serviceUuid, characteristicUuid, enable, options?]',
       );
     }
     if (arguments[3] is! bool) {
-      return returnErr('setNotifyValue enable (args[3]) must be boolean');
+      return webfErr('setNotifyValue enable (args[3]) must be boolean');
     }
     final deviceId = arguments[0] as String;
     final serviceUuid = arguments[1] as String;
@@ -290,17 +294,12 @@ class BleWebfModule extends WebFBaseModule {
       characteristicUuid,
     );
     if (cResult.isErr()) {
-      return returnErr(cResult.unwrapErr().toString());
+      return webfErr(cResult.unwrapErr().toString());
     }
     final result = await cResult.unwrap().bleSetNotifyValue(enable, options);
-    return result.toJson();
+    return result.toWebfJson();
   }
 
-  // ---------------------------------------------------------------------------
-  // Argument parsing (JS call shapes)
-  // ---------------------------------------------------------------------------
-
-  /// Parses [deviceId, options?] (positional only).
   Result<(String, Map<String, dynamic>?)> _parseDeviceArgs(
     List<dynamic> args,
     String methodName,
@@ -320,7 +319,6 @@ class BleWebfModule extends WebFBaseModule {
     return Ok((deviceId, optionsMap));
   }
 
-  /// Parses [deviceId, serviceUuid, characteristicUuid, options?] (positional only).
   Result<(String, String, String, Map<String, dynamic>?)>
   _parseCharacteristicArgs(List<dynamic> args, String methodName) {
     if (args.length < 3) {
@@ -346,7 +344,7 @@ class BleWebfModule extends WebFBaseModule {
     return Ok((deviceId, serviceUuid, characteristicUuid, map));
   }
 
-  void _emitConnectionStateChanged(fbp.OnConnectionStateChangedEvent event) {
+  void _emitConnectionStateChanged(OnConnectionStateChangedEvent event) {
     try {
       final payload = BleConnectionStateChangedPayload(
         deviceId: event.device.remoteId.str,
@@ -357,11 +355,11 @@ class BleWebfModule extends WebFBaseModule {
         data: payload.toJson(),
       );
     } catch (e) {
-      appLogger.w('[BleModule] connectionStateChanged emit error: $e');
+      debugPrint('[webfly_ble] connectionStateChanged emit error: $e');
     }
   }
 
-  void _emitCharacteristicReceived(fbp.OnCharacteristicReceivedEvent event) {
+  void _emitCharacteristicReceived(OnCharacteristicReceivedEvent event) {
     try {
       final payload = BleCharacteristicReceivedPayload(
         deviceId: event.characteristic.remoteId.str,
@@ -374,7 +372,7 @@ class BleWebfModule extends WebFBaseModule {
         data: payload.toJson(),
       );
     } catch (e) {
-      appLogger.w('[BleModule] characteristicReceived emit error: $e');
+      debugPrint('[webfly_ble] characteristicReceived emit error: $e');
     }
   }
 

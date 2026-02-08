@@ -12,6 +12,10 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - third_party/**
+    - lib/native/**
+  # Disabled: can cause Cursor/IDE to freeze (analyzer plugin runs on every analysis).
+  # plugins:
+  #   - flutter_hooks_lint_plugin
 
 linter:
   # The lint rules applied to this project can be customized in the
@@ -27,6 +31,16 @@ linter:
   rules:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+# Flutter Hooks lint plugin (disabled to avoid IDE freeze).
+# https://pub.dev/packages/flutter_hooks_lint_plugin
+# flutter_hooks_lint_plugin:
+#   exhaustive_keys:
+#     constant_hooks:
+#       - useRef
+#       - useIsMounted
+#       - useFocusNode
+#       - useContext
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
