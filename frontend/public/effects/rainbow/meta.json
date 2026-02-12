@@ -1,4 +1,5 @@
 {
+  "id": "rainbow",
   "name": "Rainbow",
   "description": "Cycling rainbow colors across the LED strip"
 }

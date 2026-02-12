@@ -1,4 +1,5 @@
 {
+  "id": "chase",
   "name": "Chase",
   "description": "LEDs chasing each other in a loop"
 }

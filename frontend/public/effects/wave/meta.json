@@ -1,4 +1,5 @@
 {
+  "id": "wave",
   "name": "Wave",
   "description": "A group of adjacent LEDs moving together like a wave"
 }

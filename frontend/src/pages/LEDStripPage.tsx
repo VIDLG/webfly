@@ -1,8 +1,45 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@openwebf/react-router';
-import { LED_EFFECTS } from '../led/effectsRegistry';
+
+interface LedEffectManifest {
+  id: string
+  name: string
+  description: string
+}
 
 export default function LEDStripPage() {
   const { navigate } = useNavigate();
+  const [effects, setEffects] = useState<LedEffectManifest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const base = import.meta.env.BASE_URL;
+        const res = await fetch(`${base}effects/manifest.json`);
+        if (!res.ok) throw new Error('Failed to load effects manifest');
+        const { effects: ids }: { effects: string[] } = await res.json();
+
+        const manifests = await Promise.all(
+          ids.map(async (id) => {
+            const r = await fetch(`${base}effects/${id}/meta.json`);
+            if (!r.ok) throw new Error(`Failed to load meta.json for effect "${id}"`);
+            const meta: { id?: string; name: string; description: string } = await r.json();
+            return { id: meta.id ?? id, name: meta.name, description: meta.description };
+          }),
+        );
+        if (!cancelled) setEffects(manifests);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -10,7 +47,7 @@ export default function LEDStripPage() {
         {/* 标题 */}
         <header className="mb-6 text-center">
           <h1 className="mb-2 text-4xl font-bold text-slate-900 dark:text-slate-100">
-            💡 LED Strip Control Center
+            LED Strip Control Center
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400">
             Dynamically load and preview different LED strip effects
@@ -21,17 +58,31 @@ export default function LEDStripPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900/60">
           <h2 className="mb-5 text-2xl font-bold text-slate-900 dark:text-slate-100">Choose an Effect</h2>
 
-          <div className="flex flex-col gap-3">
-            {LED_EFFECTS.map((effect) => (
-              <button
-                key={effect.id}
-                onClick={() => navigate(`/led/${effect.id}`)}
-                className="w-full rounded-xl border-2 border-slate-300 bg-white/70 px-5 py-4 text-left text-lg font-semibold text-slate-900 transition hover:opacity-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100"
-              >
-                {effect.name}
-              </button>
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-10 text-slate-600 dark:text-slate-400">
+              <div className="inline-block w-10 h-10 rounded-full border-4 border-slate-300 border-t-sky-500 animate-spin dark:border-slate-700 dark:border-t-sky-400" />
+              <p className="mt-4 text-base">Loading effects...</p>
+            </div>
+          ) : error ? (
+            <div className="p-5 bg-red-900/20 border-2 border-red-500/50 rounded-lg text-red-200">
+              <p className="font-mono text-sm whitespace-pre-wrap break-words">{error}</p>
+            </div>
+          ) : effects.length === 0 ? (
+            <p className="text-center text-slate-500 dark:text-slate-400">No effects found.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {effects.map((effect) => (
+                <button
+                  key={effect.id}
+                  onClick={() => navigate(`/led/${effect.id}`)}
+                  className="w-full rounded-xl border-2 border-slate-300 bg-white/70 px-5 py-4 text-left transition hover:opacity-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 dark:border-slate-700 dark:bg-slate-900/60"
+                >
+                  <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">{effect.name}</span>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{effect.description}</p>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

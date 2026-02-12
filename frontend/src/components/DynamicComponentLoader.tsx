@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import * as ReactNamespace from 'react'
 import * as CupertinoComponents from '@openwebf/react-cupertino-ui'
 import * as Babel from '@babel/standalone'
+import { useTheme } from '../hooks/theme'
 
 type BabelOptions = {
   filename?: string
@@ -18,6 +19,7 @@ type BabelStandaloneApi = {
 interface DynamicComponentLoaderProps {
   code: string
   componentName: string
+  componentProps?: Record<string, unknown>
 }
 
 /**
@@ -26,7 +28,7 @@ interface DynamicComponentLoaderProps {
  * - Compiles at runtime using @babel/standalone
  * - Transforms ESModule export to CommonJS, then executes with new Function
  */
-export default function DynamicComponentLoader({ code, componentName }: DynamicComponentLoaderProps) {
+export default function DynamicComponentLoader({ code, componentName, componentProps }: DynamicComponentLoaderProps) {
   const [Component, setComponent] = useState<React.ComponentType | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -64,8 +66,8 @@ export default function DynamicComponentLoader({ code, componentName }: DynamicC
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const moduleObj: any = { exports: exportsObj }
 
-        const fn = new Function('React', 'exports', 'module', 'CupertinoComponents', `${compiled}\nreturn module.exports?.default ?? exports.default;`)
-        const loaded = fn(ReactNamespace, exportsObj, moduleObj, CupertinoComponents)
+        const fn = new Function('React', 'exports', 'module', 'CupertinoComponents', 'useTheme', `${compiled}\nreturn module.exports?.default ?? exports.default;`)
+        const loaded = fn(ReactNamespace, exportsObj, moduleObj, CupertinoComponents, useTheme)
 
         if (!loaded) throw new Error('Could not extract component from code (ensure there is a default export)')
         if (!cancelled) setComponent(() => loaded)
@@ -101,7 +103,7 @@ export default function DynamicComponentLoader({ code, componentName }: DynamicC
 
   return (
     <div className="w-full h-full">
-      <Component />
+      <Component {...(componentProps ?? {})} />
     </div>
   )
 }
