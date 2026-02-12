@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(ls \"d:\\\\projects\\\\webfly\\\\webfly_packages\"\" 2>/dev/null || echo \"Not found or empty \")",
-      "Bash(ls \"d:\\\\projects\\\\webfly\\\\packages\"\" 2>/dev/null || echo \"Not found \")"
-    ]
-  }
-}

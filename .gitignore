@@ -60,6 +60,9 @@ app.*.map.json
 assets/gen/
 *.g.dart
 
+# Claude Code
+.claude/
+
 # Python / uv
 .venv/
 __pycache__/
