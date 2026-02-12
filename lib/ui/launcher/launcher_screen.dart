@@ -16,13 +16,10 @@ import 'widgets/launcher_header.dart';
 import 'widgets/launcher_inputs.dart';
 import 'widgets/launch_button.dart';
 import 'widgets/use_cases_card.dart';
-import 'package:webfly_webf_view/webfly_webf_view.dart' show normalizeWebfInnerPath;
+import 'package:webfly_webf_view/webfly_webf_view.dart'
+    show normalizeWebfInnerPath;
 import '../router/config.dart'
-    show
-        scannerPath,
-        nativeDiagnosticsPath,
-        appRoutePath,
-        buildWebFRouteUrl;
+    show scannerPath, nativeDiagnosticsPath, appRoutePath, buildWebFRouteUrl;
 
 class LauncherScreen extends HookWidget {
   const LauncherScreen({super.key});

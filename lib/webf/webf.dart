@@ -9,4 +9,5 @@
 
 export 'package:webfly_theme/webfly_theme.dart' show ThemeWebfModule;
 export 'package:webfly_ble/webfly_ble.dart' show BleWebfModule;
-export 'package:webfly_permission/webfly_permission.dart' show PermissionHandlerWebfModule;
+export 'package:webfly_permission/webfly_permission.dart'
+    show PermissionHandlerWebfModule;

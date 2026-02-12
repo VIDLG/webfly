@@ -8,10 +8,7 @@ import '../../../store/app_settings.dart';
 
 /// Show settings dialog
 void showSettingsDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => const _SettingsDialog(),
-  );
+  showDialog(context: context, builder: (context) => const _SettingsDialog());
 }
 
 class _SettingsDialog extends HookWidget {
@@ -25,8 +22,7 @@ class _SettingsDialog extends HookWidget {
       () => themeStream,
       initialValue: getTheme(),
     );
-    final themeState =
-        (themeSignal.value as AsyncData<ThemeState>).value;
+    final themeState = (themeSignal.value as AsyncData<ThemeState>).value;
     final themeMode = themeState.themePreference;
 
     return AlertDialog(
@@ -42,10 +38,7 @@ class _SettingsDialog extends HookWidget {
             onChanged: (value) {
               showWebfInspectorSignal.value = value;
             },
-            title: const Text(
-              'Show Inspector',
-              style: TextStyle(fontSize: 13),
-            ),
+            title: const Text('Show Inspector', style: TextStyle(fontSize: 13)),
             subtitle: const Text(
               'Display WebF element inspector overlay',
               style: TextStyle(fontSize: 11),
