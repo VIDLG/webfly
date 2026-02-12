@@ -3,28 +3,20 @@ import 'package:webfly/ui/router/config.dart';
 
 void main() {
   group('Router URL Generation Tests', () {
-    test('buildWebFUrl generates correct single-page URL', () {
-      final url = 'https://example.com/app.js';
-      final result = buildWebFUrl(url);
-
-      expect(result, startsWith('/webf?'));
-      expect(result, contains('url=https%3A%2F%2Fexample.com%2Fapp.js'));
-    });
-
     test(
       'buildWebFRouteUrl generates correct hybrid routing URL with root path',
       () {
         final url = 'https://example.com/app.js';
         final result = buildWebFRouteUrl(
           url: url,
-          route: kAppRoutePath,
+          route: appRoutePath,
           path: '/',
         );
 
-        expect(result, startsWith('/app?'));
+        expect(result, startsWith('/_/app?'));
         expect(result, contains('url=https%3A%2F%2Fexample.com%2Fapp.js'));
-        expect(result, contains('base='));
-        expect(result, contains('path=%2F'));
+        expect(result, contains('ctrl='));
+        expect(result, contains('loc=%2F'));
       },
     );
 
@@ -34,54 +26,39 @@ void main() {
         final url = 'https://example.com/app.js';
         final result = buildWebFRouteUrl(
           url: url,
-          route: kAppRoutePath,
+          route: appRoutePath,
           path: '/home',
         );
 
-        expect(result, startsWith('/app?'));
+        expect(result, startsWith('/_/app?'));
         expect(result, contains('url=https%3A%2F%2Fexample.com%2Fapp.js'));
-        expect(result, contains('path=%2Fhome'));
+        expect(result, contains('loc=%2Fhome'));
       },
     );
 
     test('buildWebFRouteUrl generates correct URL with custom base', () {
       final url = 'https://example.com/app.js';
-      final base = 'my-custom-base';
+      final base = 'my-custom-ctrl';
       final result = buildWebFRouteUrl(
         url: url,
-        route: kAppRoutePath,
+        route: appRoutePath,
         path: '/about',
         base: base,
       );
 
-      expect(result, contains('base=my-custom-base'));
+      expect(result, contains('ctrl=my-custom-ctrl'));
     });
 
     test('buildWebFRouteUrl handles path without leading slash', () {
       final url = 'https://example.com/app.js';
       final result = buildWebFRouteUrl(
         url: url,
-        route: kAppRoutePath,
+        route: appRoutePath,
         path: 'about',
       );
 
-      expect(result, startsWith('/app?'));
-      expect(result, contains('path=about'));
-    });
-
-    test('buildWebFRouteUrlFromUri preserves base parameter', () {
-      final uri = Uri.parse(
-        '/app?url=https%3A%2F%2Fexample.com%2Fapp.js&base=test-base&path=%2Fpage',
-      );
-      final result = buildWebFRouteUrlFromUri(
-        uri: uri,
-        route: kAppRoutePath,
-        path: '/new-page',
-      );
-
-      expect(result, contains('base=test-base'));
-      expect(result, startsWith('/app?'));
-      expect(result, contains('path=%2Fnew-page'));
+      expect(result, startsWith('/_/app?'));
+      expect(result, contains('loc=about'));
     });
 
     test('generateDefaultControllerName generates consistent names', () {
@@ -103,16 +80,16 @@ void main() {
   });
 
   group('GoRouter Configuration Tests', () {
-    test('kAppRoutePath should match various paths', () {
+    test('appRoutePath should match various paths', () {
       // Test the route path itself
-      expect(kAppRoutePath, equals('/app'));
+      expect(appRoutePath, equals('/_/app'));
 
       // Test that the pattern format is correct
       final testUrls = [
-        '/app/',
-        '/app/home',
-        '/app/about/team',
-        '/app/products/123',
+        '/_/app/',
+        '/_/app/home',
+        '/_/app/about/team',
+        '/_/app/products/123',
       ];
 
       // Verify URLs match expected pattern
@@ -120,44 +97,31 @@ void main() {
     });
 
     test('Route paths are correctly defined', () {
-      expect(kLauncherPath, equals('/_'));
-      expect(kScannerPath, equals('/_/scanner'));
-      expect(kWebfRoutePath, equals('/webf'));
-      expect(kAppRoutePath, equals('/app'));
+      expect(launcherPath, equals('/_'));
+      expect(scannerPath, equals('/_/scanner'));
+      expect(appRoutePath, equals('/_/app'));
     });
 
     test('Query parameter keys are correctly defined', () {
-      expect(kUrlParam, equals('url'));
-      expect(kBaseParam, equals('base'));
-      expect(kPathParam, equals('path'));
-      expect(kTitleParam, equals('title'));
+      expect(urlParam, equals('url'));
+      expect(baseParam, equals('ctrl'));
+      expect(locParam, equals('loc'));
+      expect(titleParam, equals('title'));
     });
   });
 
   group('URL Encoding Tests', () {
-    test('Special characters in URL are properly encoded', () {
-      final url = 'https://example.com/app.js?foo=bar&baz=qux';
-      final result = buildWebFUrl(url);
-
-      expect(
-        result,
-        contains(
-          'url=https%3A%2F%2Fexample.com%2Fapp.js%3Ffoo%3Dbar%26baz%3Dqux',
-        ),
-      );
-    });
-
     test('Base parameter is properly encoded', () {
       final url = 'https://example.com/app.js';
-      final base = 'base-with-special-chars:/@';
+      final base = 'ctrl-with-special-chars:/@';
       final result = buildWebFRouteUrl(
         url: url,
-        route: kAppRoutePath,
+        route: appRoutePath,
         path: '/',
         base: base,
       );
 
-      // The base should be URL encoded
+      // The controller name should be URL encoded
       expect(result, isNot(contains(':/@')));
     });
   });
@@ -167,37 +131,37 @@ void main() {
       final url = 'https://example.com/app.js';
       final result = buildWebFRouteUrl(
         url: url,
-        route: kAppRoutePath,
+        route: appRoutePath,
         path: '/',
       );
 
-      // Path is '/' which generates /app?...&path=%2F
-      expect(result, matches(RegExp(r'^/app\?')));
+      // Path is '/' which generates /_/app?...&loc=%2F
+      expect(result, matches(RegExp(r'^/_/app\?')));
     });
 
     test('Multiple slashes in path are handled', () {
       final url = 'https://example.com/app.js';
       final result = buildWebFRouteUrl(
         url: url,
-        route: kAppRoutePath,
+        route: appRoutePath,
         path: '//double//slash',
       );
 
       // Should still work with query parameter format
-      expect(result, startsWith('/app?'));
-      expect(result, contains('path=%2F%2Fdouble%2F%2Fslash'));
+      expect(result, startsWith('/_/app?'));
+      expect(result, contains('loc=%2F%2Fdouble%2F%2Fslash'));
     });
 
-    test('Go router pattern should match /app/ with empty path', () {
+    test('Go router pattern should match /_/app/ with empty path', () {
       // The regex pattern for go_router :path(.*)
-      // When path is /app/, the captured group should be empty string
-      final pattern = RegExp(r'^/app/(.*)');
+      // When path is /_/app/, the captured group should be empty string
+      final pattern = RegExp(r'^/_/app/(.*)');
 
-      expect(pattern.hasMatch('/app/'), isTrue);
-      expect(pattern.hasMatch('/app/home'), isTrue);
-      expect(pattern.hasMatch('/app?url=xxx'), isFalse); // Missing slash!
+      expect(pattern.hasMatch('/_/app/'), isTrue);
+      expect(pattern.hasMatch('/_/app/home'), isTrue);
+      expect(pattern.hasMatch('/_/app?url=xxx'), isFalse); // Missing slash!
 
-      final match = pattern.firstMatch('/app/');
+      final match = pattern.firstMatch('/_/app/');
       expect(match?.group(1), equals(''));
     });
   });

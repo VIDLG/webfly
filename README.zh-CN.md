@@ -27,7 +27,7 @@
 
 WebFly 不仅仅是一个 Web 浏览器 - 它是一个功能完整的原生运行时，集成了设备 API：
 
-- **🔵 蓝牙低功耗（BLE）** - 通过 `@webfly/ble`（`packages/webfly_ble`，基于 `flutter_blue_plus`）直接访问 BLE 设备
+- **🔵 蓝牙低功耗（BLE）** - 通过 `@webfly/ble`（`webfly_packages/webfly_ble`，基于 `flutter_blue_plus`）直接访问 BLE 设备
 - **🔐 权限** - 通过 `@webfly/permission` 按需请求运行时权限（不在一启动就弹窗，需要时再请求）
 - **💾 SQLite 数据库** - 使用 `webf_sqflite` 进行本地数据库存储
 - **🔗 原生分享** - 通过 `webf_share` 集成系统分享功能
@@ -182,7 +182,7 @@ webfly/
 │   ├── store/              # 应用设置、URL 历史
 │   └── webf/               # WebF 模块（AppSettings）与协议
 ├── packages/               # 共享与功能包
-│   ├── webf_bridge/        # 共享 WebF 桥（Dart + TS）：报文格式、createModuleInvoker、WebfModuleEventBus
+│   ├── webfly_bridge/      # 共享 WebF 桥（Dart + TS）：报文格式、createModuleInvoker、WebfModuleEventBus
 │   ├── webfly_ble/         # BLE WebF 模块（Dart + TS），flutter_blue_plus
 │   └── webfly_permission/  # 权限 WebF 模块（Dart + TS），permission_handler
 ├── frontend/               # Web 应用（React + Vite）
@@ -190,7 +190,7 @@ webfly/
 ├── assets/                 # 静态资源与打包用例
 ├── platforms/              # 平台模板（android 等）
 ├── docs/                   # 文档与截图
-└── pubspec.yaml            # Flutter 依赖（webf_bridge、webfly_ble、webfly_permission）
+└── pubspec.yaml            # Flutter 依赖（webfly_bridge、webfly_ble、webfly_permission）
 ```
 
 ### 架构概览
@@ -257,7 +257,7 @@ flutter build appbundle --release
 
 **添加自定义原生插件：**
 1. 在 `packages/` 下新建包（或往 `pubspec.yaml` 增加依赖）
-2. 使用 `webf_bridge`（Dart：`webfOk`/`webfErr`/`toWebfJson`；TS：`createModuleInvoker`、`WebfModuleEventBus`）做报文与事件总线
+2. 使用 `webfly_bridge`（Dart：`webfOk`/`webfErr`/`toJson`；TS：`createModuleInvoker`、`WebfModuleEventBus`）做报文与事件总线
 3. 在 `lib/main.dart` 中 `WebF.defineModule(...)` 注册，并在前端提供类似 `@webfly/ble` 的封装
 
 **修改 UI 主题：**
@@ -297,7 +297,7 @@ flutter build appbundle --release
 - `go_router: ^17.0.1` - 导航
 
 ### 包（本仓库）
-- `webf_bridge` - 共享桥：报文格式（Dart）、`createModuleInvoker` / `WebfModuleEventBus`（TS）
+- `webfly_bridge` - 共享桥：报文格式（Dart）、`createModuleInvoker` / `WebfModuleEventBus`（TS）
 - `webfly_ble` - BLE WebF 模块（Dart + TS），使用 `flutter_blue_plus`
 - `webfly_permission` - 权限 WebF 模块（Dart + TS），使用 `permission_handler`
 

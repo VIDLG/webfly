@@ -27,7 +27,7 @@ English | [简体中文](README.zh-CN.md)
 
 WebFly isn't just a web viewer - it's a fully-featured native runtime with integrated device APIs:
 
-- **🔵 Bluetooth Low Energy (BLE)** - Direct access to BLE devices via `@webfly/ble` (powered by `flutter_blue_plus` in `packages/webfly_ble`)
+- **🔵 Bluetooth Low Energy (BLE)** - Direct access to BLE devices via `@webfly/ble` (powered by `flutter_blue_plus` in `webfly_packages/webfly_ble`)
 - **🔐 Permissions** - Runtime permission requests via `@webfly/permission` (no startup prompts; request when needed)
 - **💾 SQLite Database** - Local database storage with `webf_sqflite`
 - **🔗 Native Sharing** - System share sheet integration via `webf_share`
@@ -197,7 +197,7 @@ webfly/
 │   ├── store/              # App settings, URL history
 │   └── webf/               # WebF modules (AppSettings) & protocol
 ├── packages/               # Shared & feature packages
-│   ├── webf_bridge/        # Shared WebF bridge (Dart + TS): wire format, createModuleInvoker, WebfModuleEventBus
+│   ├── webfly_bridge/      # Shared WebF bridge (Dart + TS): wire format, createModuleInvoker, WebfModuleEventBus
 │   ├── webfly_ble/         # BLE WebF module (Dart + TS), flutter_blue_plus
 │   └── webfly_permission/  # Permission WebF module (Dart + TS), permission_handler
 ├── frontend/               # Web Application (React + Vite)
@@ -205,7 +205,7 @@ webfly/
 ├── assets/                 # Static assets & bundled use_cases
 ├── platforms/              # Platform templates (android, etc.)
 ├── docs/                   # Documentation & screenshots
-└── pubspec.yaml            # Flutter dependencies (webf_bridge, webfly_ble, webfly_permission)
+└── pubspec.yaml            # Flutter dependencies (webfly_bridge, webfly_ble, webfly_permission)
 ```
 
 ### Architecture Overview
@@ -274,7 +274,7 @@ flutter build appbundle --release
 
 **Add Custom Native Plugins:**
 1. Create a package under `packages/` (or add dependency to `pubspec.yaml`).
-2. Use `webf_bridge` (Dart: `webfOk`/`webfErr`/`toWebfJson`; TS: `createModuleInvoker`, `WebfModuleEventBus`) for wire format and event bus.
+2. Use `webfly_bridge` (Dart: `webfOk`/`webfErr`/`toJson`; TS: `createModuleInvoker`, `WebfModuleEventBus`) for wire format and event bus.
 3. Register the module in `lib/main.dart` with `WebF.defineModule(...)` and expose API to the frontend (e.g. `@webfly/ble`-style wrapper).
 
 **Modify UI Theme:**
@@ -312,7 +312,7 @@ For development, the built-in HTTP server serves assets from:
 - `go_router: ^17.0.1` - Navigation
 
 ### Packages (monorepo)
-- `webf_bridge` - Shared bridge: wire format (Dart), `createModuleInvoker` / `WebfModuleEventBus` (TS)
+- `webfly_bridge` - Shared bridge: wire format (Dart), `createModuleInvoker` / `WebfModuleEventBus` (TS)
 - `webfly_ble` - BLE WebF module (Dart + TS), uses `flutter_blue_plus`
 - `webfly_permission` - Permission WebF module (Dart + TS), uses `permission_handler`
 

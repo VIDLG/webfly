@@ -17,7 +17,7 @@ class NativeDiagnosticsScreen extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'Logs',
-            onPressed: () => context.push(kNativeDiagnosticsLogsPath),
+            onPressed: () => context.push(nativeDiagnosticsLogsPath),
             icon: const Icon(Icons.article_outlined),
           ),
         ],

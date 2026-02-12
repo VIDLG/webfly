@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter test:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(dart test:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(ls \"d:\\\\projects\\\\webfly\\\\frontend\"\" 2>/dev/null || echo \"Not found \")",
+      "Bash(flutter pub cache:*)",
+      "Bash(dart pub cache:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add webfly_webf_view package for GoRouter hybrid routing\n\nExtract GoRouter + WebF hybrid routing into a reusable package:\n- GoRouterHybridDelegate: bridges WebF hybrid navigation to go_router\n  with GoError-safe fallbacks during teardown\n- WebfHybridConfig: strategy-based config for route packing/unpacking\n  without hard-coding host app paths\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "mcp__acp__Bash",
+      "mcp__acp__Write",
+      "mcp__acp__Edit",
+      "Bash(git mv:*)"
+    ]
+  }
+}

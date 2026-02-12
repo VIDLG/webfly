@@ -103,9 +103,10 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
     },
     resolve: {
       alias: {
-        '@webfly/ble': path.resolve(__dirname, '../packages/webfly_ble/lib/webfly_ble'),
-        '@webfly/permission': path.resolve(__dirname, '../packages/webfly_permission/lib/webfly_permission'),
-        // Resolve neverthrow from frontend so packages/webfly_ble (and webfly_permission) can import it
+        '@webfly/ble': path.resolve(__dirname, '../webfly_packages/webfly_ble/lib/webfly_ble'),
+        '@webfly/permission': path.resolve(__dirname, '../webfly_packages/webfly_permission/lib/webfly_permission'),
+        '@webfly/theme': path.resolve(__dirname, '../webfly_packages/webfly_theme/lib/webfly_theme'),
+        // Resolve neverthrow from frontend so webfly_packages/webfly_ble (and webfly_permission) can import it
         neverthrow: path.resolve(__dirname, 'node_modules/neverthrow'),
       },
     },

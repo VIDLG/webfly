@@ -145,11 +145,11 @@
             
             if (hybridHistory) {
                 // Use WebF's hybridHistory for navigation to usecases route
-                // Format: /_/usecases?url=encoded_url&base=controller_name&path=framework_path
+                // Format: /_/usecases?url=encoded_url&ctrl=controller_name&path=framework_path
                 const url = encodeURIComponent('http://localhost:8765/' + framework + '/');
                 const base = 'webf-' + Date.now();
                 const path = encodeURIComponent('/');
-                const flutterRoute = '/_/usecases?url=' + url + '&base=' + base + '&path=' + path;
+                const flutterRoute = '/_/usecases?url=' + url + '&ctrl=' + base + '&path=' + path;
                 
                 console.log('WebF navigation route:', flutterRoute);
                 hybridHistory.pushNamed(flutterRoute);

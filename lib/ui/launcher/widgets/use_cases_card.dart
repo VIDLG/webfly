@@ -13,7 +13,7 @@ class LauncherUseCasesCard extends StatelessWidget {
 
     void onTap() {
       appLogger.d('[LauncherScreen] Opening use cases menu');
-      context.push(kUseCasesMenuPath);
+      context.push(useCasesMenuPath);
     }
 
     return Card(

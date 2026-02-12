@@ -1,7 +1,10 @@
 
 [submodule "flutter_tools"]
 	path = flutter_tools
-	url = https://github.com/daleydeng/flutter_tools.git
+	url = https://github.com/VIDLG/flutter_tools.git
 [submodule "contrib/webf_usecases"]
 	path = contrib/webf_usecases
-	url = https://github.com/daleydeng/webf_usecases.git
+	url = https://github.com/VIDLG/webf_usecases.git
+[submodule "webfly_packages"]
+	path = webfly_packages
+	url = https://github.com/VIDLG/webfly_packages

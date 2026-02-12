@@ -16,13 +16,13 @@ import 'widgets/launcher_header.dart';
 import 'widgets/launcher_inputs.dart';
 import 'widgets/launch_button.dart';
 import 'widgets/use_cases_card.dart';
+import 'package:webfly_webf_view/webfly_webf_view.dart' show normalizeWebfInnerPath;
 import '../router/config.dart'
     show
-        kScannerPath,
-        kNativeDiagnosticsPath,
-        kAppRoutePath,
-        buildWebFRouteUrl,
-        normalizeWebfInnerPath;
+        scannerPath,
+        nativeDiagnosticsPath,
+        appRoutePath,
+        buildWebFRouteUrl;
 
 class LauncherScreen extends HookWidget {
   const LauncherScreen({super.key});
@@ -80,7 +80,7 @@ class LauncherScreen extends HookWidget {
       final normalizedUrl = url;
       // We always treat the input as the full URL, so path is default '/'
       // The user sees the full URL in the history and inputs.
-      final path = normalizeWebfInnerPath(customPath ?? '/') ?? '/';
+      final path = normalizeWebfInnerPath(customPath ?? '/');
 
       addUrlHistoryEntry(normalizedUrl, path);
       errorMessage.value = null;
@@ -88,7 +88,7 @@ class LauncherScreen extends HookWidget {
       // Always use hybrid routing mode (shared controller)
       final routeUrl = buildWebFRouteUrl(
         url: normalizedUrl,
-        route: kAppRoutePath,
+        route: appRoutePath,
         path: path,
       );
       appLogger.d(
@@ -132,13 +132,13 @@ class LauncherScreen extends HookWidget {
     }
 
     Future<void> openScanner() async {
-      final result = await context.push<Map<String, String>>(kScannerPath);
+      final result = await context.push<Map<String, String>>(scannerPath);
       if (result != null) {
         final url = result['url'] ?? '';
         final path = result['path'] ?? '/';
         // Keep bundle URL and inner route separate (hybrid routing uses `path=`).
         urlController.text = url;
-        pathController.text = normalizeWebfInnerPath(path) ?? '/';
+        pathController.text = normalizeWebfInnerPath(path);
         highlightUrlInput();
       }
     }
@@ -206,7 +206,7 @@ class LauncherScreen extends HookWidget {
         // 1. If user manually edited path in Advanced (not default '/'), use it
         // 2. Otherwise default to '/'
         final pathInput = pathController.text.trim();
-        final finalPath = normalizeWebfInnerPath(pathInput) ?? '/';
+        final finalPath = normalizeWebfInnerPath(pathInput);
 
         // Use the input as the full bundle URL.
         // Back-compat: if the user accidentally put the inner route into the URL
@@ -260,7 +260,7 @@ class LauncherScreen extends HookWidget {
           actions: [
             IconButton(
               tooltip: 'Native diagnostics',
-              onPressed: () => context.push(kNativeDiagnosticsPath),
+              onPressed: () => context.push(nativeDiagnosticsPath),
               icon: const Icon(Icons.monitor_heart_outlined),
             ),
             IconButton(

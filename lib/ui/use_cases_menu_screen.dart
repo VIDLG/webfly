@@ -68,9 +68,18 @@ class _UseCasesMenuScreenState extends State<UseCasesMenuScreen> {
     }
 
     final url = '$serverUrl/$framework/index.html';
-    // Navigate to WebF page
+    // Navigate to WebF hybrid route, passing state for the history.state demo.
     context.push(
-      Uri(path: kWebfRoutePath, queryParameters: {kUrlParam: url}).toString(),
+      buildWebFRouteUrl(
+        url: url,
+        route: appRoutePath,
+        path: '/',
+      ),
+      extra: {
+        'source': 'flutter',
+        'framework': framework,
+        'launchedAt': DateTime.now().toIso8601String(),
+      },
     );
   }
 

@@ -1,6 +1,6 @@
 /**
  * Shared WebF bridge: invoker, response type, and helpers.
- * Used by ble.ts, app_settings.ts, permission.ts, etc.
+ * Used by ble.ts, theme.ts, permission.ts, etc.
  */
 
 export interface WebFModuleEvent {

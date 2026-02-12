@@ -304,7 +304,7 @@ class BleDiagnosticsScreen extends HookWidget {
         actions: [
           IconButton(
             tooltip: 'Logs',
-            onPressed: () => context.push(kNativeDiagnosticsLogsPath),
+            onPressed: () => context.push(nativeDiagnosticsLogsPath),
             icon: const Icon(Icons.article_outlined),
           ),
           IconButton(

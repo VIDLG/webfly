@@ -1,10 +1,12 @@
 import 'package:catcher_2/catcher_2.dart';
 import 'package:flutter/material.dart';
-import 'package:signals_flutter/signals_flutter.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webf/webf.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 import 'package:webf_share/webf_share.dart';
 import 'package:webf_sqflite/webf_sqflite.dart';
+import 'package:webfly_theme/webfly_theme.dart';
 import 'webf/webf.dart';
 import 'services/asset_http_server.dart';
 import 'store/app_settings.dart';
@@ -34,14 +36,15 @@ void main() async {
   WebF.defineModule((context) => BleWebfModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
-  WebF.defineModule((context) => AppSettingsModule(context));
+  WebF.defineModule((context) => ThemeWebfModule(context));
   WebF.defineModule((context) => PermissionHandlerWebfModule(context));
 
   // Start asset HTTP server for serving use case files
   await AssetHttpServer().start();
 
-  // Initialize app settings and URL history
+  // Initialize app settings, theme (stream), and URL history.
   await initializeAppSettings();
+  await initializeTheme();
   await initializeUrlHistory();
 
   // Catcher2 will call runApp internally
@@ -57,55 +60,54 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends HookWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Watch((context) {
-      try {
-        ThemeMode themeMode;
-        try {
-          themeMode = themeModeSignal.value;
-        } catch (_) {
-          themeMode = ThemeMode.system;
-        }
+    try {
+      final themeSignal = useStreamSignal<ThemeState>(
+        () => themeStream,
+        initialValue: getTheme(),
+      );
+      final ThemeState themeState =
+          (themeSignal.value as AsyncData<ThemeState>).value;
+      final ThemeMode themeMode = themeState.themePreference;
 
-        return MaterialApp.router(
-          title: 'WebFly',
-          routerConfig: kGoRouter,
-          themeMode: themeMode,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.indigo,
-              brightness: Brightness.light,
-            ),
+      return MaterialApp.router(
+        title: 'WebFly',
+        routerConfig: goRouter,
+        themeMode: themeMode,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.indigo,
+            brightness: Brightness.light,
           ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.indigo,
-              brightness: Brightness.dark,
-            ),
+        ),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.indigo,
+            brightness: Brightness.dark,
           ),
-        );
-      } catch (e, st) {
-        debugPrint('[MyApp] root build failed: $e');
-        debugPrint('$st');
+        ),
+      );
+    } catch (e, st) {
+      debugPrint('[MyApp] root build failed: $e');
+      debugPrint('$st');
 
-        // 手动上报给 Catcher2
-        Catcher2.reportCheckedError(e, st);
+      // 手动上报给 Catcher2
+      Catcher2.reportCheckedError(e, st);
 
-        return MaterialApp(
-          title: 'WebFly (fallback)',
-          home: Scaffold(
-            appBar: AppBar(title: const Text('Startup Error')),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Text('Startup Error: $e\n\n$st'),
-            ),
+      return MaterialApp(
+        title: 'WebFly (fallback)',
+        home: Scaffold(
+          appBar: AppBar(title: const Text('Startup Error')),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Text('Startup Error: $e\n\n$st'),
           ),
-        );
-      }
-    });
+        ),
+      );
+    }
   }
 }

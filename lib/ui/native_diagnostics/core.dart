@@ -37,7 +37,7 @@ class NativeTestRegistry {
       id: 'ble',
       title: 'Bluetooth (BLE) test',
       subtitle: 'Scan for nearby BLE advertisers',
-      routePath: kBleDiagnosticsPath,
+      routePath: bleDiagnosticsPath,
       icon: Icons.bluetooth_searching,
       tags: <String>['Android', 'iOS', 'Permissions'],
     ),

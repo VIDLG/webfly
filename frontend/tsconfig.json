@@ -17,13 +17,14 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node", "@openwebf/webf-enterprise-typings"],
     "paths": {
-      "@webfly/ble": ["../packages/webfly_ble/lib/webfly_ble"],
-      "@webfly/permission": ["../packages/webfly_permission/lib/webfly_permission"],
+      "@webfly/ble": ["../webfly_packages/webfly_ble/lib/webfly_ble"],
+      "@webfly/permission": ["../webfly_packages/webfly_permission/lib/webfly_permission"],
+      "@webfly/theme": ["../webfly_packages/webfly_theme/lib/webfly_theme"],
       "@openwebf/webf-enterprise-typings": ["./node_modules/@openwebf/webf-enterprise-typings"],
       "neverthrow": ["./node_modules/neverthrow"]
     }
   },
-  "include": ["src", "vite.config.ts", "../lib", "../packages/webf_bridge/lib", "../packages/webfly_ble/lib", "../packages/webfly_permission/lib"],
+  "include": ["src", "vite.config.ts", "../lib", "../webfly_packages/webfly_bridge/lib", "../webfly_packages/webfly_ble/lib", "../webfly_packages/webfly_permission/lib"],
   "exclude": [
     "use_cases",
     "use_cases/**"

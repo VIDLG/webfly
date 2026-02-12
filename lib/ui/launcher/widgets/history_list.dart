@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_use/flutter_use.dart';
 import 'package:signals_hooks/signals_hooks.dart';
 import '../../../store/url_history.dart';
 import 'history_card.dart';
@@ -39,10 +40,10 @@ class UrlHistoryList extends HookWidget {
       }
     }
 
-    useEffect(() {
+    useEffectOnce(() {
       onRegisterExitEditMode?.call(exitEditMode);
       return () => onRegisterExitEditMode?.call(() {});
-    }, const []);
+    });
 
     if (urls.isEmpty) {
       return const SizedBox.shrink();

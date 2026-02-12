@@ -73,7 +73,7 @@ install-apk:
 # Usage: just codegen [--watch]
 codegen *ARGS:
     dart run build_runner build --delete-conflicting-outputs {{ARGS}}
-    cd packages/webfly_ble && dart run build_runner build --delete-conflicting-outputs {{ARGS}}
+    cd webfly_packages/webfly_ble && dart run build_runner build --delete-conflicting-outputs {{ARGS}}
 
 # Analyze Dart code for syntax and semantic issues
 analyze PATH='lib test' *ARGS:

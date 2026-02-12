@@ -26,12 +26,16 @@ dependencies:
   shelf: ^1.4.2
   shelf_static: ^1.1.3
   permission_handler: ^12.0.1
-  webf_bridge:
-    path: packages/webf_bridge
+  webfly_bridge:
+    path: webfly_packages/webfly_bridge
   webfly_ble:
-    path: packages/webfly_ble
+    path: webfly_packages/webfly_ble
   webfly_permission:
-    path: packages/webfly_permission
+    path: webfly_packages/webfly_permission
+  webfly_theme:
+    path: webfly_packages/webfly_theme
+  webfly_webf_view:
+    path: webfly_packages/webfly_webf_view
   anyhow: ^3.0.1
   json_annotation: ^4.10.0
   catcher_2: ^2.1.5

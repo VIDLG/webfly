@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_use/flutter_use.dart';
 import 'package:signals_hooks/signals_hooks.dart';
 import '../router/app_router.dart';
 
@@ -14,7 +15,7 @@ Signal<bool> useRouteFocus() {
   final isRouteCurrent = useSignal(true);
   final routeObserverSubscription = useRef<RouteAware?>(null);
 
-  useEffect(() {
+  useEffectOnce(() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;
 
@@ -29,7 +30,7 @@ Signal<bool> useRouteFocus() {
         onPoppedNext: () => isRouteCurrent.value = true,
       );
 
-      kWebfRouteObserver.subscribe(subscription, route);
+      webfRouteObserver.subscribe(subscription, route);
       routeObserverSubscription.value = subscription;
 
       // Check initial route state
@@ -41,10 +42,10 @@ Signal<bool> useRouteFocus() {
     return () {
       final subscription = routeObserverSubscription.value;
       if (subscription != null) {
-        kWebfRouteObserver.unsubscribe(subscription);
+        webfRouteObserver.unsubscribe(subscription);
       }
     };
-  }, []);
+  });
 
   return isRouteCurrent;
 }

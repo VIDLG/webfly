@@ -26,7 +26,7 @@ class AssetHttpServer {
   String? get baseUrl => _port != null ? 'http://localhost:$_port' : null;
 
   /// Start the HTTP server
-  Future<void> start({int port = kAssetHttpServerPort}) async {
+  Future<void> start({int port = assetHttpServerPort}) async {
     if (_server != null) {
       _logger.i('Asset HTTP server already running on port $_port');
       return;
