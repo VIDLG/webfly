@@ -16,6 +16,8 @@ const String nativeDiagnosticsPath = '$_prefix/native-diagnostics';
 const String nativeDiagnosticsLogsPath = '$nativeDiagnosticsPath/logs';
 const String bleDiagnosticsPath = '$nativeDiagnosticsPath/ble';
 const String useCasesMenuPath = '$_prefix/use_cases_menu';
+const String settingsPath = '$_prefix/settings';
+const String aboutPath = '$_prefix/about';
 const String useCasesPath =
     '$_prefix/usecases'; // Dedicated wrapper route for use cases
 const String appRoutePath =

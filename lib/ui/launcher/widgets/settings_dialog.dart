@@ -5,14 +5,10 @@ import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webfly_theme/webfly_theme.dart';
 
 import '../../../store/app_settings.dart';
+import '../../router/config.dart' show aboutPath;
 
-/// Show settings dialog
-void showSettingsDialog(BuildContext context) {
-  showDialog(context: context, builder: (context) => const _SettingsDialog());
-}
-
-class _SettingsDialog extends HookWidget {
-  const _SettingsDialog();
+class SettingsScreen extends HookWidget {
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,71 +24,65 @@ class _SettingsDialog extends HookWidget {
         : getTheme();
     final themeMode = themeState.themePreference;
 
-    return AlertDialog(
-      titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      title: const Text('Settings', style: TextStyle(fontSize: 18)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          // WebF section
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'WebF',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+              ),
+            ),
+          ),
           SwitchListTile(
             value: showInspector,
             onChanged: (value) {
               showWebfInspectorSignal.value = value;
             },
-            title: const Text('Show Inspector', style: TextStyle(fontSize: 13)),
-            subtitle: const Text(
-              'Display WebF element inspector overlay',
-              style: TextStyle(fontSize: 11),
-            ),
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
+            title: const Text('Show Inspector'),
+            subtitle: const Text('Display WebF element inspector overlay'),
           ),
-          const SizedBox(height: 4),
           SwitchListTile(
             value: cacheControllers,
             onChanged: (value) {
               cacheControllersSignal.value = value;
             },
-            title: const Text(
-              'Cache Controllers',
-              style: TextStyle(fontSize: 13),
-            ),
+            title: const Text('Cache Controllers'),
             subtitle: const Text(
               'Keep WebF controllers alive when returning to launcher',
-              style: TextStyle(fontSize: 11),
             ),
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
           ),
-          const SizedBox(height: 8),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
+          const Divider(),
+          // Theme section
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
               'Theme',
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
           _ThemeModeSelector(themeMode: themeMode),
+          const Divider(),
+          ListTile(
+            leading: Icon(Icons.info_outline, color: colorScheme.primary),
+            title: const Text('About'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(aboutPath),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => context.pop(),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            minimumSize: const Size(60, 32),
-            textStyle: const TextStyle(fontSize: 13),
-          ),
-          child: const Text('Close'),
-        ),
-      ],
     );
   }
 }
@@ -115,21 +105,15 @@ class _ThemeModeSelector extends StatelessWidget {
         children: [
           RadioListTile<ThemeMode>(
             value: ThemeMode.system,
-            title: const Text('Follow System', style: TextStyle(fontSize: 13)),
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
+            title: const Text('Follow System'),
           ),
           RadioListTile<ThemeMode>(
             value: ThemeMode.light,
-            title: const Text('Light', style: TextStyle(fontSize: 13)),
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
+            title: const Text('Light'),
           ),
           RadioListTile<ThemeMode>(
             value: ThemeMode.dark,
-            title: const Text('Dark', style: TextStyle(fontSize: 13)),
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
+            title: const Text('Dark'),
           ),
         ],
       ),

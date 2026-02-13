@@ -7,6 +7,8 @@ import '../native_diagnostics/native_diagnostics_logs_screen.dart';
 import '../native_diagnostics/native_diagnostics_screen.dart';
 import '../scanner_screen.dart';
 import '../webf/webf_screen.dart';
+import '../about/about_screen.dart';
+import '../launcher/widgets/settings_dialog.dart';
 import '../use_cases_menu_screen.dart';
 import 'config.dart';
 import '../../utils/app_logger.dart';
@@ -61,6 +63,18 @@ final goRouter = GoRouter(
               builder: (context, state) => const BleDiagnosticsScreen(),
             ),
           ],
+        ),
+
+        // Settings page
+        GoRoute(
+          path: 'settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+
+        // About page
+        GoRoute(
+          path: 'about',
+          builder: (context, state) => const AboutScreen(),
         ),
 
         // Use Cases Menu

@@ -11,7 +11,6 @@ import '../../store/url_history.dart';
 import '../../utils/app_logger.dart';
 import 'widgets/history_list.dart';
 import '../webf/webf_inspector_overlay.dart';
-import 'widgets/settings_dialog.dart';
 import 'widgets/launcher_header.dart';
 import 'widgets/launcher_inputs.dart';
 import 'widgets/launch_button.dart';
@@ -19,7 +18,12 @@ import 'widgets/use_cases_card.dart';
 import 'package:webfly_webf_view/webfly_webf_view.dart'
     show normalizeWebfInnerPath;
 import '../router/config.dart'
-    show scannerPath, nativeDiagnosticsPath, appRoutePath, buildWebFRouteUrl;
+    show
+        settingsPath,
+        scannerPath,
+        nativeDiagnosticsPath,
+        appRoutePath,
+        buildWebFRouteUrl;
 
 class LauncherScreen extends HookWidget {
   const LauncherScreen({super.key});
@@ -263,7 +267,7 @@ class LauncherScreen extends HookWidget {
             IconButton(
               icon: const Icon(Icons.settings),
               tooltip: 'Settings',
-              onPressed: () => showSettingsDialog(context),
+              onPressed: () => context.push(settingsPath),
             ),
           ],
         ),
