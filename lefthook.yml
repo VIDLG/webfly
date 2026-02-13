@@ -1,0 +1,6 @@
+pre-commit:
+  commands:
+    format-check:
+      run: just format-check
+    test:
+      run: just test
