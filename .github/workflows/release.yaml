@@ -102,6 +102,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Install frontend dependencies
+        run: cd frontend && pnpm install
+
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
 
