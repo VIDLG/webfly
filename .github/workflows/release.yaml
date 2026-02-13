@@ -128,7 +128,7 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref_name }}
           files: |
-            build/app/outputs/apk/release/*.apk
-            build/app/outputs/bundle/release/*.aab
+            build/app/outputs/apk/release/webfly-v*.apk
+            build/app/outputs/bundle/release/webfly-v*.aab
           generate_release_notes: true
           fail_on_unmatched_files: false
