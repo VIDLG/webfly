@@ -16,7 +16,7 @@ default:
 update:
     just install-tools
     flutter pub get
-    lefthook install
+    command -v lefthook >/dev/null 2>&1 && lefthook install || true
 
 # Install small dev tools (pkl, uv, patch-package)
 install-tools:
