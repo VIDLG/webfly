@@ -164,6 +164,14 @@ bump-version PART *FLAGS:
 tag-version *FLAGS:
     rust-script flutter_tools/git_tag_version.rs {{FLAGS}}
 
+# Bump version, commit, tag, and push to trigger CI release
+# Usage: just release [major|minor|patch]
+release PART='patch':
+    just bump-version {{PART}}
+    git add pubspec.yaml && git commit -m "bump version to $(grep '^version:' pubspec.yaml | awk '{print $2}')"
+    just tag-version
+    git push && git push --tags
+
 # =============================================
 # CI / Automation
 # =============================================
