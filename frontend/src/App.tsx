@@ -1,6 +1,16 @@
 import { Route, Routes } from '@openwebf/react-router'
 import React, { Suspense, lazy } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from './hooks/theme'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60_000,
+      retry: 1,
+    },
+  },
+})
 
 const routeTheme: 'material' | 'cupertino' = 'material'
 
@@ -109,22 +119,24 @@ function App() {
   ]
 
   return (
-    <ThemeProvider>
-      <ErrorBoundary>
-        <Routes>
-          {routes.map((r) => (
-            <Route
-              key={r.path}
-              path={r.path}
-              element={withSuspense(r.element)}
-              title={r.title}
-              theme={routeTheme}
-            />
-          ))}
-          <Route path="*" element={<NotFoundPage />} title="Not Found" theme={routeTheme} />
-        </Routes>
-      </ErrorBoundary>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <ErrorBoundary>
+          <Routes>
+            {routes.map((r) => (
+              <Route
+                key={r.path}
+                path={r.path}
+                element={withSuspense(r.element)}
+                title={r.title}
+                theme={routeTheme}
+              />
+            ))}
+            <Route path="*" element={<NotFoundPage />} title="Not Found" theme={routeTheme} />
+          </Routes>
+        </ErrorBoundary>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 

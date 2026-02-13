@@ -86,22 +86,11 @@ declare global {
 
   type OnTickCallback = (leds: Uint8Array) => void
 
-  // ── effect-runtime.js ────────────────────────────────────────
+  // ── effect-runtime.ts — function implementations live there ──
+  // (hsvToRgb, toRgb, makeBlank, createBaseMachine are defined in
+  //  effect-runtime.ts which is included via tsconfig.json)
 
-  function hsvToRgb(h: number, s: number, v: number): [number, number, number]
-  function toRgb(c: TaggedColor): [number, number, number]
-  function makeBlank(ledCount: number): Uint8Array
-  function createBaseMachine(
-    ledCount: number,
-    speed: number,
-    handlers: {
-      tick(machine: EffectMachine): void
-      reset?(): void
-      setConfig?(key: string, value: unknown): void
-    },
-  ): EffectMachine
-
-  // ── {effect}/effect.js ───────────────────────────────────────
+  // ── {effect}/effect.ts ─────────────────────────────────────────
 
   function createEffect(config?: EffectBaseConfig): EffectMachine
 }

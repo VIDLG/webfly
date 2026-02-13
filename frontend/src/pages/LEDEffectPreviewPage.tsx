@@ -2,8 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation, useParams, WebFRouter } from '@openwebf/react-router'
 import { FlutterCupertinoActionSheet } from '@openwebf/react-cupertino-ui'
 import type { FlutterCupertinoActionSheetElement } from '@openwebf/react-cupertino-ui'
+import { useQuery } from '@tanstack/react-query'
 import DynamicComponentLoader from '../components/DynamicComponentLoader'
 import DeviceCanvasView from '../components/DeviceCanvasView'
+import { typeCheckCode, type TypeDiagnostic } from '../utils/typeCheck'
+import { useLedSettings } from '../hooks/useLedSettings'
 import type { DeviceConfig } from '../types/device'
 
 interface LedEffectManifest {
@@ -12,8 +15,10 @@ interface LedEffectManifest {
   description: string
 }
 
-interface DeviceManifest {
-  devices: string[]
+interface EffectLoadResult {
+  manifest: LedEffectManifest
+  fullCode: string
+  typeErrors: TypeDiagnostic[]
 }
 
 function tryExtractInnerPathFromHybridUrl(maybeHybridUrl: string | undefined): string | undefined {
@@ -36,10 +41,93 @@ function tryExtractInnerPathFromHybridUrl(maybeHybridUrl: string | undefined): s
   }
 }
 
+// ── query functions ─────────────────────────────────────────
+
+async function fetchDeviceList(): Promise<string[]> {
+  const base = import.meta.env.BASE_URL
+  const res = await fetch(`${base}devices/manifest.json`)
+  if (!res.ok) throw new Error('Failed to load device manifest')
+  const data: { devices: string[] } = await res.json()
+  return data.devices
+}
+
+async function fetchDeviceConfig(deviceId: string): Promise<DeviceConfig> {
+  const base = import.meta.env.BASE_URL
+  const res = await fetch(`${base}devices/${deviceId}/config.json`)
+  if (!res.ok) throw new Error(`Failed to load device config for "${deviceId}"`)
+  return res.json()
+}
+
+function formatTiming(checkResult: { timing: import('../utils/typeCheck').TypeCheckTiming }): string {
+  const { timing } = checkResult
+  if (timing.cached) return 'cached'
+  const total = (timing.totalMs / 1000).toFixed(1)
+  if (timing.serverMs != null) {
+    const server = (timing.serverMs / 1000).toFixed(1)
+    const network = ((timing.totalMs - timing.serverMs) / 1000).toFixed(1)
+    return `${total}s (server ${server}s, network ${network}s)`
+  }
+  return `${total}s`
+}
+
+async function fetchEffectSource(
+  effectId: string,
+  enableTypeCheck: boolean,
+  onStep: (msg: string) => void,
+): Promise<EffectLoadResult> {
+  onStep('Downloading scripts...')
+  const base = import.meta.env.BASE_URL
+
+  // Fetch all sources in parallel; globals.d.ts provides type context for dynamic code
+  const [metaRes, runtimeRes, uiHooksRes, globalsRes, effectRes, uiRes] = await Promise.all([
+    fetch(`${base}effects/${effectId}/meta.json`),
+    fetch(`${base}effects/effect-runtime.ts`),
+    fetch(`${base}effects/ui-hooks.tsx`),
+    fetch(`${base}effects/globals.d.ts`),
+    fetch(`${base}effects/${effectId}/effect.ts`),
+    fetch(`${base}effects/${effectId}/ui.tsx`),
+  ])
+
+  if (!metaRes.ok) throw new Error(`Failed to load meta.json for effect "${effectId}"`)
+  const meta: { id?: string; name: string; description: string } = await metaRes.json()
+  const manifest: LedEffectManifest = { id: meta.id ?? effectId, name: meta.name, description: meta.description }
+
+  if (!runtimeRes.ok) throw new Error('Failed to load effects/effect-runtime.ts')
+  if (!uiHooksRes.ok) throw new Error('Failed to load effects/ui-hooks.tsx')
+  if (!effectRes.ok) throw new Error(`Failed to load effect.ts for "${effectId}"`)
+  if (!uiRes.ok) throw new Error(`Failed to load ui.tsx for "${effectId}"`)
+
+  onStep('Parsing source code...')
+  const [runtimeCode, uiHooksCode, globalsCode, effectCode, uiCode] = await Promise.all([
+    runtimeRes.text(), uiHooksRes.text(),
+    globalsRes.ok ? globalsRes.text() : Promise.resolve(''),
+    effectRes.text(), uiRes.text(),
+  ])
+
+  // Full code for Babel compilation (all sources concatenated)
+  const fullCode = `${runtimeCode}\n\n${effectCode}\n\n${uiHooksCode}\n\n${uiCode}`
+
+  let typeErrors: TypeDiagnostic[] = []
+  if (enableTypeCheck) {
+    onStep('Type checking...')
+    // Only send globals (type declarations) + dynamic effect code — skip infrastructure
+    const codeForTypeCheck = `${globalsCode}\n\n${effectCode}\n\n${uiCode}`
+    const checkResult = await typeCheckCode(codeForTypeCheck, 'tsx')
+    typeErrors = checkResult.diagnostics.filter((d) => d.category === 'error')
+    onStep(`Type check done (${formatTiming(checkResult)})`)
+  }
+
+  onStep('Compiling component...')
+  return { manifest, fullCode, typeErrors }
+}
+
+// ── component ───────────────────────────────────────────────
+
 export default function LEDEffectPreviewPage() {
   const { navigate } = useNavigate()
   const params = useParams()
   const location = useLocation()
+  const enableTypeCheck = useLedSettings((s) => s.enableTypeCheck)
 
   const effectId = useMemo(() => {
     // Try params first
@@ -74,73 +162,66 @@ export default function LEDEffectPreviewPage() {
     return segments[segments.length - 1] ?? ''
   }, [params, location])
 
-  // ── effect source loading ───────────────────────────────────
-  const [loading, setLoading] = useState(false)
-  const [manifest, setManifest] = useState<LedEffectManifest | null>(null)
-  const [effectCode, setEffectCode] = useState('')
-  const [loadError, setLoadError] = useState<string | null>(null)
+  // ── loading step progress ─────────────────────────────────
+  const [loadingStep, setLoadingStep] = useState('')
+  const [elapsedMs, setElapsedMs] = useState(0)
+  const stepRef = useRef(setLoadingStep)
+  stepRef.current = setLoadingStep
 
-  // ── device state ────────────────────────────────────────────
-  const [deviceList, setDeviceList] = useState<string[]>([])
+  // ── device state ──────────────────────────────────────────
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
-  const [deviceConfig, setDeviceConfig] = useState<DeviceConfig | null>(null)
-
-  // LED buffer shared between dynamic effect code (writer) and canvas (reader)
   const ledBufferRef = useRef<Uint8Array | null>(null)
   const actionSheetRef = useRef<FlutterCupertinoActionSheetElement>(null)
 
-  // ── fetch device manifest on mount ──────────────────────────
+  // ── queries ───────────────────────────────────────────────
+  const { data: deviceList = [] } = useQuery({
+    queryKey: ['devices', 'list'],
+    queryFn: fetchDeviceList,
+  })
+
+  // Auto-select the only device
   useEffect(() => {
-    const base = import.meta.env.BASE_URL
-    let cancelled = false
+    if (deviceList.length === 1 && !selectedDeviceId) {
+      setSelectedDeviceId(deviceList[0])
+    }
+  }, [deviceList, selectedDeviceId])
 
-    fetch(`${base}devices/manifest.json`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to load device manifest'))))
-      .then((data: DeviceManifest) => {
-        if (cancelled) return
-        setDeviceList(data.devices)
-        // Auto-select if only one device
-        if (data.devices.length === 1) {
-          setSelectedDeviceId(data.devices[0])
-        }
-      })
-      .catch((e) => {
-        console.warn('Could not load device manifest:', e)
-      })
+  const { data: deviceConfig = null } = useQuery({
+    queryKey: ['devices', 'config', selectedDeviceId],
+    queryFn: () => fetchDeviceConfig(selectedDeviceId!),
+    enabled: !!selectedDeviceId,
+  })
 
-    return () => { cancelled = true }
-  }, [])
-
-  // ── fetch device config when selection changes ──────────────
+  // Initialize LED buffer when device config changes
   useEffect(() => {
-    if (!selectedDeviceId) {
-      setDeviceConfig(null)
+    if (!deviceConfig) {
       ledBufferRef.current = null
       return
     }
+    const totalLeds = deviceConfig.strips.reduce((sum, s) => sum + s.ledCount, 0)
+    ledBufferRef.current = new Uint8Array(totalLeds * 3)
+  }, [deviceConfig])
 
-    const base = import.meta.env.BASE_URL
-    let cancelled = false
+  const effectQuery = useQuery({
+    queryKey: ['effects', effectId, 'source', enableTypeCheck],
+    queryFn: () => fetchEffectSource(effectId, enableTypeCheck, (msg) => stepRef.current(msg)),
+    enabled: !!effectId,
+  })
 
-    fetch(`${base}devices/${selectedDeviceId}/config.json`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`Failed to load device config for "${selectedDeviceId}"`))))
-      .then((config: DeviceConfig) => {
-        if (cancelled) return
-        setDeviceConfig(config)
-        // Initialize LED buffer for total LED count across all strips
-        const totalLeds = config.strips.reduce((sum, s) => sum + s.ledCount, 0)
-        ledBufferRef.current = new Uint8Array(totalLeds * 3)
-      })
-      .catch((e) => {
-        console.error('Failed to load device config:', e)
-        if (!cancelled) {
-          setDeviceConfig(null)
-          ledBufferRef.current = null
-        }
-      })
+  const loading = effectQuery.isLoading || effectQuery.isFetching
+  const loadError = effectQuery.error
+  const manifest = effectQuery.data?.manifest ?? null
+  const effectCode = effectQuery.data?.fullCode ?? ''
+  const typeErrors = effectQuery.data?.typeErrors ?? []
 
-    return () => { cancelled = true }
-  }, [selectedDeviceId])
+  // Elapsed timer — ticks every 100ms while loading
+  useEffect(() => {
+    if (!loading) return
+    setElapsedMs(0)
+    const t0 = Date.now()
+    const id = window.setInterval(() => setElapsedMs(Date.now() - t0), 100)
+    return () => clearInterval(id)
+  }, [loading])
 
   // ── onTick callback: copy LED data into shared buffer ───────
   const handleTick = useCallback((leds: Uint8Array) => {
@@ -148,59 +229,6 @@ export default function LEDEffectPreviewPage() {
       ledBufferRef.current.set(leds)
     }
   }, [])
-
-  // ── fetch effect source code ────────────────────────────────
-  useEffect(() => {
-    if (!effectId) return
-
-    setLoading(true)
-    setLoadError(null)
-    setManifest(null)
-    setEffectCode('')
-
-    let cancelled = false
-
-    const load = async () => {
-      try {
-        // Fetch effect-runtime, ui-hooks, meta.json, effect.js and ui.tsx in parallel
-        const base = import.meta.env.BASE_URL
-        const [metaRes, runtimeRes, uiHooksRes, effectRes, uiRes] = await Promise.all([
-          fetch(`${base}effects/${effectId}/meta.json`),
-          fetch(`${base}effects/effect-runtime.js`),
-          fetch(`${base}effects/ui-hooks.tsx`),
-          fetch(`${base}effects/${effectId}/effect.js`),
-          fetch(`${base}effects/${effectId}/ui.tsx`),
-        ])
-
-        if (cancelled) return
-
-        if (!metaRes.ok) throw new Error(`Failed to load meta.json for effect "${effectId}"`)
-        const meta: { id?: string; name: string; description: string } = await metaRes.json()
-        setManifest({ id: meta.id ?? effectId, name: meta.name, description: meta.description })
-
-        if (!runtimeRes.ok) throw new Error('Failed to load effects/effect-runtime.js')
-        if (!uiHooksRes.ok) throw new Error('Failed to load effects/ui-hooks.tsx')
-        if (!effectRes.ok) throw new Error(`Failed to load effect.js for "${effectId}"`)
-        if (!uiRes.ok) throw new Error(`Failed to load ui.tsx for "${effectId}"`)
-
-        const runtimeCode = await runtimeRes.text()
-        const uiHooksCode = await uiHooksRes.text()
-        const effectCode = await effectRes.text()
-        const uiCode = await uiRes.text()
-
-        // Combine: effect-runtime → effect logic → ui-hooks → UI component
-        if (!cancelled) setEffectCode(`${runtimeCode}\n\n${effectCode}\n\n${uiHooksCode}\n\n${uiCode}`)
-      } catch (e) {
-        console.error('Failed to load effect:', e)
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : String(e))
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    void load()
-    return () => { cancelled = true }
-  }, [effectId])
 
   // ── componentProps passed to dynamic effect code ────────────
   const componentProps = useMemo(() => {
@@ -280,7 +308,8 @@ export default function LEDEffectPreviewPage() {
           {loading ? (
             <div className="text-center py-16 text-slate-600 dark:text-slate-400">
               <div className="inline-block w-12 h-12 rounded-full border-4 border-slate-300 border-t-sky-500 animate-spin dark:border-slate-700 dark:border-t-sky-400" />
-              <p className="mt-5 text-base">Loading effect...</p>
+              <p className="mt-5 text-base">{loadingStep || 'Loading effect...'}</p>
+              <p className="mt-1 text-xs tabular-nums text-slate-400 dark:text-slate-500">{(elapsedMs / 1000).toFixed(1)}s</p>
             </div>
           ) : loadError ? (
             <div className="p-5 bg-red-900/20 border-2 border-red-500/50 rounded-lg text-red-200 m-4">
@@ -292,7 +321,19 @@ export default function LEDEffectPreviewPage() {
                   <code className="rounded border border-slate-300 bg-white/70 px-1 py-0.5 text-xs text-yellow-500 dark:border-slate-700 dark:bg-slate-900/60">{String(effectId)}</code>
                 </p>
               </div>
-              <p className="font-mono text-sm whitespace-pre-wrap break-words">{loadError}</p>
+              <p className="font-mono text-sm whitespace-pre-wrap break-words">{loadError instanceof Error ? loadError.message : String(loadError)}</p>
+            </div>
+          ) : typeErrors.length > 0 ? (
+            <div className="p-5 bg-red-900/20 border-2 border-red-500/50 rounded-lg m-4">
+              <h3 className="text-lg font-bold mb-3 text-red-300">TypeScript Type Errors</h3>
+              <ul className="space-y-2">
+                {typeErrors.map((d, i) => (
+                  <li key={i} className="font-mono text-sm text-red-200">
+                    <span className="text-red-400">Line {d.line}:{d.column}</span>{' '}
+                    <span className="whitespace-pre-wrap break-words">{d.message}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : effectCode ? (
             <DynamicComponentLoader

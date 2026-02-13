@@ -4,8 +4,11 @@ import 'dart:typed_data' show ByteData, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show CachingAssetBundle;
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webfly/main.dart';
+import 'package:webfly/store/app_settings.dart';
+import 'package:webfly/store/url_history.dart';
+import 'package:webfly_theme/webfly_theme.dart';
 
 class _TestAssetBundle extends CachingAssetBundle {
   static final Uint8List _png1x1Transparent = base64Decode(
@@ -23,6 +26,11 @@ class _TestAssetBundle extends CachingAssetBundle {
 
 void main() {
   testWidgets('Launcher smoke test', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await initializeAppSettings();
+    await initializeTheme();
+    await initializeUrlHistory();
+
     await tester.pumpWidget(
       DefaultAssetBundle(bundle: _TestAssetBundle(), child: const MyApp()),
     );

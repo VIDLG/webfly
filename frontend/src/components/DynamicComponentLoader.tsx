@@ -86,7 +86,7 @@ export default function DynamicComponentLoader({ code, componentName, componentP
   if (error) {
     return (
       <div className="p-5 bg-red-900/20 border-2 border-red-500/50 rounded-lg text-red-200">
-        <h3 className="text-lg font-bold mb-2">❌ Component Loading Failed</h3>
+        <h3 className="text-lg font-bold mb-2">Component Loading Failed</h3>
         <p className="font-mono text-sm whitespace-pre-wrap break-words">{error}</p>
       </div>
     )

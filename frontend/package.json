@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "check:webf-css": "pnpm -s build && rust-script scripts/check-webf-constraints.rs",
     "check:webf": "pnpm -s check:webf-css",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@babel/standalone": "^7.28.6",
@@ -17,9 +18,11 @@
     "@openwebf/react-cupertino-ui": "^0.4.1",
     "@openwebf/react-router": "^0.24.2",
     "@openwebf/webf-share": "^1.0.1",
+    "@tanstack/react-query": "^5.90.21",
     "neverthrow": "^7.2.0",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -43,7 +46,8 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.53.1",
     "vite": "npm:rolldown-vite@7.3.1",
-    "vite-plugin-qrcode": "^0.3.0"
+    "vite-plugin-qrcode": "^0.3.0",
+    "vitest": "^4.0.18"
   },
   "pnpm": {
     "overrides": {

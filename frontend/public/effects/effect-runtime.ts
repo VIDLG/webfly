@@ -9,12 +9,12 @@
  */
 
 /** Convert HSV (h 0-360, s/v 0-1) to [r, g, b] tuple. */
-function hsvToRgb(h, s, v) {
+function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   h = ((h % 360) + 360) % 360;
-  var c = v * s;
-  var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  var m = v - c;
-  var r = 0, g = 0, b = 0;
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+  let r = 0, g = 0, b = 0;
   if (h < 60)       { r = c; g = x; }
   else if (h < 120) { r = x; g = c; }
   else if (h < 180) { g = c; b = x; }
@@ -25,33 +25,27 @@ function hsvToRgb(h, s, v) {
 }
 
 /** Convert a tagged color ({ mode:'rgb' } or { mode:'hsv' }) to [r, g, b] tuple. */
-function toRgb(c) {
+function toRgb(c: TaggedColor): [number, number, number] {
   if (c.mode === 'hsv') return hsvToRgb(c.h, c.s, c.v);
   return [c.r, c.g, c.b];
 }
 
 /** Create a zeroed Uint8Array for ledCount LEDs (3 bytes each). */
-function makeBlank(ledCount) {
+function makeBlank(ledCount: number): Uint8Array {
   return new Uint8Array(ledCount * 3);
+}
+
+interface EffectHandlers {
+  tick(machine: EffectMachine): void
+  reset?(): void
+  setConfig?(key: string, value: unknown): void
 }
 
 /**
  * Create a base LED state machine with common lifecycle methods.
- *
- * @param {number} ledCount  – number of LEDs
- * @param {number} speed     – ms per tick
- * @param {object} handlers  – effect-specific callbacks:
- *   tick(machine)          – compute one frame, set machine.leds
- *   reset()                – reset internal state on stop
- *   setConfig(key, value)  – handle effect-specific config updates
- *
- * Returns a machine object with:
- *   status, speed, ledCount, leds,
- *   tick(), start(), pause(), resume(), stop(),
- *   setSpeed(ms), setConfig(key, value)
  */
-function createBaseMachine(ledCount, speed, handlers) {
-  var machine = {
+function createBaseMachine(ledCount: number, speed: number, handlers: EffectHandlers): EffectMachine {
+  const machine: EffectMachine = {
     status: 'idle',
     speed: speed,
     ledCount: ledCount,
@@ -77,9 +71,9 @@ function createBaseMachine(ledCount, speed, handlers) {
       machine.leds = makeBlank(ledCount);
     },
 
-    setSpeed: function (ms) { machine.speed = ms; },
-    setConfig: function (key, value) {
-      if (key === 'speed') machine.speed = value;
+    setSpeed: function (ms: number) { machine.speed = ms; },
+    setConfig: function (key: string, value: unknown) {
+      if (key === 'speed') machine.speed = value as number;
       else if (handlers.setConfig) handlers.setConfig(key, value);
     }
   };

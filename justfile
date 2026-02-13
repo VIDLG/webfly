@@ -88,9 +88,9 @@ doctor *ARGS:
     yes | flutter doctor --android-licenses {{ARGS}}
 
 # Bump version
-# Usage: just bump-version [major|minor|patch|build]
-bump-version PART:
-    rust-script flutter_tools/bump_version.rs {{PART}}
+# Usage: just bump-version [major|minor|patch|build|revert]
+bump-version PART *FLAGS:
+    rust-script flutter_tools/bump_version.rs {{PART}} {{FLAGS}}
 
 # Tag the current version in git (e.g. v1.2.3)
 # Usage: just tag-version [-f|--force]
@@ -120,9 +120,15 @@ ci:
 devices *ARGS:
     flutter devices {{ARGS}}
 
-# Run tests
+# Run tests (Flutter + frontend)
 test *ARGS:
     flutter test {{ARGS}}
+    cd frontend && pnpm test
+
+# Benchmark the TwoSlash type-check API latency
+# Usage: just bench-tsc [-n 10] [-f frontend/public/effects/wave/effect.ts]
+bench-tsc *ARGS:
+    node frontend/scripts/bench-typecheck-api.mjs {{ARGS}}
 
 # Format Dart code
 format *ARGS:
@@ -138,6 +144,7 @@ clean:
 
 update:
     flutter pub get
+    lefthook install
 
 # Upgrade packages to latest major versions
 upgrade *ARGS:
