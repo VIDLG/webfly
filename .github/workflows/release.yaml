@@ -44,8 +44,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: ${{ env.ANDROID_API_LEVEL }}
-          ndk-version: ${{ env.ANDROID_NDK_VERSION }}
+          packages: platforms;android-${{ env.ANDROID_API_LEVEL }} ndk;${{ env.ANDROID_NDK_VERSION }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2

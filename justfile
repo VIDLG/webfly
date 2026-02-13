@@ -8,22 +8,39 @@ set windows-shell := ["sh", "-c"]
 default:
     @just --list
 
-# -----------------------------
-# Web frontend (Vite/React)
-# -----------------------------
+# =============================================
+# Setup & Dependencies
+# =============================================
 
-# Run the unified WebF CSS checks (Tailwind blacklist + CSS property whitelist).
-# Usage examples:
-# - just webf-check-css
-# - just webf-check-css -- --scan-source
-# - just webf-check-css -- --only css-props --scan-source
-webf-check-css *ARGS:
-    cd frontend && pnpm -s build
-    cd frontend && set -- {{ARGS}}; if [ "$1" = "--" ]; then shift; fi; rust-script scripts/check-webf-constraints.rs "$@"
+# Install dependencies and configure hooks
+update:
+    just install-tools
+    flutter pub get
+    lefthook install
 
-# Alias for convenience
-webf-check *ARGS:
-    just webf-check-css {{ARGS}}
+# Install small dev tools (pkl, uv, patch-package)
+install-tools:
+    sh scripts/install-tools.sh
+
+# Check that all required dev tools are available
+check-tools:
+    sh scripts/check-tools.sh
+
+# Upgrade packages to latest major versions
+upgrade *ARGS:
+    flutter pub upgrade --major-versions {{ARGS}}
+
+# Clean build artifacts
+clean:
+    flutter clean
+
+# Check Flutter development environment and accept Android licenses
+doctor *ARGS:
+    yes | flutter doctor --android-licenses {{ARGS}}
+
+# =============================================
+# Development
+# =============================================
 
 # Run on Android device (auto-detects first Android device)
 # Usage: just android [debug|release] [--verbose]
@@ -34,6 +51,22 @@ android MODE='debug' *FLAGS:
 # Usage: just windows [debug|release] [--verbose]
 windows MODE='debug' *FLAGS:
     VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; rust-script flutter_tools/cmd_run.rs --log=logs/flutter-windows-{{MODE}}.log flutter run -d windows --{{MODE}} $VERBOSE {{FLAGS}}
+
+# List all connected devices
+devices *ARGS:
+    flutter devices {{ARGS}}
+
+# Kill processes locking Android directory
+kill-android:
+    rust-script flutter_tools/kill_file_handles.rs android
+
+# Install and run the built release APK on Android (skips build)
+install-apk:
+    DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found." 1>&2; exit 1; fi; flutter run -d "$DEVICE_ID" --release --use-application-binary=build/app/outputs/flutter-apk/app-release.apk
+
+# =============================================
+# Code Generation & Assets
+# =============================================
 
 # Generate platform configuration
 gen-platforms:
@@ -56,24 +89,21 @@ logo:
 gen-branding:
     uv run --script flutter_tools/flutter_gen_branding.py
 
-# Kill processes locking Android directory
-kill-android:
-    rust-script flutter_tools/kill_file_handles.rs android
-
-# Build APK (release)
-# Usage: just build-apk [--verbose]
-build-apk *FLAGS:
-    rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{FLAGS}}
-
-# Install and run the built release APK on Android (skips build)
-install-apk:
-    DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found." 1>&2; exit 1; fi; flutter run -d "$DEVICE_ID" --release --use-application-binary=build/app/outputs/flutter-apk/app-release.apk
-
 # Run Dart code generation in root and all packages (e.g. webfly_ble dto/options).
 # Usage: just codegen [--watch]
 codegen *ARGS:
     dart run build_runner build --delete-conflicting-outputs {{ARGS}}
     cd webfly_packages/webfly_ble && dart run build_runner build --delete-conflicting-outputs {{ARGS}}
+
+# Build web project and copy assets to Flutter
+use-cases-refresh:
+    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/gen/use_cases/react
+    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/gen/use_cases/vue -o dist
+    sh -c 'mkdir -p assets/gen/use_cases && cp assets/use_cases/index.html assets/gen/use_cases/index.html'
+
+# =============================================
+# Code Quality
+# =============================================
 
 # Analyze Dart code for syntax and semantic issues
 analyze PATH='lib test' *ARGS:
@@ -83,9 +113,46 @@ analyze PATH='lib test' *ARGS:
 lint *ARGS:
     flutter analyze {{ARGS}}
 
-# Check Flutter development environment and accept Android licenses
-doctor *ARGS:
-    yes | flutter doctor --android-licenses {{ARGS}}
+# Format Dart code
+format *ARGS:
+    dart format {{ARGS}} lib test
+
+# Check that lib/ and test/ are formatted (CI gate)
+format-check:
+    dart format --set-exit-if-changed lib test
+
+# Run the unified WebF CSS checks (Tailwind blacklist + CSS property whitelist).
+# Usage: just webf-check-css [-- --scan-source] [-- --only css-props --scan-source]
+webf-check-css *ARGS:
+    cd frontend && pnpm -s build
+    cd frontend && set -- {{ARGS}}; if [ "$1" = "--" ]; then shift; fi; rust-script scripts/check-webf-constraints.rs "$@"
+
+# Alias for convenience
+webf-check *ARGS:
+    just webf-check-css {{ARGS}}
+
+# =============================================
+# Testing
+# =============================================
+
+# Run tests (Flutter + frontend)
+test *ARGS:
+    flutter test {{ARGS}}
+    cd frontend && pnpm test
+
+# Benchmark the TwoSlash type-check API latency
+# Usage: just bench-tsc [-n 10] [-f frontend/public/effects/wave/effect.ts]
+bench-tsc *ARGS:
+    node frontend/scripts/bench-typecheck-api.mjs {{ARGS}}
+
+# =============================================
+# Build & Release
+# =============================================
+
+# Build APK (release)
+# Usage: just build-apk [--verbose]
+build-apk *FLAGS:
+    rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{FLAGS}}
 
 # Bump version
 # Usage: just bump-version [major|minor|patch|build|revert]
@@ -97,10 +164,9 @@ bump-version PART *FLAGS:
 tag-version *FLAGS:
     rust-script flutter_tools/git_tag_version.rs {{FLAGS}}
 
-
-# -----------------------------
+# =============================================
 # CI / Automation
-# -----------------------------
+# =============================================
 
 # Run CI pipeline (Android): Deps -> Gen -> Codegen -> Analyze -> Lint -> Test -> Build APK
 # Usage: just ci  (self-contained: runs pub get first)
@@ -116,63 +182,18 @@ ci:
     just test
     just build-apk
 
-# List all connected devices
-devices *ARGS:
-    flutter devices {{ARGS}}
-
-# Run tests (Flutter + frontend)
-test *ARGS:
-    flutter test {{ARGS}}
-    cd frontend && pnpm test
-
-# Benchmark the TwoSlash type-check API latency
-# Usage: just bench-tsc [-n 10] [-f frontend/public/effects/wave/effect.ts]
-bench-tsc *ARGS:
-    node frontend/scripts/bench-typecheck-api.mjs {{ARGS}}
-
-# Format Dart code
-format *ARGS:
-    dart format {{ARGS}} lib test
-
-# Check that lib/ and test/ are formatted (CI gate)
-format-check:
-    dart format --set-exit-if-changed lib test
-
-# Clean build artifacts
-clean:
-    flutter clean
-
-update:
-    just install-tools
-    flutter pub get
-    lefthook install
-
-# Install small dev tools (pkl, uv, patch-package)
-install-tools:
-    sh scripts/install-tools.sh
-
-# Check that all required dev tools are available
-check-tools:
-    sh scripts/check-tools.sh
+# Trigger CI workflow on a branch
+trigger-ci REF='main':
+    gh workflow run release.yaml --ref {{REF}}
 
 # Re-run the last failed CI workflow on GitHub
 rerun-ci:
     gh run list --workflow=release.yaml --limit 1 --json databaseId --jq '.[0].databaseId' | xargs gh run rerun --failed
 
-# Trigger CI workflow on a branch
-trigger-ci REF='main':
-    gh workflow run release.yaml --ref {{REF}}
+# Watch the latest CI run (streaming logs)
+watch-ci:
+    gh run watch "$(gh run list --workflow=release.yaml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
 
-# Upgrade packages to latest major versions
-upgrade *ARGS:
-    flutter pub upgrade --major-versions {{ARGS}}
-
-# Build web project and copy assets to Flutter
-use-cases-refresh:
-    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/gen/use_cases/react
-    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/gen/use_cases/vue -o dist
-    sh -c 'mkdir -p assets/gen/use_cases && cp assets/use_cases/index.html assets/gen/use_cases/index.html'
-
-
-
-
+# View logs of the latest CI run (--log-failed for failures only)
+logs-ci *ARGS:
+    gh run view "$(gh run list --workflow=release.yaml --limit 1 --json databaseId --jq '.[0].databaseId')" --log {{ARGS}}
