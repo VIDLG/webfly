@@ -70,8 +70,10 @@ class MyApp extends HookWidget {
         () => themeStream,
         initialValue: getTheme(),
       );
-      final ThemeState themeState =
-          (themeSignal.value as AsyncData<ThemeState>).value;
+      final themeValue = themeSignal.value;
+      final ThemeState themeState = themeValue is AsyncData<ThemeState>
+          ? themeValue.value
+          : getTheme();
       final ThemeMode themeMode = themeState.themePreference;
 
       return MaterialApp.router(
@@ -95,8 +97,10 @@ class MyApp extends HookWidget {
       debugPrint('[MyApp] root build failed: $e');
       debugPrint('$st');
 
-      // 手动上报给 Catcher2
-      Catcher2.reportCheckedError(e, st);
+      // 手动上报给 Catcher2 (guard against uninitialized Catcher2 in tests)
+      try {
+        Catcher2.reportCheckedError(e, st);
+      } catch (_) {}
 
       return MaterialApp(
         title: 'WebFly (fallback)',

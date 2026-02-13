@@ -22,7 +22,10 @@ class _SettingsDialog extends HookWidget {
       () => themeStream,
       initialValue: getTheme(),
     );
-    final themeState = (themeSignal.value as AsyncData<ThemeState>).value;
+    final themeValue = themeSignal.value;
+    final themeState = themeValue is AsyncData<ThemeState>
+        ? themeValue.value
+        : getTheme();
     final themeMode = themeState.themePreference;
 
     return AlertDialog(

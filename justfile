@@ -143,8 +143,25 @@ clean:
     flutter clean
 
 update:
+    just install-tools
     flutter pub get
     lefthook install
+
+# Install small dev tools (pkl, uv, patch-package)
+install-tools:
+    sh scripts/install-tools.sh
+
+# Check that all required dev tools are available
+check-tools:
+    sh scripts/check-tools.sh
+
+# Re-run the last failed CI workflow on GitHub
+rerun-ci:
+    gh run list --workflow=release.yaml --limit 1 --json databaseId --jq '.[0].databaseId' | xargs gh run rerun --failed
+
+# Trigger CI workflow on a branch
+trigger-ci REF='main':
+    gh workflow run release.yaml --ref {{REF}}
 
 # Upgrade packages to latest major versions
 upgrade *ARGS:

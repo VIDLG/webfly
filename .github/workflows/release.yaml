@@ -1,4 +1,4 @@
-name: Build Android
+name: Release
 
 on:
   push:
@@ -26,7 +26,7 @@ env:
   ANDROID_NDK_VERSION: '27.3.13750724'  # NDK r27d
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
-  PKL_VERSION: '0.26.3'
+  PKL_VERSION: '0.29.1'
 
 jobs:
   build:
@@ -62,13 +62,6 @@ jobs:
         with:
           tool: just,rust-script
 
-      - name: Install pkl
-        run: |
-          mkdir -p ~/.local/bin
-          curl -L -o ~/.local/bin/pkl https://github.com/apple/pkl/releases/download/${{ env.PKL_VERSION }}/pkl-linux-amd64
-          chmod +x ~/.local/bin/pkl
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -79,13 +72,15 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      # 2. Checkout code (needed by just install-tools)
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+          submodules: recursive
+          fetch-depth: 0
 
-      - name: Install patch-package globally
-        run: npm install -g patch-package
-
-      # Cache all installed tools
+      # Cache small tools so install-tools can skip already-installed ones
       - name: Cache installed tools
         uses: actions/cache@v4
         with:
@@ -97,13 +92,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-tools-
 
-      # 2. Checkout code after tools are ready
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
-          submodules: recursive
-          fetch-depth: 0
+      # 3. Install small tools via justfile (pkl, uv, patch-package)
+      - name: Install project tools
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          just install-tools
 
       # 3. Install project dependencies
       - name: Get dependencies
