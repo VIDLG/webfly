@@ -19,6 +19,7 @@ class AppUpdateChecker {
   final latestVersion = signal<String?>(null);
   final releaseInfo = signal<ReleaseInfo?>(null);
   final releaseNotes = signal<String?>(null);
+  final checkError = signal<String?>(null);
 
   String? _currentVersion;
   bool _checked = false;
@@ -41,6 +42,8 @@ class AppUpdateChecker {
         testMode: testMode,
       );
 
+      checkError.value = null;
+
       if (release != null) {
         hasUpdate.value = true;
         latestVersion.value = release.version;
@@ -52,6 +55,7 @@ class AppUpdateChecker {
       }
     } catch (e) {
       appLogger.d('[UpdateChecker] check failed: $e');
+      checkError.value = '$e';
     }
   }
 }
@@ -71,6 +75,7 @@ Signal<bool> get hasUpdateSignal => updateChecker.hasUpdate;
 Signal<String?> get latestVersionSignal => updateChecker.latestVersion;
 Signal<ReleaseInfo?> get releaseInfoSignal => updateChecker.releaseInfo;
 Signal<String?> get releaseNotesSignal => updateChecker.releaseNotes;
+Signal<String?> get checkErrorSignal => updateChecker.checkError;
 
 /// Fire-and-forget: kick off the first update check in the background.
 void initializeUpdateChecker() {

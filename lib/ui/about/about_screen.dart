@@ -23,6 +23,7 @@ class AboutScreen extends HookWidget {
     final latestVersionValue = latestVersionSignal.watch(context);
     final release = releaseInfoSignal.watch(context);
     final releaseNotes = releaseNotesSignal.watch(context);
+    final checkError = checkErrorSignal.watch(context);
 
     // Track if user has manually checked (to show latest version even if up-to-date)
     final hasManuallyChecked = useState(false);
@@ -223,6 +224,24 @@ class AboutScreen extends HookWidget {
                             ),
                           ],
                         )
+                      : checkError != null
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 18,
+                              color: colorScheme.error,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Check failed',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        )
                       : hasManuallyChecked.value
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
@@ -233,7 +252,7 @@ class AboutScreen extends HookWidget {
                               color: colorScheme.primary,
                             ),
                             const SizedBox(width: 8),
-                            Text('Latest: ${latestVersionValue ?? ""}'),
+                            Text('Latest: $latestVersionValue'),
                           ],
                         )
                       : const Row(
