@@ -234,12 +234,7 @@ class AboutScreen extends HookWidget {
                               color: colorScheme.error,
                             ),
                             const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Check failed: $checkError',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                            Text('Check failed'),
                           ],
                         )
                       : hasManuallyChecked.value
@@ -270,43 +265,85 @@ class AboutScreen extends HookWidget {
             if (hasUpdate &&
                 releaseNotes != null &&
                 releaseNotes.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Card(
-                elevation: 0,
-                color: colorScheme.surfaceContainerLow,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.article_outlined,
-                            size: 18,
-                            color: colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Release Notes',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+              if (checkError != null) ...[
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 0,
+                  color: colorScheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 18,
+                              color: colorScheme.error,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        releaseNotes,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.5,
+                            const SizedBox(width: 8),
+                            Text(
+                              'Error Details',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        SelectableText(
+                          checkError,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onErrorContainer,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
+              if (releaseNotes != null) ...[
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 0,
+                  color: colorScheme.surfaceContainerLow,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.article_outlined,
+                              size: 18,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Release Notes',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          releaseNotes,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
             // Download & install
             if (hasUpdate &&
