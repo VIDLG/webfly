@@ -1,5 +1,5 @@
 // App native generation config
-// Run: rust-script flutter/tools/flutter-gen-platforms.rs --config flutter/app.pkl
+// Run: cargo run --manifest-path flutter_tools/flutter_gen_platforms/Cargo.toml -- --config app.pkl
 
 import "pkl:yaml"
 
@@ -33,36 +33,13 @@ android {
     distribution_url = "https://mirrors.huaweicloud.com/gradle/gradle-8.14-all.zip"
   }
 
-  app {
-    build {
-      application_id = "\(org).\(project_name)"
-      namespace = "\(org).\(project_name)"
-      output_file_name = "\(project_name)-v${defaultConfig.versionName}+${defaultConfig.versionCode}-${name}.apk"
-      abi_filters = List("armeabi-v7a", "arm64-v8a")
-      // 禁用 Kotlin 增量编译以避免跨盘符路径问题
-      kotlin_incremental = false
-    }
-  }
-
-  build {
-    allprojects {
-      repositories = List(
-        "https://maven.aliyun.com/repository/public",
-        "https://maven.aliyun.com/repository/google",
-        "https://maven.aliyun.com/repository/jcenter"
-      )
-    }
-  }
-
-  settings {
-    plugin_management {
-      repositories = List(
-        "https://maven.aliyun.com/repository/public",
-        "https://maven.aliyun.com/repository/google",
-        "https://maven.aliyun.com/repository/gradle-plugin",
-        "https://maven.aliyun.com/repository/jcenter"
-      )
-    }
+  // Template variables for platforms/android/app/build.gradle.kts
+  template_vars {
+    namespace = "\(org).\(project_name)"
+    application_id = "\(org).\(project_name)"
+    output_file_name = "\(project_name)-v${defaultConfig.versionName}+${defaultConfig.versionCode}-${name}.apk"
+    key_alias = "\(project_name)"
+    store_file = "../../\(platforms_dir)/android/keystore.jks"
   }
 }
 

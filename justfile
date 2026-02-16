@@ -16,7 +16,7 @@ default:
 update:
     just install-tools
     flutter pub get
-    command -v lefthook >/dev/null 2>&1 && lefthook install || true
+    if [ -z "$CI" ]; then command -v lefthook >/dev/null 2>&1 && lefthook install || true; fi
 
 # Install small dev tools (pkl, uv, patch-package)
 install-tools:
@@ -71,6 +71,30 @@ install-apk:
 # Generate platform configuration
 gen-platforms:
     cargo run --manifest-path flutter_tools/flutter_gen_platforms/Cargo.toml -- --config app.pkl
+
+# Generate Android release keystore from key.properties
+gen-android-keystore *FLAGS:
+    rust-script flutter_tools/gen_android_keystore.rs {{FLAGS}}
+
+# Print GitHub Actions secrets needed for CI signing
+show-secrets:
+    #!/usr/bin/env sh
+    set -e
+    PROPS="platforms/android/key.properties"
+    if [ ! -f "$PROPS" ]; then echo "Error: $PROPS not found" >&2; exit 1; fi
+    if [ ! -f "platforms/android/keystore.jks" ]; then echo "Error: keystore.jks not found" >&2; exit 1; fi
+    get() { grep "^$1=" "$PROPS" | cut -d= -f2-; }
+    echo "=== GitHub Actions Secrets ==="
+    echo ""
+    echo "KEYSTORE_BASE64:"
+    base64 -w 0 platforms/android/keystore.jks && echo
+    echo ""
+    echo "KEYSTORE_PASSWORD:"
+    get storePassword
+    echo ""
+    echo "KEY_PASSWORD:"
+    get keyPassword
+    echo ""
 
 # Generate all image assets (branding first, then logos with launcher icons/splash)
 gen-assets:
@@ -164,6 +188,11 @@ bump-version PART *FLAGS:
 tag-version *FLAGS:
     rust-script flutter_tools/git_tag_version.rs {{FLAGS}}
 
+# Generate changelog from git log using Claude AI
+# Usage: just gen-changelog [--tag v0.8.2] [--output changelog.md]
+gen-changelog *FLAGS:
+    rust-script flutter_tools/gen_changelog.rs {{FLAGS}}
+
 # Bump version, commit, tag, and push to trigger CI release
 # Usage: just release [major|minor|patch]
 release PART='patch':
@@ -181,6 +210,7 @@ release PART='patch':
 ci:
     just update
     just use-cases-refresh
+    just gen-android-keystore
     just gen-platforms
     just gen-assets
     just codegen

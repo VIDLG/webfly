@@ -10,6 +10,7 @@ import 'package:webfly_theme/webfly_theme.dart';
 import 'webf/webf.dart';
 import 'services/asset_http_server.dart';
 import 'store/app_settings.dart';
+import 'store/update_checker.dart';
 import 'store/url_history.dart';
 import 'ui/router/app_router.dart';
 
@@ -46,6 +47,7 @@ void main() async {
   await initializeAppSettings();
   await initializeTheme();
   await initializeUrlHistory();
+  initializeUpdateChecker();
 
   // Catcher2 will call runApp internally
   Catcher2(

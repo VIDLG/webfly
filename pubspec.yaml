@@ -36,14 +36,14 @@ dependencies:
     path: webfly_packages/webfly_theme
   webfly_webf_view:
     path: webfly_packages/webfly_webf_view
+  webfly_updater:
+    path: webfly_packages/webfly_updater
   anyhow: ^3.0.0
   json_annotation: ^4.10.0
   catcher_2: ^2.1.0
   flutter_use: ^1.0.0
   signals_hooks: ^0.4.0
   package_info_plus: ^9.0.0
-  path_provider: ^2.1.5
-  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:

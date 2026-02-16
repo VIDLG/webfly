@@ -1,17 +1,14 @@
-import 'dart:convert';
-import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:signals_hooks/signals_hooks.dart';
+import 'package:webfly_updater/webfly_updater.dart';
 
-const _repoOwner = 'vidlg';
-const _repoName = 'webfly';
-const _repoUrl = 'https://github.com/$_repoOwner/$_repoName';
-const _releaseApiUrl =
-    'https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest';
+import '../../store/update_checker.dart';
+
+const _repoUrl = 'https://github.com/vidlg/webfly';
 
 class AboutScreen extends HookWidget {
   const AboutScreen({super.key});
@@ -21,120 +18,73 @@ class AboutScreen extends HookWidget {
     final packageInfo = useFuture(
       useMemoized(() => PackageInfo.fromPlatform()),
     );
-    final updateState = useState<_UpdateState>(_UpdateState.idle);
-    final latestVersion = useState<String?>(null);
-    final apkDownloadUrl = useState<String?>(null);
-    final downloadProgress = useState<double>(0);
-    final errorMessage = useState<String?>(null);
+    // Shared update state from global store
+    final hasUpdate = hasUpdateSignal.watch(context);
+    final latestVersionValue = latestVersionSignal.watch(context);
+    final release = releaseInfoSignal.watch(context);
+    final releaseNotes = releaseNotesSignal.watch(context);
+
+    // Track if user has manually checked (to show latest version even if up-to-date)
+    final hasManuallyChecked = useState(false);
+
+    // Local UI state for checking
+    final isChecking = useState(false);
+
+    // Stream subscription for download/install
+    final updateState = useState<UpdateState>(const UpdateIdle());
+    final subscription = useRef<StreamSubscription<UpdateState>?>(null);
+
+    // Dispose subscription on unmount
+    useEffect(() {
+      return () => subscription.value?.cancel();
+    }, const []);
 
     final info = packageInfo.data;
     final currentVersion = info != null ? 'v${info.version}' : '...';
     final buildNumber = info?.buildNumber ?? '';
 
     Future<void> checkForUpdates() async {
-      updateState.value = _UpdateState.checking;
-      errorMessage.value = null;
-      try {
-        final client = HttpClient();
-        client.connectionTimeout = const Duration(seconds: 10);
-        final request = await client.getUrl(Uri.parse(_releaseApiUrl));
-        request.headers.set('Accept', 'application/vnd.github.v3+json');
-        final response = await request.close();
-
-        if (response.statusCode == 200) {
-          final body = await response.transform(utf8.decoder).join();
-          final data = jsonDecode(body) as Map<String, dynamic>;
-          final tagName = data['tag_name'] as String?;
-          latestVersion.value = tagName;
-
-          // Find APK asset
-          final assets = data['assets'] as List<dynamic>? ?? [];
-          String? apkUrl;
-          for (final asset in assets) {
-            final name = asset['name'] as String? ?? '';
-            if (name.endsWith('.apk')) {
-              apkUrl = asset['browser_download_url'] as String?;
-              break;
-            }
-          }
-          apkDownloadUrl.value = apkUrl;
-
-          if (tagName != null && tagName != currentVersion) {
-            updateState.value = _UpdateState.available;
-          } else {
-            updateState.value = _UpdateState.upToDate;
-          }
-        } else {
-          errorMessage.value = 'API returned ${response.statusCode}';
-          updateState.value = _UpdateState.error;
-        }
-        client.close();
-      } catch (e) {
-        errorMessage.value = e.toString();
-        updateState.value = _UpdateState.error;
-      }
+      isChecking.value = true;
+      await updateChecker.check(force: true);
+      hasManuallyChecked.value = true;
+      isChecking.value = false;
     }
 
-    Future<void> downloadAndInstall() async {
-      final url = apkDownloadUrl.value;
-      if (url == null) {
-        errorMessage.value = 'No APK found in release assets';
-        updateState.value = _UpdateState.error;
-        return;
-      }
+    void startDownloadAndInstall() {
+      if (release == null) return;
 
-      updateState.value = _UpdateState.downloading;
-      downloadProgress.value = 0;
-      errorMessage.value = null;
-
-      try {
-        final client = HttpClient();
-        client.connectionTimeout = const Duration(seconds: 15);
-        final request = await client.getUrl(Uri.parse(url));
-        final response = await request.close();
-
-        if (response.statusCode == 200 || response.statusCode == 302) {
-          final contentLength = response.contentLength;
-          final cacheDir = await getTemporaryDirectory();
-          final filePath =
-              '${cacheDir.path}/webfly-${latestVersion.value ?? "update"}.apk';
-          final file = File(filePath);
-          final sink = file.openWrite();
-
-          int received = 0;
-          await for (final chunk in response) {
-            sink.add(chunk);
-            received += chunk.length;
-            if (contentLength > 0) {
-              downloadProgress.value = received / contentLength;
-            }
+      subscription.value?.cancel();
+      subscription.value = downloadAndInstall(release).listen(
+        (state) => updateState.value = state,
+        onError: (e) {
+          updateState.value = UpdateFailed(DownloadError(e.toString()));
+        },
+        onDone: () {
+          // If stream completes without UpdateReady/UpdateFailed,
+          // the install UI was shown by the system.
+          final current = updateState.value;
+          if (current is! UpdateFailed && current is! UpdateReady) {
+            updateState.value = const UpdateReady();
           }
-          await sink.close();
-          client.close();
-
-          updateState.value = _UpdateState.installing;
-          final result = await OpenFilex.open(filePath);
-          if (result.type != ResultType.done) {
-            errorMessage.value = result.message;
-            updateState.value = _UpdateState.error;
-          } else {
-            // Stay on installing state; the system installer takes over
-            updateState.value = _UpdateState.available;
-          }
-        } else {
-          client.close();
-          errorMessage.value = 'Download failed: HTTP ${response.statusCode}';
-          updateState.value = _UpdateState.error;
-        }
-      } catch (e) {
-        errorMessage.value = e.toString();
-        updateState.value = _UpdateState.error;
-      }
+        },
+      );
     }
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final state = updateState.value;
+    final isBusy =
+        isChecking.value ||
+        state is UpdateDownloading ||
+        state is UpdateInstalling;
+
+    // Extract progress and error from current state.
+    final double? downloadProgress = state is UpdateDownloading
+        ? state.progress
+        : null;
+    final String? errorMessage = state is UpdateFailed
+        ? _errorMessage(state.error)
+        : null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('About')),
@@ -155,7 +105,6 @@ class AboutScreen extends HookWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // App name
             Text(
               'WebFly',
               style: theme.textTheme.headlineMedium?.copyWith(
@@ -163,7 +112,6 @@ class AboutScreen extends HookWidget {
               ),
             ),
             const SizedBox(height: 4),
-            // Version
             Text(
               buildNumber.isNotEmpty
                   ? '$currentVersion (build $buildNumber)'
@@ -247,34 +195,110 @@ class AboutScreen extends HookWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // Check for updates button
+            // Check for updates
             SizedBox(
               width: double.infinity,
               child: FilledButton.tonal(
-                onPressed: switch (state) {
-                  _UpdateState.checking ||
-                  _UpdateState.downloading ||
-                  _UpdateState.installing => null,
-                  _ => checkForUpdates,
-                },
+                onPressed: isBusy ? null : checkForUpdates,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: _buildCheckContent(
-                    state,
-                    latestVersion.value,
-                    colorScheme,
-                  ),
+                  child: isChecking.value
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : hasUpdate
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.new_releases,
+                              size: 18,
+                              color: colorScheme.error,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'New version available: ${latestVersionValue ?? ""}',
+                            ),
+                          ],
+                        )
+                      : hasManuallyChecked.value
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 18,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Latest: ${latestVersionValue ?? ""}'),
+                          ],
+                        )
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh, size: 18),
+                            SizedBox(width: 8),
+                            Text('Check for Updates'),
+                          ],
+                        ),
                 ),
               ),
             ),
-            // Download & install button (visible when update available)
-            if (state == _UpdateState.available &&
-                apkDownloadUrl.value != null) ...[
+            // Release notes
+            if (hasUpdate &&
+                releaseNotes != null &&
+                releaseNotes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Card(
+                elevation: 0,
+                color: colorScheme.surfaceContainerLow,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.article_outlined,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Release Notes',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        releaseNotes,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            // Download & install
+            if (hasUpdate &&
+                release != null &&
+                state is! UpdateDownloading &&
+                state is! UpdateInstalling) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: downloadAndInstall,
+                  onPressed: startDownloadAndInstall,
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Row(
@@ -289,30 +313,29 @@ class AboutScreen extends HookWidget {
                 ),
               ),
             ],
-            // Download progress
-            if (state == _UpdateState.downloading) ...[
+            // Progress
+            if (state is UpdateDownloading) ...[
               const SizedBox(height: 16),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
-                  value: downloadProgress.value > 0
-                      ? downloadProgress.value
+                  value: downloadProgress != null && downloadProgress > 0
+                      ? downloadProgress
                       : null,
                   minHeight: 6,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                downloadProgress.value > 0
-                    ? 'Downloading... ${(downloadProgress.value * 100).toStringAsFixed(0)}%'
+                downloadProgress != null && downloadProgress > 0
+                    ? 'Downloading... ${(downloadProgress * 100).toStringAsFixed(0)}%'
                     : 'Downloading...',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
-            // Installing indicator
-            if (state == _UpdateState.installing) ...[
+            if (state is UpdateInstalling) ...[
               const SizedBox(height: 16),
               Text(
                 'Opening installer...',
@@ -321,11 +344,10 @@ class AboutScreen extends HookWidget {
                 ),
               ),
             ],
-            // Error detail
-            if (state == _UpdateState.error && errorMessage.value != null) ...[
+            if (errorMessage != null) ...[
               const SizedBox(height: 8),
               Text(
-                errorMessage.value!,
+                errorMessage,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.error,
                 ),
@@ -338,64 +360,16 @@ class AboutScreen extends HookWidget {
       ),
     );
   }
-
-  Widget _buildCheckContent(
-    _UpdateState state,
-    String? latest,
-    ColorScheme colorScheme,
-  ) {
-    return switch (state) {
-      _UpdateState.idle => const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.refresh, size: 18),
-          SizedBox(width: 8),
-          Text('Check for Updates'),
-        ],
-      ),
-      _UpdateState.checking => const SizedBox(
-        height: 18,
-        width: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-      _UpdateState.upToDate => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.check_circle, size: 18, color: colorScheme.primary),
-          const SizedBox(width: 8),
-          const Text('Already up to date'),
-        ],
-      ),
-      _UpdateState.available ||
-      _UpdateState.downloading ||
-      _UpdateState.installing => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.new_releases, size: 18, color: colorScheme.error),
-          const SizedBox(width: 8),
-          Text('New version available: ${latest ?? ""}'),
-        ],
-      ),
-      _UpdateState.error => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.error_outline, size: 18, color: colorScheme.error),
-          const SizedBox(width: 8),
-          const Text('Failed, tap to retry'),
-        ],
-      ),
-    };
-  }
 }
 
-enum _UpdateState {
-  idle,
-  checking,
-  upToDate,
-  available,
-  downloading,
-  installing,
-  error,
+String _errorMessage(UpdateError error) {
+  return switch (error) {
+    NetworkError(:final message) => 'Network error: $message',
+    HashVerificationError() => 'File corrupted, please retry',
+    SignatureMismatchError() => 'APK signature mismatch, may be unsafe',
+    DownloadError(:final message) => 'Download failed: $message',
+    InstallError(:final message) => 'Install failed: $message',
+  };
 }
 
 class _InfoTile extends StatelessWidget {

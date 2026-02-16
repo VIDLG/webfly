@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:go_router/go_router.dart';
 import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webfly_theme/webfly_theme.dart';
 
 import '../../../store/app_settings.dart';
-import '../../router/config.dart' show aboutPath;
+import '../../../store/update_checker.dart';
 
 class SettingsScreen extends HookWidget {
   const SettingsScreen({super.key});
@@ -14,6 +13,7 @@ class SettingsScreen extends HookWidget {
   Widget build(BuildContext context) {
     final showInspector = useSignalValue(showWebfInspectorSignal);
     final cacheControllers = useSignalValue(cacheControllersSignal);
+    final updateTestMode = useSignalValue(updateTestModeSignal);
     final themeSignal = useStreamSignal<ThemeState>(
       () => themeStream,
       initialValue: getTheme(),
@@ -75,11 +75,32 @@ class SettingsScreen extends HookWidget {
           ),
           _ThemeModeSelector(themeMode: themeMode),
           const Divider(),
-          ListTile(
-            leading: Icon(Icons.info_outline, color: colorScheme.primary),
-            title: const Text('About'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(aboutPath),
+          // Developer section
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'Developer',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+              ),
+            ),
+          ),
+          SwitchListTile(
+            value: updateTestMode,
+            onChanged: (value) {
+              updateTestModeSignal.value = value;
+              // Re-check updates immediately when toggling test mode
+              updateChecker.check(force: true);
+            },
+            title: const Text('Update Test Mode'),
+            subtitle: const Text(
+              'Always show update available (for testing download/install)',
+            ),
+            secondary: Icon(
+              Icons.bug_report,
+              color: updateTestMode ? colorScheme.error : null,
+            ),
           ),
         ],
       ),

@@ -38,7 +38,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('WebFly'), findsOneWidget);
-    expect(find.byIcon(Icons.settings), findsOneWidget);
+    expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
     expect(find.text('Launch'), findsOneWidget);
     expect(find.text('Use Cases'), findsOneWidget);
   });

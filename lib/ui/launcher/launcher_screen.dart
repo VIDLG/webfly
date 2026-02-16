@@ -7,6 +7,7 @@ import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webf/launcher.dart';
 import '../hooks/use_route_focus.dart';
 import '../../store/app_settings.dart';
+import '../../store/update_checker.dart';
 import '../../store/url_history.dart';
 import '../../utils/app_logger.dart';
 import 'widgets/history_list.dart';
@@ -22,6 +23,7 @@ import '../router/config.dart'
         settingsPath,
         scannerPath,
         nativeDiagnosticsPath,
+        aboutPath,
         appRoutePath,
         buildWebFRouteUrl;
 
@@ -35,6 +37,7 @@ class LauncherScreen extends HookWidget {
     final errorMessage = useState<String?>(null);
     final cacheControllers = cacheControllersSignal.watch(context);
     final urls = urlHistorySignal.watch(context);
+    final hasUpdate = hasUpdateSignal.watch(context);
     final isUrlHighlighted = useBoolean(false);
     final historyListEditMode = useSignal(false);
     final requestExitEditModeRef = useRef<void Function()?>(null);
@@ -259,15 +262,63 @@ class LauncherScreen extends HookWidget {
           title: const Text('WebFly'),
           centerTitle: true,
           actions: [
-            IconButton(
-              tooltip: 'Native diagnostics',
-              onPressed: () => context.push(nativeDiagnosticsPath),
-              icon: const Icon(Icons.monitor_heart_outlined),
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Settings',
-              onPressed: () => context.push(settingsPath),
+            PopupMenuButton<String>(
+              icon: Badge(
+                isLabelVisible: hasUpdate,
+                smallSize: 8,
+                child: const Icon(Icons.add_circle_outline),
+              ),
+              tooltip: 'More',
+              onSelected: (value) => context.push(value),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: settingsPath,
+                  child: ListTile(
+                    leading: Icon(Icons.settings),
+                    title: Text('Settings'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: nativeDiagnosticsPath,
+                  child: ListTile(
+                    leading: Icon(Icons.monitor_heart_outlined),
+                    title: Text('Diagnostics'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: aboutPath,
+                  child: ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('About'),
+                    trailing: hasUpdate
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'NEW',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onError,
+                              ),
+                            ),
+                          )
+                        : null,
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

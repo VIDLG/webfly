@@ -50,6 +50,12 @@ app.*.map.json
 /android/app/release
 /android/
 
+# Android signing
+*.keystore
+*.jks
+key.properties
+!key.properties.example
+
 # Local environment files
 .env
 .env.*
@@ -68,3 +74,5 @@ assets/gen/
 __pycache__/
 *.egg-info/
 uv.lock
+
+secrets.txt

@@ -6,11 +6,13 @@ import 'package:signals_flutter/signals_flutter.dart';
 class AppSettings {
   static const _showInspectorKey = 'show_webf_inspector';
   static const _cacheControllersKey = 'cache_controllers';
+  static const _updateTestModeKey = 'update_test_mode';
 
   final SharedPreferences _prefs;
 
   final showWebfInspector = signal<bool>(false);
   final cacheControllers = signal<bool>(false);
+  final updateTestMode = signal<bool>(false);
 
   AppSettings._(this._prefs);
 
@@ -22,6 +24,7 @@ class AppSettings {
       store.showWebfInspector.value = prefs.getBool(_showInspectorKey) ?? false;
       store.cacheControllers.value =
           prefs.getBool(_cacheControllersKey) ?? false;
+      store.updateTestMode.value = prefs.getBool(_updateTestModeKey) ?? false;
     });
 
     effect(() {
@@ -32,6 +35,11 @@ class AppSettings {
     effect(() {
       store._prefs
           .setBool(_cacheControllersKey, store.cacheControllers.value)
+          .catchError((_) => false);
+    });
+    effect(() {
+      store._prefs
+          .setBool(_updateTestModeKey, store.updateTestMode.value)
           .catchError((_) => false);
     });
 
@@ -47,6 +55,7 @@ AppSettings? _store;
 
 Signal<bool> get showWebfInspectorSignal => _store!.showWebfInspector;
 Signal<bool> get cacheControllersSignal => _store!.cacheControllers;
+Signal<bool> get updateTestModeSignal => _store!.updateTestMode;
 
 /// Initialize app settings (load from disk, setup auto-save).
 Future<void> initializeAppSettings() async {
