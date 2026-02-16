@@ -236,7 +236,7 @@ class AboutScreen extends HookWidget {
                             const SizedBox(width: 8),
                             Flexible(
                               child: Text(
-                                'Check failed',
+                                'Check failed: $checkError',
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
