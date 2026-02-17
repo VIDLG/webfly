@@ -20,7 +20,7 @@
 
 提交代码前应先运行 `just format` 格式化代码。
 
-commit message 应根据变更内容生成有意义的描述，避免简单的单行描述。
+commit message 应根据变更内容生成有意义的描述，包含新增文件、功能修改等关键信息，避免简单的单行描述。
 
 涉及 `git tag`、`git push`、`git checkout` 等改变工作目录的关键命令时，需先确认后再执行。
 
