@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-import '../router/config.dart';
 import '../../utils/app_logger.dart';
+import '../router/config.dart';
 
 // ============================================================================
 // Models
@@ -114,7 +114,7 @@ class TestLogger {
         message: message,
       ),
     );
-    appLogger.d('[$tag] $message');
+    talker.debug('[$tag] $message');
   }
 
   void i(String message) {
@@ -126,7 +126,7 @@ class TestLogger {
         message: message,
       ),
     );
-    appLogger.i('[$tag] $message');
+    talker.info('[$tag] $message');
   }
 
   void w(String message) {
@@ -138,7 +138,7 @@ class TestLogger {
         message: message,
       ),
     );
-    appLogger.w('[$tag] $message');
+    talker.warning('[$tag] $message');
   }
 
   void e(String message, [Object? error, StackTrace? stackTrace]) {
@@ -150,6 +150,6 @@ class TestLogger {
         message: error == null ? message : '$message ($error)',
       ),
     );
-    appLogger.e('[$tag] $message', error: error, stackTrace: stackTrace);
+    talker.error('[$tag] $message', error, stackTrace);
   }
 }

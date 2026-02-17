@@ -13,7 +13,10 @@ class SettingsScreen extends HookWidget {
   Widget build(BuildContext context) {
     final showInspector = useSignalValue(showWebfInspectorSignal);
     final cacheControllers = useSignalValue(cacheControllersSignal);
-    final updateTestMode = useSignalValue(updateTestModeSignal);
+    final developerMode = useSignalValue(updateTestModeSignal);
+    final useExternalBrowser = useSignalValue(useExternalBrowserSignal);
+    final connectTimeout = useSignalValue(connectTimeoutSignal);
+    final receiveTimeout = useSignalValue(receiveTimeoutSignal);
     final themeSignal = useStreamSignal<ThemeState>(
       () => themeStream,
       initialValue: getTheme(),
@@ -27,82 +30,168 @@ class SettingsScreen extends HookWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final smallTitle = theme.textTheme.bodyMedium;
+    final smallSubtitle = theme.textTheme.bodySmall;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: [
-          // WebF section
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              'WebF',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+              child: Text(
+                'WebF',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
               ),
             ),
-          ),
-          SwitchListTile(
-            value: showInspector,
-            onChanged: (value) {
-              showWebfInspectorSignal.value = value;
-            },
-            title: const Text('Show Inspector'),
-            subtitle: const Text('Display WebF element inspector overlay'),
-          ),
-          SwitchListTile(
-            value: cacheControllers,
-            onChanged: (value) {
-              cacheControllersSignal.value = value;
-            },
-            title: const Text('Cache Controllers'),
-            subtitle: const Text(
-              'Keep WebF controllers alive when returning to launcher',
+            SwitchListTile(
+              value: showInspector,
+              onChanged: (value) {
+                showWebfInspectorSignal.value = value;
+              },
+              title: Text('Show Inspector', style: smallTitle),
+              subtitle: Text(
+                'Display WebF element inspector overlay',
+                style: smallSubtitle,
+              ),
+              dense: true,
             ),
-          ),
-          const Divider(),
-          // Theme section
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              'Theme',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
+            SwitchListTile(
+              value: cacheControllers,
+              onChanged: (value) {
+                cacheControllersSignal.value = value;
+              },
+              title: Text('Cache Controllers', style: smallTitle),
+              subtitle: Text(
+                'Keep WebF controllers alive when returning to launcher',
+                style: smallSubtitle,
+              ),
+              dense: true,
+            ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+              child: Text(
+                'Network',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
               ),
             ),
-          ),
-          _ThemeModeSelector(themeMode: themeMode),
-          const Divider(),
-          // Developer section
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              'Developer',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
+            ListTile(
+              title: Text('Connection Timeout', style: smallTitle),
+              subtitle: Text('Seconds', style: smallSubtitle),
+              dense: true,
+              trailing: SizedBox(
+                width: 72,
+                child: TextFormField(
+                  initialValue: connectTimeout.toString(),
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: smallSubtitle,
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (value) {
+                    final v = int.tryParse(value);
+                    if (v != null && v > 0) {
+                      connectTimeoutSignal.value = v;
+                    }
+                  },
+                ),
               ),
             ),
-          ),
-          SwitchListTile(
-            value: updateTestMode,
-            onChanged: (value) {
-              updateTestModeSignal.value = value;
-              // Re-check updates immediately when toggling test mode
-              updateChecker.check(force: true);
-            },
-            title: const Text('Update Test Mode'),
-            subtitle: const Text(
-              'Always show update available (for testing download/install)',
+            ListTile(
+              title: Text('Download Timeout', style: smallTitle),
+              subtitle: Text('Seconds', style: smallSubtitle),
+              dense: true,
+              trailing: SizedBox(
+                width: 72,
+                child: TextFormField(
+                  initialValue: receiveTimeout.toString(),
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: smallSubtitle,
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (value) {
+                    final v = int.tryParse(value);
+                    if (v != null && v > 0) {
+                      receiveTimeoutSignal.value = v;
+                    }
+                  },
+                ),
+              ),
             ),
-            secondary: Icon(
-              Icons.bug_report,
-              color: updateTestMode ? colorScheme.error : null,
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+              child: Text(
+                'Theme',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
             ),
-          ),
-        ],
+            _ThemeModeSelector(themeMode: themeMode),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+              child: Text(
+                'Developer',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+            SwitchListTile(
+              value: developerMode,
+              onChanged: (value) {
+                updateTestModeSignal.value = value;
+                updateChecker.check(force: true);
+              },
+              title: Text('Test Update Flow', style: smallTitle),
+              subtitle: Text(
+                'Simulate update available for testing download',
+                style: smallSubtitle,
+              ),
+              dense: true,
+            ),
+            SwitchListTile(
+              value: useExternalBrowser,
+              onChanged: (value) {
+                useExternalBrowserSignal.value = value;
+              },
+              title: Text('External Browser', style: smallTitle),
+              subtitle: Text(
+                'Open links in system browser instead of built-in WebView',
+                style: smallSubtitle,
+              ),
+              dense: true,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -115,28 +204,32 @@ class _ThemeModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RadioGroup<ThemeMode>(
-      groupValue: themeMode,
-      onChanged: (value) async {
-        if (value != null) {
-          await setTheme(value);
-        }
-      },
-      child: Column(
-        children: [
-          RadioListTile<ThemeMode>(
+    final smallText = Theme.of(context).textTheme.bodySmall;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: SegmentedButton<ThemeMode>(
+        segments: [
+          ButtonSegment(
             value: ThemeMode.system,
-            title: const Text('Follow System'),
+            label: Text('System', style: smallText),
           ),
-          RadioListTile<ThemeMode>(
+          ButtonSegment(
             value: ThemeMode.light,
-            title: const Text('Light'),
+            label: Text('Light', style: smallText),
           ),
-          RadioListTile<ThemeMode>(
+          ButtonSegment(
             value: ThemeMode.dark,
-            title: const Text('Dark'),
+            label: Text('Dark', style: smallText),
           ),
         ],
+        selected: {themeMode},
+        onSelectionChanged: (Set<ThemeMode> selection) async {
+          await setTheme(selection.first);
+        },
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
       ),
     );
   }

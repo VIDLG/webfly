@@ -1,14 +1,18 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:signals_hooks/signals_hooks.dart';
+import 'package:talker_flutter/talker_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webfly_updater/webfly_updater.dart';
 
+import '../../store/app_settings.dart';
 import '../../store/update_checker.dart';
+import '../../utils/app_logger.dart';
+import 'webview_screen.dart';
 
 const _repoUrl = 'https://github.com/vidlg/webfly';
+const _releasesUrl = 'https://github.com/vidlg/webfly/releases';
 
 class AboutScreen extends HookWidget {
   const AboutScreen({super.key});
@@ -18,27 +22,13 @@ class AboutScreen extends HookWidget {
     final packageInfo = useFuture(
       useMemoized(() => PackageInfo.fromPlatform()),
     );
-    // Shared update state from global store
     final hasUpdate = hasUpdateSignal.watch(context);
     final latestVersionValue = latestVersionSignal.watch(context);
     final release = releaseInfoSignal.watch(context);
     final releaseNotes = releaseNotesSignal.watch(context);
-    final checkError = checkErrorSignal.watch(context);
-
-    // Track if user has manually checked (to show latest version even if up-to-date)
     final hasManuallyChecked = useState(false);
-
-    // Local UI state for checking
     final isChecking = useState(false);
-
-    // Stream subscription for download/install
-    final updateState = useState<UpdateState>(const UpdateIdle());
-    final subscription = useRef<StreamSubscription<UpdateState>?>(null);
-
-    // Dispose subscription on unmount
-    useEffect(() {
-      return () => subscription.value?.cancel();
-    }, const []);
+    final state = updateStateSignal.watch(context);
 
     final info = packageInfo.data;
     final currentVersion = info != null ? 'v${info.version}' : '...';
@@ -52,34 +42,16 @@ class AboutScreen extends HookWidget {
     }
 
     void startDownloadAndInstall() {
-      if (release == null) return;
-
-      subscription.value?.cancel();
-      subscription.value = downloadAndInstall(release).listen(
-        (state) => updateState.value = state,
-        onError: (e) {
-          updateState.value = UpdateFailed(DownloadError(e.toString()));
-        },
-        onDone: () {
-          // If stream completes without UpdateReady/UpdateFailed,
-          // the install UI was shown by the system.
-          final current = updateState.value;
-          if (current is! UpdateFailed && current is! UpdateReady) {
-            updateState.value = const UpdateReady();
-          }
-        },
-      );
+      updateChecker.startDownloadAndInstall();
     }
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final state = updateState.value;
     final isBusy =
         isChecking.value ||
         state is UpdateDownloading ||
         state is UpdateInstalling;
 
-    // Extract progress and error from current state.
     final double? downloadProgress = state is UpdateDownloading
         ? state.progress
         : null;
@@ -88,29 +60,48 @@ class AboutScreen extends HookWidget {
         : null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('About')),
+      appBar: AppBar(
+        title: const Text('About'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.article_outlined),
+            tooltip: 'Logs',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TalkerScreen(talker: talker),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           children: [
             const SizedBox(height: 24),
-            // Logo
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                theme.brightness == Brightness.dark
-                    ? 'assets/gen/logo/webfly_logo_dark.png'
-                    : 'assets/gen/logo/webfly_logo_light.png',
-                width: 80,
-                height: 80,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'WebFly',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    theme.brightness == Brightness.dark
+                        ? 'assets/gen/logo/webfly_logo_dark.png'
+                        : 'assets/gen/logo/webfly_logo_light.png',
+                    width: 56,
+                    height: 56,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'WebFly',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -122,7 +113,6 @@ class AboutScreen extends HookWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // Description
             Card(
               elevation: 0,
               color: colorScheme.surfaceContainerLow,
@@ -162,41 +152,6 @@ class AboutScreen extends HookWidget {
               ),
             ),
             const SizedBox(height: 12),
-            // Links & info
-            Card(
-              elevation: 0,
-              color: colorScheme.surfaceContainerLow,
-              child: Column(
-                children: [
-                  _InfoTile(
-                    icon: Icons.code,
-                    title: 'Source Code',
-                    subtitle: _repoUrl,
-                    trailing: Icon(
-                      Icons.open_in_new,
-                      size: 16,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  _InfoTile(
-                    icon: Icons.policy_outlined,
-                    title: 'License',
-                    subtitle: 'See repository for license details',
-                  ),
-                  if (info != null) ...[
-                    const Divider(height: 1, indent: 56),
-                    _InfoTile(
-                      icon: Icons.android,
-                      title: 'Package',
-                      subtitle: info.packageName,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Check for updates
             SizedBox(
               width: double.infinity,
               child: FilledButton.tonal(
@@ -224,19 +179,6 @@ class AboutScreen extends HookWidget {
                             ),
                           ],
                         )
-                      : checkError != null
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 18,
-                              color: colorScheme.error,
-                            ),
-                            const SizedBox(width: 8),
-                            Text('Check failed'),
-                          ],
-                        )
                       : hasManuallyChecked.value
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
@@ -247,7 +189,7 @@ class AboutScreen extends HookWidget {
                               color: colorScheme.primary,
                             ),
                             const SizedBox(width: 8),
-                            Text('Latest: $latestVersionValue'),
+                            Text('Latest: ${latestVersionValue ?? ""}'),
                           ],
                         )
                       : const Row(
@@ -261,95 +203,12 @@ class AboutScreen extends HookWidget {
                 ),
               ),
             ),
-            // Release notes
-            if (hasUpdate &&
-                releaseNotes != null &&
-                releaseNotes.isNotEmpty) ...[
-              if (checkError != null) ...[
-                const SizedBox(height: 12),
-                Card(
-                  elevation: 0,
-                  color: colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 18,
-                              color: colorScheme.error,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Error Details',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onErrorContainer,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        SelectableText(
-                          checkError,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onErrorContainer,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              if (releaseNotes != null) ...[
-                const SizedBox(height: 12),
-                Card(
-                  elevation: 0,
-                  color: colorScheme.surfaceContainerLow,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.article_outlined,
-                              size: 18,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Release Notes',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          releaseNotes,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-            // Download & install
             if (hasUpdate &&
                 release != null &&
+                state is! UpdatePreparing &&
                 state is! UpdateDownloading &&
-                state is! UpdateInstalling) ...[
+                state is! UpdateInstalling &&
+                state is! UpdateReady) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -369,21 +228,43 @@ class AboutScreen extends HookWidget {
                 ),
               ),
             ],
-            // Progress
-            if (state is UpdateDownloading) ...[
+            if (state is UpdatePreparing || state is UpdateDownloading) ...[
               const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: downloadProgress != null && downloadProgress > 0
-                      ? downloadProgress
-                      : null,
-                  minHeight: 6,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value:
+                            (state is UpdateDownloading &&
+                                downloadProgress != null &&
+                                downloadProgress > 0)
+                            ? downloadProgress
+                            : null,
+                        minHeight: 6,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: updateChecker.reset,
+                    icon: const Icon(Icons.close),
+                    iconSize: 20,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    tooltip: 'Cancel',
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
-                downloadProgress != null && downloadProgress > 0
+                (state is UpdateDownloading &&
+                        downloadProgress != null &&
+                        downloadProgress > 0)
                     ? 'Downloading... ${(downloadProgress * 100).toStringAsFixed(0)}%'
                     : 'Downloading...',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -400,6 +281,28 @@ class AboutScreen extends HookWidget {
                 ),
               ),
             ],
+            if (state is UpdateReady) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    updateChecker.installApk();
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.install_mobile, size: 18),
+                        SizedBox(width: 8),
+                        Text('Install'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
             if (errorMessage != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -410,6 +313,135 @@ class AboutScreen extends HookWidget {
                 textAlign: TextAlign.center,
               ),
             ],
+            if (hasUpdate &&
+                releaseNotes != null &&
+                releaseNotes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Card(
+                elevation: 0,
+                color: colorScheme.surfaceContainerLow,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.article_outlined,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Release Notes',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        releaseNotes,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Card(
+              elevation: 0,
+              color: colorScheme.surfaceContainerLow,
+              child: Column(
+                children: [
+                  _InfoTile(
+                    icon: Icons.home_outlined,
+                    title: 'Homepage',
+                    subtitle: _repoUrl,
+                    trailing: Icon(
+                      Icons.open_in_new,
+                      size: 16,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    onTap: () async {
+                      if (useExternalBrowserSignal.value) {
+                        final uri = Uri.parse(_repoUrl);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      } else {
+                        if (context.mounted) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const WebViewScreen(
+                                url: _repoUrl,
+                                title: 'Homepage',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _InfoTile(
+                    icon: Icons.download_outlined,
+                    title: 'Releases',
+                    subtitle: _releasesUrl,
+                    trailing: Icon(
+                      Icons.open_in_new,
+                      size: 16,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    onTap: () async {
+                      if (useExternalBrowserSignal.value) {
+                        final uri = Uri.parse(_releasesUrl);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      } else {
+                        if (context.mounted) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const WebViewScreen(
+                                url: _releasesUrl,
+                                title: 'Releases',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _InfoTile(
+                    icon: Icons.policy_outlined,
+                    title: 'License',
+                    subtitle: 'MIT',
+                  ),
+                  if (info != null) ...[
+                    const Divider(height: 1, indent: 56),
+                    _InfoTile(
+                      icon: Icons.android,
+                      title: 'Package',
+                      subtitle: info.packageName,
+                    ),
+                  ],
+                ],
+              ),
+            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -433,12 +465,14 @@ class _InfoTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   const _InfoTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     this.trailing,
+    this.onTap,
   });
 
   @override
@@ -452,6 +486,7 @@ class _InfoTile extends StatelessWidget {
         style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
       ),
       trailing: trailing,
+      onTap: onTap,
       dense: true,
       visualDensity: VisualDensity.compact,
     );

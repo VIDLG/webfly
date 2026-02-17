@@ -12,7 +12,7 @@ class LauncherUseCasesCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     void onTap() {
-      appLogger.d('[LauncherScreen] Opening use cases menu');
+      talker.debug('[LauncherScreen] Opening use cases menu');
       context.push(useCasesMenuPath);
     }
 

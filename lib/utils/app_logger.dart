@@ -1,46 +1,62 @@
-import 'package:logger/logger.dart';
+import 'package:logging/logging.dart';
+import 'package:talker/talker.dart';
 
-/// Get log level from environment or default to info
+final talker = Talker(
+  settings: TalkerSettings(
+    enabled: true,
+    useHistory: true,
+    maxHistoryItems: 1000,
+  ),
+);
+
+final appLogger = Logger('app');
+
 Level _getLogLevel() {
   const levelStr = String.fromEnvironment('LOG_LEVEL', defaultValue: 'info');
   switch (levelStr.toLowerCase()) {
     case 'all':
-    case 'trace':
-      return Level.all;
+    case 'finest':
+      return Level.FINEST;
     case 'debug':
-      return Level.debug;
+    case 'finer':
+      return Level.FINER;
+    case 'fine':
+      return Level.FINE;
     case 'info':
-      return Level.info;
+      return Level.INFO;
     case 'warning':
     case 'warn':
-      return Level.warning;
+      return Level.WARNING;
     case 'error':
-      return Level.error;
+    case 'severe':
+      return Level.SEVERE;
     case 'fatal':
-      return Level.fatal;
+    case 'shout':
+      return Level.SHOUT;
     case 'off':
-      return Level.off;
+      return Level.OFF;
     default:
-      return Level.info;
+      return Level.INFO;
   }
 }
 
-/// Global logger instance for the application
-///
-/// Log level can be controlled via --dart-define:
-/// ```
-/// flutter run --dart-define=LOG_LEVEL=debug
-/// flutter run --dart-define=LOG_LEVEL=info  (default)
-/// flutter run --dart-define=LOG_LEVEL=error
-/// ```
-final appLogger = Logger(
-  level: _getLogLevel(),
-  printer: PrettyPrinter(
-    methodCount: 0,
-    errorMethodCount: 3,
-    lineLength: 100,
-    colors: true,
-    printEmojis: true,
-    dateTimeFormat: DateTimeFormat.none,
-  ),
-);
+void initAppLogger() {
+  final level = _getLogLevel();
+  Logger.root.level = level;
+
+  Logger.root.onRecord.listen((record) {
+    final message = record.message;
+    final error = record.error;
+    final stackTrace = record.stackTrace;
+
+    if (record.level >= Level.SEVERE) {
+      talker.error(message, error, stackTrace);
+    } else if (record.level >= Level.WARNING) {
+      talker.warning(message, error, stackTrace);
+    } else if (record.level >= Level.INFO) {
+      talker.info(message, error, stackTrace);
+    } else {
+      talker.debug(message, error, stackTrace);
+    }
+  });
+}

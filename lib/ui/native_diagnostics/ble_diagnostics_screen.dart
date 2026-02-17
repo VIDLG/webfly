@@ -162,7 +162,7 @@ class BleDiagnosticsScreen extends HookWidget {
         },
         err: (error) {
           log.w('turnOn failed: $error');
-          appLogger.w('[BLE] turnOn not available/failed: $error');
+          talker.warning('[BLE] turnOn not available/failed: $error');
           lastError.value =
               'Could not turn on Bluetooth automatically: ${error.toString()}';
         },

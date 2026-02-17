@@ -2,17 +2,15 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:logger/logger.dart';
+import 'package:talker/talker.dart';
 import '../ui/router/config.dart';
 
-/// HTTP server that serves embedded assets
-/// Allows WebF to load assets via http://localhost:port/
 class AssetHttpServer {
   static final AssetHttpServer _instance = AssetHttpServer._internal();
   factory AssetHttpServer() => _instance;
   AssetHttpServer._internal();
 
-  final _logger = Logger();
+  final _logger = Talker();
   HttpServer? _server;
   int? _port;
 
@@ -28,7 +26,7 @@ class AssetHttpServer {
   /// Start the HTTP server
   Future<void> start({int port = assetHttpServerPort}) async {
     if (_server != null) {
-      _logger.i('Asset HTTP server already running on port $_port');
+      _logger.info('Asset HTTP server already running on port $_port');
       return;
     }
 
@@ -44,9 +42,9 @@ class AssetHttpServer {
       );
       _port = _server!.port;
 
-      _logger.i('Asset HTTP server started on http://localhost:$_port');
+      _logger.info('Asset HTTP server started on http://localhost:$_port');
     } catch (e) {
-      _logger.e('Failed to start asset HTTP server', error: e);
+      _logger.error('Failed to start asset HTTP server', e);
       rethrow;
     }
   }
@@ -55,7 +53,7 @@ class AssetHttpServer {
   Future<void> stop() async {
     if (_server != null) {
       await _server!.close(force: true);
-      _logger.i('Asset HTTP server stopped');
+      _logger.info('Asset HTTP server stopped');
       _server = null;
       _port = null;
     }
@@ -64,7 +62,7 @@ class AssetHttpServer {
   /// Handle HTTP requests by serving assets
   Future<shelf.Response> _handleRequest(shelf.Request request) async {
     final path = request.url.path;
-    _logger.i('🌐 HTTP Request: ${request.method} /$path');
+    _logger.info('🌐 HTTP Request: ${request.method} /$path');
 
     // Handle root path with a helpful response
     if (path.isEmpty || path == '/') {
@@ -73,7 +71,7 @@ class AssetHttpServer {
 
     // Handle other paths
     final assetPath = _mapRequestPath(path);
-    _logger.i('📂 Mapped /$path -> $assetPath');
+    _logger.info('📂 Mapped /$path -> $assetPath');
 
     try {
       // Load asset from bundle
@@ -83,7 +81,9 @@ class AssetHttpServer {
       // Determine content type
       final contentType = _getContentType(assetPath);
 
-      _logger.i('✅ Serving $assetPath (${data.length} bytes) as $contentType');
+      _logger.info(
+        '✅ Serving $assetPath (${data.length} bytes) as $contentType',
+      );
 
       return shelf.Response.ok(
         data,
@@ -94,7 +94,7 @@ class AssetHttpServer {
         },
       );
     } catch (e) {
-      _logger.w('Asset not found: $assetPath', error: e);
+      _logger.warning('Asset not found: $assetPath', e);
       return shelf.Response.notFound('Asset not found: /$path');
     }
   }
@@ -114,7 +114,7 @@ class AssetHttpServer {
         },
       );
     } catch (e) {
-      _logger.w('Failed to load root index.html', error: e);
+      _logger.warning('Failed to load root index.html', e);
 
       // Fallback to a simple HTML response
       const fallbackContent = '''

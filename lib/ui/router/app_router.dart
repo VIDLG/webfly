@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webfly_webf_view/webfly_webf_view.dart';
+import 'package:talker/talker.dart';
 import '../launcher/launcher_screen.dart';
 import '../native_diagnostics/ble_diagnostics_screen.dart';
 import '../native_diagnostics/native_diagnostics_logs_screen.dart';
@@ -11,7 +12,8 @@ import '../about/about_screen.dart';
 import '../launcher/widgets/settings_dialog.dart';
 import '../use_cases_menu_screen.dart';
 import 'config.dart';
-import '../../utils/app_logger.dart';
+
+final _log = Talker();
 
 /// Route observer for WebF pages, from webfly_webf_view package.
 final webfRouteObserver = defaultWebfRouteObserver;
@@ -111,13 +113,13 @@ final goRouter = GoRouter(
         GoRoute(
           path: 'app',
           redirect: (context, state) {
-            appLogger.d('[AppRouter] Hybrid route matched: ${state.uri}');
-            appLogger.d(
+            _log.debug('[AppRouter] Hybrid route matched: ${state.uri}');
+            _log.debug(
               '[AppRouter] Query params: ${state.uri.queryParameters}',
             );
             final url = state.uri.queryParameters[urlParam];
             if (url == null || url.isEmpty) {
-              appLogger.d(
+              _log.debug(
                 '[AppRouter] Missing URL param, redirecting to launcher',
               );
               return launcherPath; // Redirect to launcher if no URL
@@ -148,7 +150,7 @@ final goRouter = GoRouter(
 
   // Error handling
   errorBuilder: (context, state) {
-    appLogger.e(
+    _log.error(
       '[AppRouter] ERROR - Route not found!\n'
       'URI: ${state.uri}\n'
       'Path: ${state.uri.path}\n'
