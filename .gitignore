@@ -50,6 +50,9 @@ app.*.map.json
 /android/app/release
 /android/
 
+# Gradle cache
+platforms/android/.gradle/
+
 # Android signing
 *.keystore
 *.jks

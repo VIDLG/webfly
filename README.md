@@ -6,6 +6,7 @@ English | [简体中文](README.zh-CN.md)
 
 <img src="assets/logo/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
 
+[![Releases](https://img.shields.io/badge/Releases-Latest-blue?logo=github)](https://github.com/anomalyco/webfly/releases)
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
 [![WebF](https://img.shields.io/badge/WebF-0.24.11-FF6B6B)](https://github.com/openwebf/webf)
