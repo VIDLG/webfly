@@ -2,7 +2,7 @@ name: webfly
 description: "WebFly is like webf go / expo go, focused on rendering target web pages"
 homepage: "https://github.com/vidlg/webfly"
 publish_to: 'none'
-version: 0.10.0+1
+version: 0.10.1+1
 
 environment:
   sdk: ^3.10.7
