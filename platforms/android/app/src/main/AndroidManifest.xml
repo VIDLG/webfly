@@ -44,31 +44,17 @@
         android:resource="@xml/cache_paths" />
     </provider>
 
-    <!-- OTA Update FileProvider for APK installation -->
-    <provider
-      android:name="sk.fourq.otaupdate.OtaUpdateFileProvider"
-      android:authorities="${applicationId}.ota_update_provider"
-      android:exported="false"
-      android:grantUriPermissions="true">
-      <meta-data
-        android:name="android.support.FILE_PROVIDER_PATHS"
-        android:resource="@xml/ota_update_paths" />
-    </provider>
 
-    <!-- OTA Update installation result receiver -->
-    <receiver
-      android:name="sk.fourq.otaupdate.InstallResultReceiver"
-      android:exported="false">
-      <intent-filter>
-        <action android:name="${applicationId}.ACTION_INSTALL_COMPLETE" />
-      </intent-filter>
-    </receiver>
   </application>
 
   <queries>
     <intent>
       <action android:name="android.intent.action.PROCESS_TEXT" />
       <data android:mimeType="text/plain" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <data android:scheme="https" />
     </intent>
   </queries>
 

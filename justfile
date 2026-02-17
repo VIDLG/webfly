@@ -72,6 +72,9 @@ install-apk:
 gen-platforms:
     cargo run --manifest-path flutter_tools/flutter_gen_platforms/Cargo.toml -- --config app.pkl
 
+# Regenerate platforms and assets (use after deleting android/windows directories)
+regen-platforms: gen-platforms gen-assets
+
 # Generate Android release keystore from key.properties
 gen-android-keystore *FLAGS:
     rust-script flutter_tools/gen_android_keystore.rs {{FLAGS}}
@@ -196,6 +199,7 @@ gen-changelog *FLAGS:
 # Bump version, commit, tag, and push to trigger CI release
 # Usage: just release [major|minor|patch]
 release PART='patch':
+    just format
     just bump-version {{PART}}
     git add pubspec.yaml && git commit -m "bump version to $(grep '^version:' pubspec.yaml | awk '{print $2}')"
     just tag-version
