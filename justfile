@@ -162,10 +162,18 @@ webf-check *ARGS:
 # Testing
 # =============================================
 
-# Run tests (Flutter + frontend)
+# Run Flutter tests
 test *ARGS:
     flutter test {{ARGS}}
-    cd frontend && pnpm test
+
+# Run frontend tests
+test-frontend *ARGS:
+    cd frontend && pnpm test {{ARGS}}
+
+# Run all tests (Flutter + frontend)
+test-all *ARGS:
+    flutter test {{ARGS}}
+    cd frontend && pnpm test {{ARGS}}
 
 # Benchmark the TwoSlash type-check API latency
 # Usage: just bench-tsc [-n 10] [-f frontend/public/effects/wave/effect.ts]
