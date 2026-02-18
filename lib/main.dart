@@ -13,9 +13,14 @@ import 'store/app_settings.dart';
 import 'store/update_checker.dart';
 import 'store/url_history.dart';
 import 'ui/router/app_router.dart';
+import 'utils/app_logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Activate logging → Talker bridge so sub-packages using the `logging`
+  // package (webfly_updater, webfly_ble, etc.) appear in TalkerScreen.
+  initAppLogger();
 
   // Register WebF Cupertino UI custom elements (required by @openwebf/react-cupertino-ui).
   installWebFCupertinoUI();

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../router/config.dart';
-import 'core.dart';
+import 'registry.dart';
 
 class NativeDiagnosticsScreen extends StatelessWidget {
   const NativeDiagnosticsScreen({super.key});

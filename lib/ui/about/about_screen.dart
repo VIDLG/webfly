@@ -36,9 +36,18 @@ class AboutScreen extends HookWidget {
 
     Future<void> checkForUpdates() async {
       isChecking.value = true;
-      await updateChecker.check(force: true);
-      hasManuallyChecked.value = true;
-      isChecking.value = false;
+      try {
+        await updateChecker.check(force: true);
+        hasManuallyChecked.value = true;
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Check failed, please try again')),
+          );
+        }
+      } finally {
+        isChecking.value = false;
+      }
     }
 
     void startDownloadAndInstall() {

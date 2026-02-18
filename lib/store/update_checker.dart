@@ -66,6 +66,8 @@ class AppUpdateChecker {
       }
     } catch (e, s) {
       talker.error('[UpdateChecker] Check failed', e, s);
+      _checked = false;
+      if (force) rethrow;
     }
   }
 
