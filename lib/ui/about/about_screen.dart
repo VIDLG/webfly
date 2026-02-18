@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:signals_hooks/signals_hooks.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webfly_updater/webfly_updater.dart';
 
 import '../../store/app_settings.dart';
 import '../../store/update_checker.dart';
-import '../../utils/app_logger.dart';
 import 'webview_screen.dart';
 
 const _repoUrl = 'https://github.com/vidlg/webfly';
@@ -69,22 +67,7 @@ class AboutScreen extends HookWidget {
         : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('About'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.article_outlined),
-            tooltip: 'Logs',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => TalkerScreen(talker: talker),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('About')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(

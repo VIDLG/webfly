@@ -4,12 +4,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_use/flutter_use.dart';
-import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webfly_ble/webfly_ble.dart';
 
-import '../router/config.dart';
 import '../../utils/app_logger.dart';
 import 'registry.dart';
 
@@ -68,21 +66,21 @@ class BleDiagnosticsScreen extends HookWidget {
           locationService = null;
         }
 
-        talker.info('[BLE] --- BLE environment snapshot ($reason) ---');
-        talker.info('[BLE] platform=${Platform.operatingSystem}');
-        talker.info('[BLE] osVersion=${Platform.operatingSystemVersion}');
+        talker.bleInfo('--- BLE environment snapshot ($reason) ---');
+        talker.bleInfo('platform=${Platform.operatingSystem}');
+        talker.bleInfo('osVersion=${Platform.operatingSystemVersion}');
 
-        talker.info('[BLE] bleSupported=${bleSupported.value}');
-        talker.info('[BLE] adapterState=$adapterState');
-        talker.info(
-          '[BLE] permissions: '
+        talker.bleInfo('bleSupported=${bleSupported.value}');
+        talker.bleInfo('adapterState=$adapterState');
+        talker.bleInfo(
+          'permissions: '
           'scan=${permissionStatuses.get('bluetoothScan')}, '
           'connect=${permissionStatuses.get('bluetoothConnect')}, '
           'locWhenInUse=${permissionStatuses.get('locationWhenInUse')}',
         );
-        talker.info('[BLE] locationService=${locationService ?? 'unknown'}');
+        talker.bleInfo('locationService=${locationService ?? 'unknown'}');
       } catch (e, st) {
-        talker.error('[BLE] logEnvironmentSnapshot failed', e, st);
+        talker.bleError('logEnvironmentSnapshot failed: $e');
       }
     }
 
@@ -107,7 +105,7 @@ class BleDiagnosticsScreen extends HookWidget {
       try {
         await refreshPermissions();
 
-        talker.info('[BLE] requestPermissions: start');
+        talker.bleInfo('requestPermissions: start');
 
         // Android 12+ uses nearby devices permissions.
         await Permission.bluetoothScan.request();
@@ -117,8 +115,8 @@ class BleDiagnosticsScreen extends HookWidget {
 
         await refreshPermissions();
 
-        talker.info(
-          '[BLE] requestPermissions: done '
+        talker.bleInfo(
+          'requestPermissions: done '
           '(scan=${permissionStatuses.get('bluetoothScan')}, '
           'connect=${permissionStatuses.get('bluetoothConnect')}, '
           'loc=${permissionStatuses.get('locationWhenInUse')})',
@@ -136,7 +134,7 @@ class BleDiagnosticsScreen extends HookWidget {
           showSnack('Permission request completed.');
         }
       } catch (e, st) {
-        talker.error('[BLE] Permission request error', e, st);
+        talker.bleError('Permission request error: $e');
         lastError.value = 'Permission request failed: $e';
       } finally {
         requestingPermissions.toggle(false);
@@ -152,14 +150,14 @@ class BleDiagnosticsScreen extends HookWidget {
         return;
       }
 
-      talker.info('[BLE] turnOn: requested');
+      talker.bleInfo('turnOn: requested');
       final result = await bleTurnOn();
       result.match(
         ok: (_) {
-          talker.info('[BLE] turnOn: succeeded');
+          talker.bleInfo('turnOn: succeeded');
         },
         err: (error) {
-          talker.warning('[BLE] turnOn not available/failed: $error');
+          talker.bleWarning('turnOn not available/failed: $error');
           lastError.value =
               'Could not turn on Bluetooth automatically: ${error.toString()}';
         },
@@ -180,16 +178,16 @@ class BleDiagnosticsScreen extends HookWidget {
 
       if (!context.mounted) return;
 
-      talker.info('[BLE] startScan(adapter=$adapterState)');
+      talker.bleInfo('startScan(adapter=$adapterState)');
       final result = await bleStartScan(
         const ScanOptions(timeout: Duration(seconds: 10)),
       );
       result.match(
         ok: (_) {
-          talker.info('[BLE] startScan: succeeded');
+          talker.bleInfo('startScan: succeeded');
         },
         err: (error) {
-          talker.error('[BLE] startScan failed: $error');
+          talker.bleError('startScan failed: $error');
           lastError.value = 'startScan failed: ${error.toString()}';
         },
       );
@@ -198,14 +196,14 @@ class BleDiagnosticsScreen extends HookWidget {
     Future<void> stopScan() async {
       lastError.value = null;
 
-      talker.info('[BLE] stopScan');
+      talker.bleInfo('stopScan');
       final result = await bleStopScan();
       result.match(
         ok: (_) {
-          talker.info('[BLE] stopScan: succeeded');
+          talker.bleInfo('stopScan: succeeded');
         },
         err: (error) {
-          talker.error('[BLE] stopScan failed: $error');
+          talker.bleError('stopScan failed: $error');
           lastError.value = 'stopScan failed: ${error.toString()}';
         },
       );
@@ -215,7 +213,7 @@ class BleDiagnosticsScreen extends HookWidget {
       unawaited(() async {
         final supported = await FlutterBluePlus.isSupported;
         bleSupported.value = supported;
-        talker.info('[BLE] isSupported=$supported');
+        talker.bleInfo('isSupported=$supported');
       }());
 
       unawaited(() async {
@@ -299,11 +297,6 @@ class BleDiagnosticsScreen extends HookWidget {
       appBar: AppBar(
         title: const Text('BLE Diagnostics'),
         actions: [
-          IconButton(
-            tooltip: 'Logs',
-            onPressed: () => context.push(nativeDiagnosticsLogsPath),
-            icon: const Icon(Icons.article_outlined),
-          ),
           IconButton(
             tooltip: 'Refresh',
             onPressed: refreshPermissions,

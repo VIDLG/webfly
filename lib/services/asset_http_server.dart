@@ -25,7 +25,7 @@ class AssetHttpServer {
   /// Start the HTTP server
   Future<void> start({int port = assetHttpServerPort}) async {
     if (_server != null) {
-      talker.info('Asset HTTP server already running on port $_port');
+      talker.assetInfo('Already running on port $_port');
       return;
     }
 
@@ -41,9 +41,9 @@ class AssetHttpServer {
       );
       _port = _server!.port;
 
-      talker.info('Asset HTTP server started on http://localhost:$_port');
+      talker.assetInfo('Started on http://localhost:$_port');
     } catch (e) {
-      talker.error('Failed to start asset HTTP server', e);
+      talker.assetError('Failed to start: $e');
       rethrow;
     }
   }
@@ -52,7 +52,7 @@ class AssetHttpServer {
   Future<void> stop() async {
     if (_server != null) {
       await _server!.close(force: true);
-      talker.info('Asset HTTP server stopped');
+      talker.assetInfo('Stopped');
       _server = null;
       _port = null;
     }
@@ -61,7 +61,7 @@ class AssetHttpServer {
   /// Handle HTTP requests by serving assets
   Future<shelf.Response> _handleRequest(shelf.Request request) async {
     final path = request.url.path;
-    talker.info('🌐 HTTP Request: ${request.method} /$path');
+    talker.assetInfo('HTTP Request: ${request.method} /$path');
 
     // Handle root path with a helpful response
     if (path.isEmpty || path == '/') {
@@ -70,7 +70,7 @@ class AssetHttpServer {
 
     // Handle other paths
     final assetPath = _mapRequestPath(path);
-    talker.info('📂 Mapped /$path -> $assetPath');
+    talker.assetInfo('Mapped /$path -> $assetPath');
 
     try {
       // Load asset from bundle
@@ -80,8 +80,8 @@ class AssetHttpServer {
       // Determine content type
       final contentType = _getContentType(assetPath);
 
-      talker.info(
-        '✅ Serving $assetPath (${data.length} bytes) as $contentType',
+      talker.assetInfo(
+        'Serving $assetPath (${data.length} bytes) as $contentType',
       );
 
       return shelf.Response.ok(
@@ -93,7 +93,7 @@ class AssetHttpServer {
         },
       );
     } catch (e) {
-      talker.warning('Asset not found: $assetPath', e);
+      talker.assetWarning('Asset not found: $assetPath');
       return shelf.Response.notFound('Asset not found: /$path');
     }
   }
@@ -113,7 +113,7 @@ class AssetHttpServer {
         },
       );
     } catch (e) {
-      talker.warning('Failed to load root index.html', e);
+      talker.assetWarning('Failed to load root index.html');
 
       // Fallback to a simple HTML response
       const fallbackContent = '''

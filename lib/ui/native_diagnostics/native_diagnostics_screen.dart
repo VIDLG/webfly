@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../router/config.dart';
 import 'registry.dart';
 
 class NativeDiagnosticsScreen extends StatelessWidget {
@@ -12,16 +11,7 @@ class NativeDiagnosticsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Native Diagnostics'),
-        actions: [
-          IconButton(
-            tooltip: 'Logs',
-            onPressed: () => context.push(nativeDiagnosticsLogsPath),
-            icon: const Icon(Icons.article_outlined),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Native Diagnostics')),
       body: ListView(
         children: [
           ...NativeTestRegistry.tests.expand(

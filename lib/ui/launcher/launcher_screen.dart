@@ -71,9 +71,7 @@ class LauncherScreen extends HookWidget {
     final isRouteFocused = useRouteFocus();
     useEffect(() {
       if (isRouteFocused.value && !cacheControllers) {
-        talker.debug(
-          '[LauncherScreen] Cache disabled: disposing all WebF controllers',
-        );
+        talker.launcherDebug('Cache disabled: disposing all WebF controllers');
         WebFControllerManager.instance.disposeAll();
       }
       return null;
@@ -95,8 +93,8 @@ class LauncherScreen extends HookWidget {
         route: appRoutePath,
         path: path,
       );
-      talker.debug(
-        '[LauncherScreen] Navigating to hybrid route: $routeUrl (path: $path)',
+      talker.launcherDebug(
+        'Navigating to hybrid route: $routeUrl (path: $path)',
       );
       context.push(routeUrl, extra: {'initial': true, 'url': normalizedUrl});
     }

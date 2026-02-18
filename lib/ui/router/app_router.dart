@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import 'package:webfly_webf_view/webfly_webf_view.dart';
 import '../../utils/app_logger.dart';
 import '../launcher/launcher_screen.dart';
@@ -83,6 +84,12 @@ final goRouter = GoRouter(
           builder: (context, state) => const UseCasesMenuScreen(),
         ),
 
+        // Talker logs viewer
+        GoRoute(
+          path: 'logs',
+          builder: (context, state) => TalkerScreen(talker: talker),
+        ),
+
         // Use Cases page with fixed title
         GoRoute(
           path: 'usecases',
@@ -111,15 +118,11 @@ final goRouter = GoRouter(
         GoRoute(
           path: 'app',
           redirect: (context, state) {
-            talker.debug('[AppRouter] Hybrid route matched: ${state.uri}');
-            talker.debug(
-              '[AppRouter] Query params: ${state.uri.queryParameters}',
-            );
+            talker.routerDebug('Hybrid route matched: ${state.uri}');
+            talker.routerDebug('Query params: ${state.uri.queryParameters}');
             final url = state.uri.queryParameters[urlParam];
             if (url == null || url.isEmpty) {
-              talker.debug(
-                '[AppRouter] Missing URL param, redirecting to launcher',
-              );
+              talker.routerDebug('Missing URL param, redirecting to launcher');
               return launcherPath; // Redirect to launcher if no URL
             }
             return null; // No redirect, continue to builder
@@ -149,7 +152,7 @@ final goRouter = GoRouter(
   // Error handling
   errorBuilder: (context, state) {
     talker.error(
-      '[AppRouter] ERROR - Route not found!\n'
+      'Route not found!\n'
       'URI: ${state.uri}\n'
       'Path: ${state.uri.path}\n'
       'Query: ${state.uri.query}\n'

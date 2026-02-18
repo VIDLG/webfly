@@ -15,6 +15,7 @@ class SettingsScreen extends HookWidget {
     final cacheControllers = useSignalValue(cacheControllersSignal);
     final developerMode = useSignalValue(updateTestModeSignal);
     final useExternalBrowser = useSignalValue(useExternalBrowserSignal);
+    final showLogsFab = useSignalValue(showLogsFabSignal);
     final connectTimeout = useSignalValue(connectTimeoutSignal);
     final receiveTimeout = useSignalValue(receiveTimeoutSignal);
     final themeSignal = useStreamSignal<ThemeState>(
@@ -186,6 +187,18 @@ class SettingsScreen extends HookWidget {
               title: Text('External Browser', style: smallTitle),
               subtitle: Text(
                 'Open links in system browser instead of built-in WebView',
+                style: smallSubtitle,
+              ),
+              dense: true,
+            ),
+            SwitchListTile(
+              value: showLogsFab,
+              onChanged: (value) {
+                showLogsFabSignal.value = value;
+              },
+              title: Text('Show Logs Button', style: smallTitle),
+              subtitle: Text(
+                'Display floating logs button on all screens',
                 style: smallSubtitle,
               ),
               dense: true,

@@ -29,18 +29,16 @@ class AppUpdateChecker {
 
     try {
       _currentVersion ??= 'v${(await PackageInfo.fromPlatform()).version}';
-      talker.info('[UpdateChecker] Checking for updates...');
-      talker.info('[UpdateChecker] Current version: $_currentVersion');
+      talker.updateInfo('Checking for updates...');
+      talker.updateInfo('Current version: $_currentVersion');
 
       final currentSignature = await getInstalledSignature();
-      talker.info(
-        '[UpdateChecker] Current signature: ${currentSignature ?? "unknown"}',
-      );
+      talker.updateInfo('Current signature: ${currentSignature ?? "unknown"}');
 
-      talker.debug('[UpdateChecker] Release URL: $_releaseUrl');
+      talker.updateDebug('Release URL: $_releaseUrl');
 
       final testMode = updateTestModeSignal.value;
-      talker.debug('[UpdateChecker] Test mode: $testMode');
+      talker.updateDebug('Test mode: $testMode');
 
       final release = await checkForUpdates(
         releaseUrl: _releaseUrl,
@@ -50,22 +48,20 @@ class AppUpdateChecker {
       );
 
       if (release != null) {
-        talker.info(
-          '[UpdateChecker] New version available: ${release.version}',
-        );
-        talker.info('[UpdateChecker] Download URL: ${release.downloadUrl}');
-        talker.debug('[UpdateChecker] SHA256 URL: ${release.sha256Url}');
+        talker.updateInfo('New version available: ${release.version}');
+        talker.updateInfo('Download URL: ${release.downloadUrl}');
+        talker.updateDebug('SHA256 URL: ${release.sha256Url}');
         hasUpdate.value = true;
         latestVersion.value = release.version;
         releaseInfo.value = release;
         releaseNotes.value = release.releaseNotes;
       } else {
-        talker.info('[UpdateChecker] Already up to date');
+        talker.updateInfo('Already up to date');
         hasUpdate.value = false;
         latestVersion.value = _currentVersion;
       }
     } catch (e, s) {
-      talker.error('[UpdateChecker] Check failed', e, s);
+      talker.updateError('Check failed: $e');
       _checked = false;
       if (force) rethrow;
     }
@@ -76,12 +72,12 @@ class AppUpdateChecker {
   void startDownloadAndInstall() {
     final release = releaseInfo.value;
     if (release == null) {
-      talker.warning('[UpdateChecker] No release info, cannot start download');
+      talker.updateWarning('No release info, cannot start download');
       return;
     }
 
-    talker.info('[UpdateChecker] Starting download...');
-    talker.info('[UpdateChecker] Download URL: ${release.downloadUrl}');
+    talker.updateInfo('Starting download...');
+    talker.updateInfo('Download URL: ${release.downloadUrl}');
 
     _downloadSub?.cancel();
     _lastLoggedPercent = -1;
@@ -93,14 +89,14 @@ class AppUpdateChecker {
           final percent = (progress * 100).round();
           if (percent > 0 && percent >= _lastLoggedPercent + 10) {
             _lastLoggedPercent = (percent ~/ 10) * 10;
-            talker.info('[UpdateChecker] Downloading: $_lastLoggedPercent%');
+            talker.updateInfo('Downloading: $_lastLoggedPercent%');
           }
         } else {
-          talker.info('[UpdateChecker] State: $state');
+          talker.updateInfo('State: $state');
         }
       },
       onError: (e, s) {
-        talker.error('[UpdateChecker] Download error', e, s);
+        talker.updateError('Download error: $e');
         updateState.value = UpdateFailed(DownloadError(e.toString()));
       },
     );
@@ -114,7 +110,7 @@ class AppUpdateChecker {
   void installApk() {
     final state = updateState.value;
     if (state is UpdateReady) {
-      talker.info('[UpdateChecker] Re-opening installer...');
+      talker.updateInfo('Re-opening installer...');
       updater.installApk(state.apkPath);
     }
   }

@@ -22,6 +22,7 @@ const String useCasesPath =
     '$_prefix/usecases'; // Dedicated wrapper route for use cases
 const String appRoutePath =
     '$_prefix/app'; // Hybrid routing uses query params instead of path params
+const String logsPath = '$_prefix/logs';
 
 // Asset HTTP Server configuration
 const int assetHttpServerPort = 8765; // Fixed port for serving assets

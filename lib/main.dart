@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:catcher_2/catcher_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webf/webf.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
-import 'package:webf_share/webf_share.dart';
 import 'package:webf_sqflite/webf_sqflite.dart';
 import 'package:webfly_theme/webfly_theme.dart';
 import 'webf/webf.dart';
@@ -12,10 +13,15 @@ import 'services/asset_http_server.dart';
 import 'store/app_settings.dart';
 import 'store/update_checker.dart';
 import 'store/url_history.dart';
+import 'ui/common/logs_fab.dart';
 import 'ui/router/app_router.dart';
 import 'utils/app_logger.dart';
 
 void main() async {
+  runZoned(_main, zoneSpecification: noisyPrintFilter);
+}
+
+Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Activate logging → Talker bridge so sub-packages using the `logging`
@@ -40,7 +46,6 @@ void main() async {
 
   // Register WebF native plugin modules
   WebF.defineModule((context) => BleWebfModule(context));
-  WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
   WebF.defineModule((context) => ThemeWebfModule(context));
   WebF.defineModule((context) => PermissionHandlerWebfModule(context));
@@ -87,6 +92,8 @@ class MyApp extends HookWidget {
         title: 'WebFly',
         routerConfig: goRouter,
         themeMode: themeMode,
+        builder: (context, child) =>
+            Stack(fit: StackFit.expand, children: [child!, const LogsFab()]),
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.indigo,

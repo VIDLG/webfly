@@ -9,6 +9,7 @@ class AppSettings {
   static const _connectTimeoutKey = 'connect_timeout_seconds';
   static const _receiveTimeoutKey = 'receive_timeout_seconds';
   static const _useExternalBrowserKey = 'use_external_browser';
+  static const _showLogsFabKey = 'show_logs_fab';
 
   final SharedPreferences _prefs;
 
@@ -18,6 +19,7 @@ class AppSettings {
   final connectTimeoutSeconds = signal<int>(10);
   final receiveTimeoutSeconds = signal<int>(30);
   final useExternalBrowser = signal<bool>(false);
+  final showLogsFab = signal<bool>(true);
 
   AppSettings._(this._prefs);
 
@@ -36,6 +38,7 @@ class AppSettings {
           prefs.getInt(_receiveTimeoutKey) ?? 30;
       store.useExternalBrowser.value =
           prefs.getBool(_useExternalBrowserKey) ?? false;
+      store.showLogsFab.value = prefs.getBool(_showLogsFabKey) ?? true;
     });
 
     effect(() {
@@ -68,6 +71,11 @@ class AppSettings {
           .setBool(_useExternalBrowserKey, store.useExternalBrowser.value)
           .catchError((_) => false);
     });
+    effect(() {
+      store._prefs
+          .setBool(_showLogsFabKey, store.showLogsFab.value)
+          .catchError((_) => false);
+    });
 
     return store;
   }
@@ -90,6 +98,7 @@ Signal<bool> get updateTestModeSignal => _store!.updateTestMode;
 Signal<int> get connectTimeoutSignal => _store!.connectTimeoutSeconds;
 Signal<int> get receiveTimeoutSignal => _store!.receiveTimeoutSeconds;
 Signal<bool> get useExternalBrowserSignal => _store!.useExternalBrowser;
+Signal<bool> get showLogsFabSignal => _store!.showLogsFab;
 NetworkConfig get networkConfig => _store!.networkConfig;
 
 /// Initialize app settings (load from disk, setup auto-save).
