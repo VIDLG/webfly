@@ -23,20 +23,8 @@ export default function DeviceCanvasView({ deviceConfig, ledBufferRef }: DeviceC
   const canvasH = deviceConfig.canvas.height + PADDING_MM * 2
 
   // ── animation loop ────────────────────────────────────────────
-  // Only redraw when the LED buffer actually changes to avoid flooding
-  // WebF's Canvas2D debug logging with continuous draw calls.
   const POLL_INTERVAL_MS = 50
   const timerRef = useRef(0)
-  const lastBufSnapshotRef = useRef('')
-
-  /** Cheap fingerprint of the current LED buffer to detect changes. */
-  const bufferSnapshot = (): string => {
-    const buf = ledBufferRef.current
-    if (!buf || buf.length === 0) return ''
-    // Sample a few bytes instead of hashing the entire buffer
-    const len = buf.length
-    return `${buf[0]},${buf[Math.floor(len / 4)]},${buf[Math.floor(len / 2)]},${buf[len - 1]}`
-  }
 
   const drawFrame = (ctx: CanvasRenderingContext2D, cssW: number, cssH: number) => {
     const scale = Math.min(cssW / canvasW, cssH / canvasH)
@@ -146,13 +134,8 @@ export default function DeviceCanvasView({ deviceConfig, ledBufferRef }: DeviceC
 
     stopAnimation()
     drawFrame(ctx, cssW, cssH) // first frame immediately
-    lastBufSnapshotRef.current = bufferSnapshot()
     timerRef.current = window.setInterval(() => {
-      const snap = bufferSnapshot()
-      if (snap !== lastBufSnapshotRef.current) {
-        lastBufSnapshotRef.current = snap
-        drawFrame(ctx, cssW, cssH)
-      }
+      drawFrame(ctx, cssW, cssH)
     }, POLL_INTERVAL_MS)
   }
 

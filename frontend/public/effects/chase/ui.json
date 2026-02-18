@@ -1,0 +1,42 @@
+{
+  "root": "controls",
+  "bridge": {
+    "colorKeys": ["hue", "saturation", "brightness"]
+  },
+  "speed": { "min": 30, "max": 300, "default": 80 },
+  "elements": {
+    "controls": {
+      "type": "Stack",
+      "props": { "direction": "vertical", "gap": "md" },
+      "children": ["color-card", "chase-count-card"]
+    },
+    "color-card": {
+      "type": "ColorHSV",
+      "props": {
+        "label": "Color",
+        "hue": { "$bindState": "/effect/hue" },
+        "saturation": { "$bindState": "/effect/saturation" },
+        "brightness": { "$bindState": "/effect/brightness" },
+        "accentColor": "#f59e0b"
+      }
+    },
+    "chase-count-card": {
+      "type": "CupertinoSlider",
+      "props": {
+        "label": "Chase Points",
+        "min": 1,
+        "max": 5,
+        "value": { "$bindState": "/effect/chaseCount" },
+        "accentColor": "#f59e0b"
+      }
+    }
+  },
+  "state": {
+    "effect": {
+      "hue": 43,
+      "saturation": 85,
+      "brightness": 98,
+      "chaseCount": 2
+    }
+  }
+}

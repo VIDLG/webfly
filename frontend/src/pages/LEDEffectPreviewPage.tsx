@@ -3,22 +3,18 @@ import { useNavigate, useLocation, useParams, WebFRouter } from '@openwebf/react
 import { FlutterCupertinoActionSheet } from '@openwebf/react-cupertino-ui'
 import type { FlutterCupertinoActionSheetElement } from '@openwebf/react-cupertino-ui'
 import { useQuery } from '@tanstack/react-query'
-import DynamicComponentLoader from '../components/DynamicComponentLoader'
+import type { Spec } from '@json-render/core'
+import EffectRenderer, { type EffectBridgeConfig, type SpeedConfig } from '../effects/EffectRenderer'
 import DeviceCanvasView from '../components/DeviceCanvasView'
-import { typeCheckCode, type TypeDiagnostic } from '../utils/typeCheck'
-import { useLedSettings } from '../hooks/useLedSettings'
+import type { LedEffectManifest } from '../types/effect'
 import type { DeviceConfig } from '../types/device'
-
-interface LedEffectManifest {
-  id: string
-  name: string
-  description: string
-}
 
 interface EffectLoadResult {
   manifest: LedEffectManifest
-  fullCode: string
-  typeErrors: TypeDiagnostic[]
+  uiSpec: Spec
+  effectLogicCode: string
+  bridgeConfig?: EffectBridgeConfig
+  speedConfig?: SpeedConfig
 }
 
 function tryExtractInnerPathFromHybridUrl(maybeHybridUrl: string | undefined): string | undefined {
@@ -58,67 +54,45 @@ async function fetchDeviceConfig(deviceId: string): Promise<DeviceConfig> {
   return res.json()
 }
 
-function formatTiming(checkResult: { timing: import('../utils/typeCheck').TypeCheckTiming }): string {
-  const { timing } = checkResult
-  if (timing.cached) return 'cached'
-  const total = (timing.totalMs / 1000).toFixed(1)
-  if (timing.serverMs != null) {
-    const server = (timing.serverMs / 1000).toFixed(1)
-    const network = ((timing.totalMs - timing.serverMs) / 1000).toFixed(1)
-    return `${total}s (server ${server}s, network ${network}s)`
-  }
-  return `${total}s`
-}
-
 async function fetchEffectSource(
   effectId: string,
-  enableTypeCheck: boolean,
   onStep: (msg: string) => void,
 ): Promise<EffectLoadResult> {
   onStep('Downloading scripts...')
   const base = import.meta.env.BASE_URL
 
-  // Fetch all sources in parallel; globals.d.ts provides type context for dynamic code
-  const [metaRes, runtimeRes, uiHooksRes, globalsRes, effectRes, uiRes] = await Promise.all([
+  const [metaRes, uiJsonRes, runtimeRes, effectRes] = await Promise.all([
     fetch(`${base}effects/${effectId}/meta.json`),
+    fetch(`${base}effects/${effectId}/ui.json`),
     fetch(`${base}effects/effect-runtime.ts`),
-    fetch(`${base}effects/ui-hooks.tsx`),
-    fetch(`${base}effects/globals.d.ts`),
     fetch(`${base}effects/${effectId}/effect.ts`),
-    fetch(`${base}effects/${effectId}/ui.tsx`),
   ])
 
   if (!metaRes.ok) throw new Error(`Failed to load meta.json for effect "${effectId}"`)
-  const meta: { id?: string; name: string; description: string } = await metaRes.json()
-  const manifest: LedEffectManifest = { id: meta.id ?? effectId, name: meta.name, description: meta.description }
-
+  if (!uiJsonRes.ok) throw new Error(`Failed to load ui.json for "${effectId}"`)
   if (!runtimeRes.ok) throw new Error('Failed to load effects/effect-runtime.ts')
-  if (!uiHooksRes.ok) throw new Error('Failed to load effects/ui-hooks.tsx')
   if (!effectRes.ok) throw new Error(`Failed to load effect.ts for "${effectId}"`)
-  if (!uiRes.ok) throw new Error(`Failed to load ui.tsx for "${effectId}"`)
 
-  onStep('Parsing source code...')
-  const [runtimeCode, uiHooksCode, globalsCode, effectCode, uiCode] = await Promise.all([
-    runtimeRes.text(), uiHooksRes.text(),
-    globalsRes.ok ? globalsRes.text() : Promise.resolve(''),
-    effectRes.text(), uiRes.text(),
+  onStep('Parsing sources...')
+  const [meta, uiJson, runtimeCode, effectCode] = await Promise.all([
+    metaRes.json() as Promise<{ id?: string; name: string; description: string }>,
+    uiJsonRes.json() as Promise<Spec & { bridge?: EffectBridgeConfig; speed?: SpeedConfig }>,
+    runtimeRes.text(),
+    effectRes.text(),
   ])
 
-  // Full code for Babel compilation (all sources concatenated)
-  const fullCode = `${runtimeCode}\n\n${effectCode}\n\n${uiHooksCode}\n\n${uiCode}`
+  const manifest: LedEffectManifest = { id: meta.id ?? effectId, name: meta.name, description: meta.description }
 
-  let typeErrors: TypeDiagnostic[] = []
-  if (enableTypeCheck) {
-    onStep('Type checking...')
-    // Only send globals (type declarations) + dynamic effect code — skip infrastructure
-    const codeForTypeCheck = `${globalsCode}\n\n${effectCode}\n\n${uiCode}`
-    const checkResult = await typeCheckCode(codeForTypeCheck, 'tsx')
-    typeErrors = checkResult.diagnostics.filter((d) => d.category === 'error')
-    onStep(`Type check done (${formatTiming(checkResult)})`)
-  }
+  // Extract optional bridge/speed config from ui.json (not json-render fields)
+  const bridgeConfig = uiJson.bridge
+  const speedConfig = uiJson.speed
+  const uiSpec: Spec = { root: uiJson.root, elements: uiJson.elements, state: uiJson.state }
 
-  onStep('Compiling component...')
-  return { manifest, fullCode, typeErrors }
+  // Concatenate runtime + effect for Babel compilation (pure TS, no JSX)
+  const effectLogicCode = `${runtimeCode}\n\n${effectCode}`
+
+  onStep('Ready')
+  return { manifest, uiSpec, effectLogicCode, bridgeConfig, speedConfig }
 }
 
 // ── component ───────────────────────────────────────────────
@@ -127,26 +101,28 @@ export default function LEDEffectPreviewPage() {
   const { navigate } = useNavigate()
   const params = useParams()
   const location = useLocation()
-  const enableTypeCheck = useLedSettings((s) => s.enableTypeCheck)
 
   const effectId = useMemo(() => {
+    // Strip query string from a path segment using URL parser
+    const stripQuery = (s: string) => new URL(s, 'http://x').pathname.split('/').pop() ?? s
+
     // Try params first
     const direct = (params as unknown as { effectId?: string }).effectId
-    if (direct) return direct
+    if (direct) return stripQuery(direct)
 
     // Some WebF routing setups may expose the real path via a splat param or a `path` param.
     const splat = (params as unknown as Record<string, unknown>)['*']
     if (typeof splat === 'string' && splat) {
       const segments = splat.split('/').filter(Boolean)
       const last = segments[segments.length - 1]
-      if (last) return last
+      if (last) return stripQuery(last)
     }
 
     const paramPath = (params as unknown as Record<string, unknown>)['path']
     if (typeof paramPath === 'string' && paramPath) {
       const segments = paramPath.split('/').filter(Boolean)
       const last = segments[segments.length - 1]
-      if (last) return last
+      if (last) return stripQuery(last)
     }
 
     // WebF hybrid routing wraps the real route into query param `path`.
@@ -159,7 +135,7 @@ export default function LEDEffectPreviewPage() {
 
     const effectivePath = innerFromWebf || innerFromLocation || webfRawPath || locationPathname
     const segments = effectivePath.split('/').filter(Boolean)
-    return segments[segments.length - 1] ?? ''
+    return stripQuery(segments[segments.length - 1] ?? '')
   }, [params, location])
 
   // ── loading step progress ─────────────────────────────────
@@ -203,16 +179,15 @@ export default function LEDEffectPreviewPage() {
   }, [deviceConfig])
 
   const effectQuery = useQuery({
-    queryKey: ['effects', effectId, 'source', enableTypeCheck],
-    queryFn: () => fetchEffectSource(effectId, enableTypeCheck, (msg) => stepRef.current(msg)),
+    queryKey: ['effects', effectId, 'source'],
+    queryFn: () => fetchEffectSource(effectId, (msg) => stepRef.current(msg)),
     enabled: !!effectId,
   })
 
   const loading = effectQuery.isLoading || effectQuery.isFetching
   const loadError = effectQuery.error
-  const manifest = effectQuery.data?.manifest ?? null
-  const effectCode = effectQuery.data?.fullCode ?? ''
-  const typeErrors = effectQuery.data?.typeErrors ?? []
+  const effectData = effectQuery.data ?? null
+  const manifest = effectData?.manifest ?? null
 
   // Elapsed timer — ticks every 100ms while loading
   useEffect(() => {
@@ -230,31 +205,24 @@ export default function LEDEffectPreviewPage() {
     }
   }, [])
 
-  // ── componentProps passed to dynamic effect code ────────────
-  const componentProps = useMemo(() => {
-    if (!deviceConfig) return undefined
-    return {
-      deviceConfig,
-      onTick: handleTick,
-    }
-  }, [deviceConfig, handleTick])
-
-  // Force re-mount DynamicComponentLoader when device changes (ledCount changes)
+  // Force re-mount EffectRenderer when device changes (ledCount changes)
   const loaderKey = `${effectId}-${selectedDeviceId ?? 'none'}`
 
   return (
     <div className="min-h-screen bg-slate-50 px-5 py-5 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="flex-1 min-w-0 text-slate-900 dark:text-slate-100">
-            <h1 className="text-2xl sm:text-3xl font-bold leading-tight drop-shadow truncate">
-              {manifest?.name ?? effectId ?? 'Unknown Effect'}
-            </h1>
-            {manifest?.description ? (
-              <p className="text-sm sm:text-base opacity-70 text-slate-600 dark:text-slate-400">{manifest.description}</p>
-            ) : null}
-          </div>
+        {/* Header row: Back (left) | Title (centered) | Device (right) */}
+        <div className="relative flex items-center justify-center min-h-[44px] mb-1">
+          <button
+            className="absolute left-0 shrink-0 rounded-full border border-slate-300 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:opacity-95 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100"
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </button>
+
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight drop-shadow truncate text-center text-slate-900 dark:text-slate-100 px-20">
+            {manifest?.name ?? effectId ?? 'Unknown Effect'}
+          </h1>
 
           {/* Device selector via native ActionSheet */}
           {deviceList.length > 0 && (
@@ -267,6 +235,7 @@ export default function LEDEffectPreviewPage() {
                 }}
               />
               <button
+                className="absolute right-0 shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 transition active:scale-[0.97] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 onClick={() => {
                   actionSheetRef.current?.show({
                     title: 'Select Device',
@@ -281,20 +250,17 @@ export default function LEDEffectPreviewPage() {
                     cancelButton: { text: 'Cancel', event: 'cancel' },
                   })
                 }}
-                className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 transition active:scale-[0.97] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               >
                 {selectedDeviceId ?? 'No Device'}
               </button>
             </>
           )}
-
-          <button
-            className="shrink-0 rounded-full border border-slate-300 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:opacity-95 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100"
-            onClick={() => navigate(-1)}
-          >
-            Back
-          </button>
         </div>
+
+        {/* Description row */}
+        {manifest?.description ? (
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4">{manifest.description}</p>
+        ) : <div className="mb-4" />}
 
         {/* Canvas visualization */}
         {deviceConfig && (
@@ -303,7 +269,7 @@ export default function LEDEffectPreviewPage() {
           </div>
         )}
 
-        {/* Effect controls (dynamic TSX) */}
+        {/* Effect controls */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-xl min-h-[300px] dark:border-slate-800 dark:bg-slate-900/60">
           {loading ? (
             <div className="text-center py-16 text-slate-600 dark:text-slate-400">
@@ -323,24 +289,15 @@ export default function LEDEffectPreviewPage() {
               </div>
               <p className="font-mono text-sm whitespace-pre-wrap break-words">{loadError instanceof Error ? loadError.message : String(loadError)}</p>
             </div>
-          ) : typeErrors.length > 0 ? (
-            <div className="p-5 bg-red-900/20 border-2 border-red-500/50 rounded-lg m-4">
-              <h3 className="text-lg font-bold mb-3 text-red-300">TypeScript Type Errors</h3>
-              <ul className="space-y-2">
-                {typeErrors.map((d, i) => (
-                  <li key={i} className="font-mono text-sm text-red-200">
-                    <span className="text-red-400">Line {d.line}:{d.column}</span>{' '}
-                    <span className="whitespace-pre-wrap break-words">{d.message}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : effectCode ? (
-            <DynamicComponentLoader
+          ) : effectData ? (
+            <EffectRenderer
               key={loaderKey}
-              code={effectCode}
-              componentName={effectId}
-              componentProps={componentProps}
+              uiSpec={effectData.uiSpec}
+              effectLogicCode={effectData.effectLogicCode}
+              deviceConfig={deviceConfig}
+              onTick={handleTick}
+              bridgeConfig={effectData.bridgeConfig}
+              speedConfig={effectData.speedConfig}
             />
           ) : (
             <div className="text-center text-slate-600 dark:text-slate-400 p-8">

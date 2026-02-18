@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@babel/standalone": "^7.28.6",
+    "@json-render/core": "^0.7.0",
+    "@json-render/react": "^0.7.0",
     "@openwebf/react-core-ui": "0.24.2",
     "@openwebf/react-cupertino-ui": "^0.4.1",
     "@openwebf/react-router": "^0.24.2",
@@ -22,6 +24,7 @@
     "neverthrow": "^7.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "zod": "^4.3.6",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

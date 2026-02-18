@@ -1,0 +1,64 @@
+{
+  "root": "params-card",
+  "bridge": {
+    "scaleKeys": { "saturation": 0.01, "brightness": 0.01 }
+  },
+  "speed": { "min": 20, "max": 300, "default": 100 },
+  "elements": {
+    "params-card": {
+      "type": "Card",
+      "props": { "title": "Parameters" },
+      "children": ["hue-step-slider", "hue-spread-slider", "saturation-slider", "brightness-slider"]
+    },
+    "hue-step-slider": {
+      "type": "CupertinoSlider",
+      "props": {
+        "label": "Hue Step",
+        "min": 1,
+        "max": 30,
+        "value": { "$bindState": "/effect/hueStep" },
+        "accentColor": "#6366f1"
+      }
+    },
+    "hue-spread-slider": {
+      "type": "CupertinoSlider",
+      "props": {
+        "label": "Hue Spread",
+        "min": 1,
+        "max": 36,
+        "value": { "$bindState": "/effect/hueSpread" },
+        "accentColor": "#6366f1"
+      }
+    },
+    "saturation-slider": {
+      "type": "CupertinoSlider",
+      "props": {
+        "label": "Saturation",
+        "min": 0,
+        "max": 100,
+        "value": { "$bindState": "/effect/saturation" },
+        "unit": "%",
+        "accentColor": "#6366f1"
+      }
+    },
+    "brightness-slider": {
+      "type": "CupertinoSlider",
+      "props": {
+        "label": "Brightness",
+        "min": 0,
+        "max": 100,
+        "value": { "$bindState": "/effect/brightness" },
+        "unit": "%",
+        "accentColor": "#6366f1"
+      }
+    }
+  },
+  "state": {
+    "effect": {
+      "hueStep": 10,
+      "hueSpread": 18,
+      "saturation": 100,
+      "brightness": 100
+    }
+  }
+}

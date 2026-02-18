@@ -1,0 +1,26 @@
+{
+  "root": "color-card",
+  "bridge": {
+    "colorKeys": ["hue", "saturation", "brightness"]
+  },
+  "speed": { "min": 50, "max": 1000, "default": 200 },
+  "elements": {
+    "color-card": {
+      "type": "ColorHSV",
+      "props": {
+        "label": "Color",
+        "hue": { "$bindState": "/effect/hue" },
+        "saturation": { "$bindState": "/effect/saturation" },
+        "brightness": { "$bindState": "/effect/brightness" },
+        "accentColor": "#d946ef"
+      }
+    }
+  },
+  "state": {
+    "effect": {
+      "hue": 293,
+      "saturation": 100,
+      "brightness": 94
+    }
+  }
+}

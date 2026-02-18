@@ -1,4 +1,9 @@
-import type * as ReactNamespace from 'react'
+/**
+ * Ambient type declarations for LED effect source files (effect.ts).
+ *
+ * These types describe the runtime globals provided by effect-runtime.ts
+ * and the interfaces that effect.ts files must conform to.
+ */
 
 declare global {
   // ── Color types ──────────────────────────────────────────────
@@ -28,67 +33,20 @@ declare global {
     speed?: number
   }
 
-  // ── Injected globals (host runtime) ──────────────────────────
+  // ── effect-runtime.ts — function implementations ─────────────
 
-  const React: typeof ReactNamespace
-  const CupertinoComponents: {
-    FlutterCupertinoButton: ReactNamespace.ComponentType<any>
-    FlutterCupertinoSlider: ReactNamespace.ComponentType<any>
-    [key: string]: ReactNamespace.ComponentType<any>
-  }
-
-  // ── Theme (injected from host app) ─────────────────────────
-
-  type ResolvedTheme = 'light' | 'dark'
-  type ThemeMode = 'light' | 'dark' | 'system'
-
-  interface ThemeContextType {
-    theme: ResolvedTheme
-    themePreference: ThemeMode
-    setThemePreference: (preference: ThemeMode) => Promise<void>
-    toggleTheme: () => Promise<void>
-  }
-
-  function useTheme(): ThemeContextType
-
-  // ── Device configuration ────────────────────────────────────
-
-  interface DeviceLed {
-    index: number
-    x: number
-    y: number
-    guard?: string
-  }
-
-  interface DeviceStrip {
-    id: string
-    name: string
-    ledCount: number
-    path?: string
-    leds: DeviceLed[]
-  }
-
-  interface DeviceRotorGuard {
-    cx: number
-    cy: number
-    radius: number
-  }
-
-  interface DeviceConfig {
-    id: string
-    name: string
-    description: string
-    coordinateUnit: string
-    canvas: { width: number; height: number; origin: string }
-    rotorGuards?: Record<string, DeviceRotorGuard>
-    strips: DeviceStrip[]
-  }
-
-  type OnTickCallback = (leds: Uint8Array) => void
-
-  // ── effect-runtime.ts — function implementations live there ──
-  // (hsvToRgb, toRgb, makeBlank, createBaseMachine are defined in
-  //  effect-runtime.ts which is included via tsconfig.json)
+  function hsvToRgb(h: number, s: number, v: number): [number, number, number]
+  function toRgb(color: TaggedColor): [number, number, number]
+  function makeBlank(ledCount: number): Uint8Array
+  function createBaseMachine(
+    ledCount: number,
+    speed: number,
+    impl: {
+      tick: (m: EffectMachine) => void
+      reset: () => void
+      setConfig: (key: string, value: unknown) => void
+    },
+  ): EffectMachine
 
   // ── {effect}/effect.ts ─────────────────────────────────────────
 

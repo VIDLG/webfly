@@ -1,0 +1,42 @@
+{
+  "root": "controls",
+  "bridge": {
+    "colorKeys": ["hue", "saturation", "brightness"]
+  },
+  "speed": { "min": 50, "max": 500, "default": 100 },
+  "elements": {
+    "controls": {
+      "type": "Stack",
+      "props": { "direction": "vertical", "gap": "md" },
+      "children": ["color-card", "wave-width-card"]
+    },
+    "color-card": {
+      "type": "ColorHSV",
+      "props": {
+        "label": "Color",
+        "hue": { "$bindState": "/effect/hue" },
+        "saturation": { "$bindState": "/effect/saturation" },
+        "brightness": { "$bindState": "/effect/brightness" },
+        "accentColor": "#10b981"
+      }
+    },
+    "wave-width-card": {
+      "type": "CupertinoSlider",
+      "props": {
+        "label": "Wave Width",
+        "min": 1,
+        "max": 10,
+        "value": { "$bindState": "/effect/waveWidth" },
+        "accentColor": "#10b981"
+      }
+    }
+  },
+  "state": {
+    "effect": {
+      "hue": 160,
+      "saturation": 92,
+      "brightness": 83,
+      "waveWidth": 5
+    }
+  }
+}

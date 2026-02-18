@@ -2,11 +2,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM"],
-    "jsx": "react",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["globals.d.ts", "effect-runtime.ts", "ui-hooks.tsx", "**/*.tsx"]
+  "include": ["globals.d.ts", "effect-runtime.ts", "*/effect.ts"]
 }
