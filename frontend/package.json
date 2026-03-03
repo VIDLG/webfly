@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.45",
     "@babel/standalone": "^7.28.6",
     "@json-render/core": "^0.7.0",
     "@json-render/react": "^0.7.0",
@@ -21,6 +22,7 @@
     "@openwebf/react-router": "^0.24.2",
     "@openwebf/webf-share": "^1.0.1",
     "@tanstack/react-query": "^5.90.21",
+    "ai": "^6.0.90",
     "neverthrow": "^7.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

@@ -8,7 +8,7 @@
  *     are rendered dynamically via json-render from the effect's ui.json spec.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import * as ReactNamespace from 'react'
 import { FlutterCupertinoSlider } from '@openwebf/react-cupertino-ui'
 import { useTheme } from '../hooks/theme'
@@ -278,6 +278,10 @@ function PlayControls({ machineCtx }: { machineCtx: EffectMachineContextValue })
 
 // ── Props ────────────────────────────────────────────────────
 
+export interface EffectRendererHandle {
+  machineCtx: EffectMachineContextValue | null
+}
+
 export interface EffectRendererProps {
   uiSpec: Spec
   effectLogicCode: string
@@ -285,6 +289,8 @@ export interface EffectRendererProps {
   onTick?: (leds: Uint8Array) => void
   bridgeConfig?: EffectBridgeConfig
   speedConfig?: SpeedConfig
+  /** Ref to access the internal machineCtx (for AI controller) */
+  machineCtxRef?: React.Ref<EffectRendererHandle>
 }
 
 // ── Inner renderer (after createEffect is ready) ─────────────
@@ -298,6 +304,7 @@ function EffectRendererInner({
   onTick,
   bridgeConfig,
   speedConfig,
+  machineCtxRef,
 }: {
   createEffect: CreateEffectFn
   uiSpec: Spec
@@ -305,9 +312,13 @@ function EffectRendererInner({
   onTick?: (leds: Uint8Array) => void
   bridgeConfig?: EffectBridgeConfig
   speedConfig: SpeedConfig
+  machineCtxRef?: React.Ref<EffectRendererHandle>
 }) {
   const ledCount = deviceConfig ? deviceConfig.strips.reduce((sum, s) => sum + s.ledCount, 0) : 20
   const machineCtx = useEffectMachine(createEffect, { ledCount }, onTick)
+
+  // Expose machineCtx to parent via ref (for AI controller)
+  useImperativeHandle(machineCtxRef, () => ({ machineCtx }), [machineCtx])
 
   const stateRef = useRef<Record<string, unknown>>(uiSpec.state ?? {})
 
@@ -351,7 +362,7 @@ function EffectRendererInner({
 
 // ── Public component ─────────────────────────────────────────
 
-export default function EffectRenderer({ uiSpec, effectLogicCode, deviceConfig, onTick, bridgeConfig, speedConfig }: EffectRendererProps) {
+export default function EffectRenderer({ uiSpec, effectLogicCode, deviceConfig, onTick, bridgeConfig, speedConfig, machineCtxRef }: EffectRendererProps) {
   const createEffect = useCompiledCreateEffect(effectLogicCode)
 
   if (!createEffect) {
@@ -371,6 +382,7 @@ export default function EffectRenderer({ uiSpec, effectLogicCode, deviceConfig, 
       onTick={onTick}
       bridgeConfig={bridgeConfig}
       speedConfig={speedConfig ?? DEFAULT_SPEED_CONFIG}
+      machineCtxRef={machineCtxRef}
     />
   )
 }

@@ -59,7 +59,8 @@ class WebFScreen extends HookWidget {
                     controllerName: controllerName,
                     routePath: routePath,
                     cacheControllers: cacheControllers,
-                    loadingBuilder: (_) => const WebFlyLoading(message: 'Loading...'),
+                    loadingBuilder: (_) =>
+                        const WebFlyLoading(message: 'Loading...'),
                   ),
                   const WebFInspectorOverlay(),
                 ],

@@ -4,14 +4,21 @@ import { FlutterCupertinoActionSheet } from '@openwebf/react-cupertino-ui'
 import type { FlutterCupertinoActionSheetElement } from '@openwebf/react-cupertino-ui'
 import { useQuery } from '@tanstack/react-query'
 import type { Spec } from '@json-render/core'
-import EffectRenderer, { type EffectBridgeConfig, type SpeedConfig } from '../effects/EffectRenderer'
+import EffectRenderer, { type EffectBridgeConfig, type EffectRendererHandle, type SpeedConfig } from '../effects/EffectRenderer'
 import DeviceCanvasView from '../components/DeviceCanvasView'
+import AIChatPanel from '../ai/components/AIChatPanel'
+import type { AIEffectController } from '../ai/tools/types'
 import type { LedEffectManifest } from '../types/effect'
 import type { DeviceConfig } from '../types/device'
 
 interface EffectLoadResult {
   manifest: LedEffectManifest
   uiSpec: Spec
+  /** Raw effect.ts code (without runtime) */
+  effectCode: string
+  /** Raw effect-runtime.ts code */
+  runtimeCode: string
+  /** Concatenated runtime + effect for Babel compilation */
   effectLogicCode: string
   bridgeConfig?: EffectBridgeConfig
   speedConfig?: SpeedConfig
@@ -88,11 +95,11 @@ async function fetchEffectSource(
   const speedConfig = uiJson.speed
   const uiSpec: Spec = { root: uiJson.root, elements: uiJson.elements, state: uiJson.state }
 
-  // Concatenate runtime + effect for Babel compilation (pure TS, no JSX)
+  // Keep raw pieces for AI; concatenate for Babel compilation
   const effectLogicCode = `${runtimeCode}\n\n${effectCode}`
 
   onStep('Ready')
-  return { manifest, uiSpec, effectLogicCode, bridgeConfig, speedConfig }
+  return { manifest, uiSpec, effectCode, runtimeCode, effectLogicCode, bridgeConfig, speedConfig }
 }
 
 // ── component ───────────────────────────────────────────────
@@ -189,6 +196,73 @@ export default function LEDEffectPreviewPage() {
   const effectData = effectQuery.data ?? null
   const manifest = effectData?.manifest ?? null
 
+  // ── live mutable state (AI can modify these) ────────────────
+  const [liveUiSpec, setLiveUiSpec] = useState<Spec | null>(null)
+  const [liveEffectCode, setLiveEffectCode] = useState<string | null>(null)
+  const [liveBridgeConfig, setLiveBridgeConfig] = useState<EffectBridgeConfig | undefined>(undefined)
+  const [isModified, setIsModified] = useState(false)
+
+  // Reset live state when base effect data changes
+  useEffect(() => {
+    setLiveUiSpec(null)
+    setLiveEffectCode(null)
+    setLiveBridgeConfig(undefined)
+    setIsModified(false)
+  }, [effectData])
+
+  // Compute effective values (live overrides or original)
+  const activeUiSpec = liveUiSpec ?? effectData?.uiSpec ?? null
+  const activeEffectCode = liveEffectCode ?? effectData?.effectCode ?? null
+  const activeBridgeConfig = liveBridgeConfig ?? effectData?.bridgeConfig
+  const activeRuntimeCode = effectData?.runtimeCode ?? ''
+
+  // Build effectLogicCode from active pieces
+  const activeEffectLogicCode = activeEffectCode
+    ? `${activeRuntimeCode}\n\n${activeEffectCode}`
+    : effectData?.effectLogicCode ?? null
+
+  // ── EffectRenderer ref (for AI controller to access machineCtx) ──
+  const rendererRef = useRef<EffectRendererHandle>(null)
+
+  // ── AI Effect Controller ────────────────────────────────────
+  const configValuesRef = useRef<Record<string, unknown>>({})
+
+  const aiController = useMemo<AIEffectController | null>(() => {
+    if (!effectData) return null
+
+    return {
+      getState: () => ({
+        uiSpec: activeUiSpec!,
+        effectCode: activeEffectCode ?? effectData.effectCode,
+        bridgeConfig: activeBridgeConfig,
+        speedConfig: effectData.speedConfig,
+        configValues: configValuesRef.current,
+        machineStatus: rendererRef.current?.machineCtx?.machine.status ?? 'idle',
+        speed: rendererRef.current?.machineCtx?.speed ?? effectData.speedConfig?.default ?? 200,
+      }),
+      setConfig: (key, value) => {
+        rendererRef.current?.machineCtx?.machine.setConfig(key, value)
+      },
+      setSpeed: (ms) => {
+        rendererRef.current?.machineCtx?.handleSpeedChange(ms)
+      },
+      setUiSpec: (spec) => {
+        setLiveUiSpec(spec)
+        setIsModified(true)
+      },
+      setBridgeConfig: (config) => {
+        setLiveBridgeConfig(config)
+        setIsModified(true)
+      },
+      setEffectCode: (code) => {
+        setLiveEffectCode(code)
+        setIsModified(true)
+      },
+      getRuntimeCode: () => activeRuntimeCode,
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectData, activeRuntimeCode])
+
   // Elapsed timer — ticks every 100ms while loading
   useEffect(() => {
     if (!loading) return
@@ -205,8 +279,16 @@ export default function LEDEffectPreviewPage() {
     }
   }, [])
 
-  // Force re-mount EffectRenderer when device changes (ledCount changes)
-  const loaderKey = `${effectId}-${selectedDeviceId ?? 'none'}`
+  // Reset to original bundled effect
+  const handleReset = useCallback(() => {
+    setLiveUiSpec(null)
+    setLiveEffectCode(null)
+    setLiveBridgeConfig(undefined)
+    setIsModified(false)
+  }, [])
+
+  // Force re-mount EffectRenderer when device or live code changes
+  const loaderKey = `${effectId}-${selectedDeviceId ?? 'none'}-${liveEffectCode ? 'mod' : 'orig'}`
 
   return (
     <div className="min-h-screen bg-slate-50 px-5 py-5 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -222,6 +304,11 @@ export default function LEDEffectPreviewPage() {
 
           <h1 className="text-2xl sm:text-3xl font-bold leading-tight drop-shadow truncate text-center text-slate-900 dark:text-slate-100 px-20">
             {manifest?.name ?? effectId ?? 'Unknown Effect'}
+            {isModified && (
+              <span className="ml-2 inline-block rounded-full bg-amber-500 px-2 py-0.5 text-xs font-medium text-white align-middle">
+                Modified
+              </span>
+            )}
           </h1>
 
           {/* Device selector via native ActionSheet */}
@@ -289,15 +376,16 @@ export default function LEDEffectPreviewPage() {
               </div>
               <p className="font-mono text-sm whitespace-pre-wrap break-words">{loadError instanceof Error ? loadError.message : String(loadError)}</p>
             </div>
-          ) : effectData ? (
+          ) : effectData && activeUiSpec && activeEffectLogicCode ? (
             <EffectRenderer
               key={loaderKey}
-              uiSpec={effectData.uiSpec}
-              effectLogicCode={effectData.effectLogicCode}
+              uiSpec={activeUiSpec}
+              effectLogicCode={activeEffectLogicCode}
               deviceConfig={deviceConfig}
               onTick={handleTick}
-              bridgeConfig={effectData.bridgeConfig}
+              bridgeConfig={activeBridgeConfig}
               speedConfig={effectData.speedConfig}
+              machineCtxRef={rendererRef}
             />
           ) : (
             <div className="text-center text-slate-600 dark:text-slate-400 p-8">
@@ -305,6 +393,21 @@ export default function LEDEffectPreviewPage() {
             </div>
           )}
         </div>
+
+        {/* AI Assistant + Reset (below effect controls) */}
+        {effectData && (
+          <div className="mt-4 space-y-3">
+            {isModified && (
+              <button
+                onClick={handleReset}
+                className="w-full rounded-xl border border-amber-400 bg-amber-50 py-2.5 text-sm font-semibold text-amber-700 transition active:scale-[0.98] dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+              >
+                Reset to Original
+              </button>
+            )}
+            <AIChatPanel controller={aiController} />
+          </div>
+        )}
       </div>
     </div>
   )
