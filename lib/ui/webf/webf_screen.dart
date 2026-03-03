@@ -19,26 +19,16 @@ class WebFScreen extends HookWidget {
     required this.url,
     required this.controllerName,
     this.routePath = '/',
-    this.title,
     this.extra,
-    this.loadingBuilder,
-    this.errorBuilder,
   });
 
   final String url;
   final String controllerName;
   final String routePath;
-  final String? title;
 
   /// GoRouter extra state passed from the navigation call.
   /// When non-null a small debug bar is briefly displayed at the bottom.
   final Object? extra;
-
-  /// Optional custom loading widget builder
-  final Widget Function(BuildContext)? loadingBuilder;
-
-  /// Optional custom error widget builder
-  final Widget Function(BuildContext, Object?)? errorBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -69,10 +59,7 @@ class WebFScreen extends HookWidget {
                     controllerName: controllerName,
                     routePath: routePath,
                     cacheControllers: cacheControllers,
-                    loadingBuilder:
-                        loadingBuilder ??
-                        (_) => const WebFlyLoading(message: 'Loading...'),
-                    errorBuilder: errorBuilder,
+                    loadingBuilder: (_) => const WebFlyLoading(message: 'Loading...'),
                   ),
                   const WebFInspectorOverlay(),
                 ],

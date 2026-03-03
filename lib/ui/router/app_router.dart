@@ -109,7 +109,6 @@ final goRouter = GoRouter(
               url: url,
               controllerName: controllerName,
               routePath: path,
-              title: 'Use Cases',
             );
           },
         ),
@@ -134,13 +133,11 @@ final goRouter = GoRouter(
                 state.uri.queryParameters[baseParam] ??
                 generateDefaultControllerName(url);
             final controllerName = base;
-            final title = state.uri.queryParameters[titleParam];
 
             return WebFScreen(
               url: url,
               controllerName: controllerName,
               routePath: path,
-              title: title,
               extra: state.extra,
             );
           },

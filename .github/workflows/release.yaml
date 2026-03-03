@@ -53,6 +53,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
@@ -104,9 +107,6 @@ jobs:
 
       - name: Install frontend dependencies
         run: cd frontend && pnpm install
-
-      - name: Accept Android licenses
-        run: yes | flutter doctor --android-licenses || true
 
       - name: Setup signing
         if: env.KEYSTORE_BASE64 != ''

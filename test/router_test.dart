@@ -106,7 +106,6 @@ void main() {
       expect(urlParam, equals('url'));
       expect(baseParam, equals('ctrl'));
       expect(locParam, equals('loc'));
-      expect(titleParam, equals('title'));
     });
   });
 

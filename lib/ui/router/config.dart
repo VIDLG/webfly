@@ -31,7 +31,6 @@ const int assetHttpServerPort = 8765; // Fixed port for serving assets
 const String urlParam = WebfHybridConfig.defaultBundleUrlParam;
 const String baseParam = WebfHybridConfig.defaultControllerParam;
 const String locParam = WebfHybridConfig.defaultLocationParam;
-const String titleParam = 'title'; // Optional title for AppBar (host-only)
 
 /// Generate default base/controller name from URL
 String generateDefaultControllerName(String url) => 'webf-${url.hashCode}';
@@ -41,14 +40,12 @@ String generateDefaultControllerName(String url) => 'webf-${url.hashCode}';
 /// In hybrid routing, Flutter stays on a wrapper route ([route], e.g. [appRoutePath])
 /// and the WebF app is loaded with [url]. The WebF inner route is passed via the
 /// [locParam] query parameter ([path]). Optional [base] is used as the controller
-/// name; if omitted, it is derived from [url]. Optional [title] is exposed as a
-/// query param for the AppBar.
+/// name; if omitted, it is derived from [url].
 String buildWebFRouteUrl({
   required String url,
   required String route,
   required String path,
   String? base,
-  String? title,
 }) {
   assert(path.isNotEmpty, 'path cannot be empty');
   assert(url.isNotEmpty, 'url cannot be empty');
@@ -57,13 +54,7 @@ String buildWebFRouteUrl({
     base ?? generateDefaultControllerName(url),
   );
   final encodedPath = Uri.encodeComponent(path);
-  var result =
-      '$route?$urlParam=$encodedUrl&$baseParam=$encodedBase&$locParam=$encodedPath';
-  if (title != null) {
-    final encodedTitle = Uri.encodeComponent(title);
-    result += '&$titleParam=$encodedTitle';
-  }
-  return result;
+  return '$route?$urlParam=$encodedUrl&$baseParam=$encodedBase&$locParam=$encodedPath';
 }
 
 /// Global go_router delegate instance used by WebFView.
