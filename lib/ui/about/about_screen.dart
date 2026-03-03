@@ -20,31 +20,33 @@ class AboutScreen extends HookWidget {
     final packageInfo = useFuture(
       useMemoized(() => PackageInfo.fromPlatform()),
     );
-    final hasUpdate = hasUpdateSignal.watch(context);
-    final latestVersionValue = latestVersionSignal.watch(context);
+    // Derive hasUpdate from version comparison
+    final currentVer = currentVersionSignal.watch(context);
+    final latestVer = latestVersionSignal.watch(context);
+    final hasUpdate =
+        currentVer != null && latestVer != null && currentVer != latestVer;
     final release = releaseInfoSignal.watch(context);
     final releaseNotes = releaseNotesSignal.watch(context);
-    final hasManuallyChecked = useState(false);
-    final isChecking = useState(false);
+    // Derive hasManuallyChecked from lastCheckedAt
+    final lastChecked = lastCheckedAtSignal.watch(context);
+    final hasManuallyChecked = lastChecked != null;
+    // Derive isChecking from updateState
     final state = updateStateSignal.watch(context);
+    final isChecking = state is UpdateChecking;
 
     final info = packageInfo.data;
     final currentVersion = info != null ? 'v${info.version}' : '...';
     final buildNumber = info?.buildNumber ?? '';
 
     Future<void> checkForUpdates() async {
-      isChecking.value = true;
       try {
         await updateChecker.check(force: true);
-        hasManuallyChecked.value = true;
       } catch (_) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Check failed, please try again')),
           );
         }
-      } finally {
-        isChecking.value = false;
       }
     }
 
@@ -55,9 +57,7 @@ class AboutScreen extends HookWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isBusy =
-        isChecking.value ||
-        state is UpdateDownloading ||
-        state is UpdateInstalling;
+        isChecking || state is UpdateDownloading || state is UpdateInstalling;
 
     final double? downloadProgress = state is UpdateDownloading
         ? state.progress
@@ -150,7 +150,7 @@ class AboutScreen extends HookWidget {
                 onPressed: isBusy ? null : checkForUpdates,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: isChecking.value
+                  child: isChecking
                       ? const SizedBox(
                           height: 18,
                           width: 18,
@@ -166,12 +166,10 @@ class AboutScreen extends HookWidget {
                               color: colorScheme.error,
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'New version available: ${latestVersionValue ?? ""}',
-                            ),
+                            Text('New version available: $latestVer'),
                           ],
                         )
-                      : hasManuallyChecked.value
+                      : hasManuallyChecked
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -181,7 +179,7 @@ class AboutScreen extends HookWidget {
                               color: colorScheme.primary,
                             ),
                             const SizedBox(width: 8),
-                            Text('Latest: ${latestVersionValue ?? ""}'),
+                            Text('Latest: $latestVer'),
                           ],
                         )
                       : const Row(

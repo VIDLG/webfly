@@ -6,5 +6,29 @@
   "scss.lint.unknownAtRules": "ignore",
   "less.lint.unknownAtRules": "ignore",
   "rust-analyzer.checkOnSave": false,
-  "files.eol": "\n"
+  "files.eol": "\n",
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.rulers": [80]
+  },
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.rulers": [100]
+  },
+  "[typescriptreact]": {
+    "editor.formatOnSave": true,
+    "editor.rulers": [100]
+  },
+  "[yaml]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "files.associations": {
+    "*.yml": "yaml"
+  }
 }

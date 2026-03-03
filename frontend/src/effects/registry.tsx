@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { type ReactNode, useMemo } from 'react'
 import { defineRegistry, useBoundProp } from '@json-render/react'
 import { FlutterCupertinoSlider } from '@openwebf/react-cupertino-ui'

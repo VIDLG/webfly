@@ -8,12 +8,12 @@ import { query, execute, getDatabase } from './db.js'
 
 const LS_PREFIX = 'ai_config:'
 
-async function useSqlite(): Promise<boolean> {
+async function hasSqlite(): Promise<boolean> {
   return (await getDatabase()) !== null
 }
 
 export async function getAIConfig(key: string): Promise<string | null> {
-  if (await useSqlite()) {
+  if (await hasSqlite()) {
     const rows = await query('SELECT value FROM ai_config WHERE key = ?', [key])
     return rows.length > 0 ? (rows[0].value as string) : null
   }
@@ -21,7 +21,7 @@ export async function getAIConfig(key: string): Promise<string | null> {
 }
 
 export async function setAIConfig(key: string, value: string): Promise<void> {
-  if (await useSqlite()) {
+  if (await hasSqlite()) {
     await execute(
       'INSERT OR REPLACE INTO ai_config (key, value) VALUES (?, ?)',
       [key, value],
@@ -32,7 +32,7 @@ export async function setAIConfig(key: string, value: string): Promise<void> {
 }
 
 export async function removeAIConfig(key: string): Promise<void> {
-  if (await useSqlite()) {
+  if (await hasSqlite()) {
     await execute('DELETE FROM ai_config WHERE key = ?', [key])
     return
   }

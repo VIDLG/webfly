@@ -11,11 +11,22 @@ import 'app_settings.dart';
 const _releaseUrl = 'https://api.github.com/repos/vidlg/webfly/releases/latest';
 
 class AppUpdateChecker {
-  final hasUpdate = signal<bool>(false);
   final latestVersion = signal<String?>(null);
+  final currentVersion = signal<String?>(null);
   final releaseInfo = signal<ReleaseInfo?>(null);
   final releaseNotes = signal<String?>(null);
   final updateState = signal<UpdateState>(const UpdateIdle());
+  final lastCheckedAt = signal<DateTime?>(null);
+
+  bool get hasUpdate {
+    final current = currentVersion.value;
+    final latest = latestVersion.value;
+    if (current == null || latest == null) return false;
+    // Strip 'v' prefix for comparison
+    return current.replaceFirst('v', '') != latest.replaceFirst('v', '');
+  }
+
+  bool get isChecking => updateState.value is UpdateChecking;
 
   String? _currentVersion;
   bool _checked = false;
@@ -26,9 +37,11 @@ class AppUpdateChecker {
   Future<void> check({bool force = false}) async {
     if (_checked && !force) return;
     _checked = true;
+    lastCheckedAt.value = DateTime.now();
 
     try {
       _currentVersion ??= 'v${(await PackageInfo.fromPlatform()).version}';
+      currentVersion.value = _currentVersion;
       talker.updateInfo('Checking for updates...');
       talker.updateInfo('Current version: $_currentVersion');
 
@@ -51,16 +64,14 @@ class AppUpdateChecker {
         talker.updateInfo('New version available: ${release.version}');
         talker.updateInfo('Download URL: ${release.downloadUrl}');
         talker.updateDebug('SHA256 URL: ${release.sha256Url}');
-        hasUpdate.value = true;
         latestVersion.value = release.version;
         releaseInfo.value = release;
         releaseNotes.value = release.releaseNotes;
       } else {
         talker.updateInfo('Already up to date');
-        hasUpdate.value = false;
         latestVersion.value = _currentVersion;
       }
-    } catch (e, s) {
+    } catch (e) {
       talker.updateError('Check failed: $e');
       _checked = false;
       if (force) rethrow;
@@ -131,11 +142,12 @@ AppUpdateChecker get updateChecker {
   return _instance!;
 }
 
-Signal<bool> get hasUpdateSignal => updateChecker.hasUpdate;
 Signal<String?> get latestVersionSignal => updateChecker.latestVersion;
+Signal<String?> get currentVersionSignal => updateChecker.currentVersion;
 Signal<ReleaseInfo?> get releaseInfoSignal => updateChecker.releaseInfo;
 Signal<String?> get releaseNotesSignal => updateChecker.releaseNotes;
 Signal<UpdateState> get updateStateSignal => updateChecker.updateState;
+Signal<DateTime?> get lastCheckedAtSignal => updateChecker.lastCheckedAt;
 
 /// Fire-and-forget: kick off the first update check in the background.
 void initializeUpdateChecker() {

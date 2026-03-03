@@ -14,7 +14,7 @@ export interface EffectOverride {
 
 const LS_PREFIX = 'effect_override:'
 
-async function useSqlite(): Promise<boolean> {
+async function hasSqlite(): Promise<boolean> {
   return (await getDatabase()) !== null
 }
 
@@ -22,7 +22,7 @@ export async function saveEffectOverride(
   effectId: string,
   data: EffectOverride,
 ): Promise<void> {
-  if (await useSqlite()) {
+  if (await hasSqlite()) {
     await execute(
       `INSERT OR REPLACE INTO effect_overrides (effect_id, ui_json, effect_code, bridge_config, updated_at)
        VALUES (?, ?, ?, ?, datetime('now'))`,
@@ -36,7 +36,7 @@ export async function saveEffectOverride(
 export async function loadEffectOverride(
   effectId: string,
 ): Promise<EffectOverride | null> {
-  if (await useSqlite()) {
+  if (await hasSqlite()) {
     const rows = await query(
       'SELECT ui_json, effect_code, bridge_config FROM effect_overrides WHERE effect_id = ?',
       [effectId],
@@ -54,7 +54,7 @@ export async function loadEffectOverride(
 }
 
 export async function resetEffectOverride(effectId: string): Promise<void> {
-  if (await useSqlite()) {
+  if (await hasSqlite()) {
     await execute('DELETE FROM effect_overrides WHERE effect_id = ?', [effectId])
     return
   }
@@ -62,7 +62,7 @@ export async function resetEffectOverride(effectId: string): Promise<void> {
 }
 
 export async function hasEffectOverride(effectId: string): Promise<boolean> {
-  if (await useSqlite()) {
+  if (await hasSqlite()) {
     const rows = await query(
       'SELECT 1 FROM effect_overrides WHERE effect_id = ?',
       [effectId],

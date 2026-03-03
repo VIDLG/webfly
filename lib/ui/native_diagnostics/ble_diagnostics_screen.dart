@@ -9,7 +9,6 @@ import 'package:signals_hooks/signals_hooks.dart';
 import 'package:webfly_ble/webfly_ble.dart';
 
 import '../../utils/app_logger.dart';
-import 'registry.dart';
 
 class BleDiagnosticsScreen extends HookWidget {
   const BleDiagnosticsScreen({super.key});
@@ -79,7 +78,7 @@ class BleDiagnosticsScreen extends HookWidget {
           'locWhenInUse=${permissionStatuses.get('locationWhenInUse')}',
         );
         talker.bleInfo('locationService=${locationService ?? 'unknown'}');
-      } catch (e, st) {
+      } catch (e) {
         talker.bleError('logEnvironmentSnapshot failed: $e');
       }
     }
@@ -133,7 +132,7 @@ class BleDiagnosticsScreen extends HookWidget {
         } else {
           showSnack('Permission request completed.');
         }
-      } catch (e, st) {
+      } catch (e) {
         talker.bleError('Permission request error: $e');
         lastError.value = 'Permission request failed: $e';
       } finally {

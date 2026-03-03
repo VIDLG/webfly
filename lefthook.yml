@@ -2,5 +2,7 @@ pre-commit:
   commands:
     format-check:
       run: just format-check
+    lint:
+      run: just lint && just lint-frontend
     test:
       run: just test

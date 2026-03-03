@@ -140,6 +140,10 @@ analyze PATH='lib test' *ARGS:
 lint *ARGS:
     flutter analyze {{ARGS}}
 
+# Run frontend lint + typecheck
+lint-frontend:
+    cd frontend && pnpm lint && pnpm tsc --noEmit
+
 # Format Dart code
 format *ARGS:
     dart format {{ARGS}} lib test

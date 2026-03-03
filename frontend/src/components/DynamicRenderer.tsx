@@ -11,6 +11,7 @@
  * Context / state management on top.
  */
 
+/* eslint-disable react-refresh/only-export-components */
 import React, { useEffect, useState } from 'react'
 import * as ReactNamespace from 'react'
 import * as Babel from '@babel/standalone'
@@ -120,6 +121,7 @@ function useTsxComponent(
     }
 
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, filename]) // globals is expected to be stable (caller uses useMemo)
 
   return { Component, error }
