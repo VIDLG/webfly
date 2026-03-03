@@ -14,14 +14,14 @@ function createEffect(config?: BlinkEffectConfig): EffectMachine {
   return createBaseMachine(ledCount, cfg.speed || 200, {
     tick: function (m: EffectMachine) {
       on = !on;
-      const buf = makeBlank(ledCount);
+      const buf = m.leds;
+      buf.fill(0);
       if (on) {
         for (let i = 0; i < ledCount; i++) {
           const o = i * 3;
           buf[o] = color[0]; buf[o + 1] = color[1]; buf[o + 2] = color[2];
         }
       }
-      m.leds = buf;
     },
     reset: function () { on = false; },
     setConfig: function (key: string, value: unknown) {

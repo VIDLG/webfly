@@ -15,13 +15,13 @@ function createEffect(config?: ChaseEffectConfig): EffectMachine {
 
   return createBaseMachine(ledCount, cfg.speed || 80, {
     tick: function (m: EffectMachine) {
-      const buf = makeBlank(ledCount);
+      const buf = m.leds;
+      buf.fill(0);
       const gap = Math.floor(ledCount / chaseCount);
       for (let i = 0; i < chaseCount; i++) {
         const o = ((position + gap * i) % ledCount) * 3;
         buf[o] = color[0]; buf[o + 1] = color[1]; buf[o + 2] = color[2];
       }
-      m.leds = buf;
       position = (position + 1) % ledCount;
     },
     reset: function () { position = 0; },

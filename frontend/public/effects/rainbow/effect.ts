@@ -19,14 +19,13 @@ function createEffect(config?: RainbowEffectConfig): EffectMachine {
 
   return createBaseMachine(ledCount, cfg.speed || 100, {
     tick: function (m: EffectMachine) {
-      const buf = makeBlank(ledCount);
+      const buf = m.leds;
       for (let i = 0; i < ledCount; i++) {
         const hue = (i * hueSpread + offset) % 360;
         const rgb = hsvToRgb(hue, saturation, brightness);
         const o = i * 3;
         buf[o] = rgb[0]; buf[o + 1] = rgb[1]; buf[o + 2] = rgb[2];
       }
-      m.leds = buf;
       offset = (offset + hueStep) % 360;
     },
     reset: function () { offset = 0; },

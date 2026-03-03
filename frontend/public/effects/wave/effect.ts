@@ -15,12 +15,12 @@ function createEffect(config?: WaveEffectConfig): EffectMachine {
 
   return createBaseMachine(ledCount, cfg.speed || 100, {
     tick: function (m: EffectMachine) {
-      const buf = makeBlank(ledCount);
+      const buf = m.leds;
+      buf.fill(0);
       for (let i = 0; i < waveWidth; i++) {
         const o = ((position + i) % ledCount) * 3;
         buf[o] = color[0]; buf[o + 1] = color[1]; buf[o + 2] = color[2];
       }
-      m.leds = buf;
       position = (position + 1) % ledCount;
     },
     reset: function () { position = 0; },
