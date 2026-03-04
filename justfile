@@ -89,7 +89,6 @@ bench-tsc *ARGS:
 ci:
     just update
     just use-cases-refresh
-    just gen-android-keystore
     just gen-platforms
     just gen-assets
     just codegen
