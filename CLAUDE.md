@@ -110,12 +110,14 @@ WebF 仅支持 CSS 子集，项目在构建时强制检查：
 
 ## Release 流程
 
-项目包含 submodule：`flutter_tools`、`contrib/webf_usecases`、`webfly_packages`。执行 release 时：
+当用户说"release"时，**必须使用 `just release [major|minor|patch]`**（默认 patch），不要手动执行 git tag / push 等操作。该命令会自动完成格式化、版本号递增、commit、打 tag 并推送。
 
-1. 检查 submodule 是否有未提交改动，有则先在各 submodule 中 commit & push
+执行 release 前：
+
+1. 检查 submodule（`flutter_tools`、`contrib/webf_usecases`、`webfly_packages`）是否有未提交改动，有则先在各 submodule 中 commit & push
 2. 更新主仓库对 submodule 的引用（`git add <submodule_path>`）
 3. 主仓库如有其他变更，先 commit
-4. 执行 `just release`
+4. 执行 `just release`、`just release minor` 或 `just release major`
 
 ## LED 特效系统
 
