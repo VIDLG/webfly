@@ -39,7 +39,7 @@ build-apk *FLAGS:
 # Setup dev environment (one command for new developers)
 # 1. Install tools & deps  2. Generate platforms & assets  3. Keystore & hooks
 setup:
-    just install-tools
+    just setup-tools
     flutter pub get
     cd frontend && pnpm install
     just gen-platforms
@@ -49,9 +49,9 @@ setup:
     if [ -z "$CI" ]; then command -v lefthook >/dev/null 2>&1 && lefthook install || true; fi
     if [ -z "$CI" ] && [ -n "$KEYSTORE_PASSWORD" ]; then just gen-android-keystore; fi
 
-# Install small dev tools (pkl, uv, patch-package)
-install-tools:
-    sh scripts/install-tools.sh
+# Install small dev tools (pkl, uv, patch-package; +jadx locally)
+setup-tools:
+    sh scripts/setup-tools.sh
 
 # Check that all required dev tools are available
 check-tools:

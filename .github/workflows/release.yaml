@@ -74,7 +74,7 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      # 2. Checkout code (needed by just install-tools)
+      # 2. Checkout code (needed by just setup-tools)
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -82,7 +82,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      # Cache small tools so install-tools can skip already-installed ones
+      # Cache small tools so setup-tools can skip already-installed ones
       - name: Cache installed tools
         uses: actions/cache@v4
         with:
@@ -99,7 +99,7 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           export PATH="$HOME/.local/bin:$PATH"
-          just install-tools
+          just setup-tools
 
       # 3. Install project dependencies
       - name: Get dependencies

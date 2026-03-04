@@ -3,7 +3,7 @@
 # Supports Linux, macOS, and Windows (Git Bash / MSYS2).
 #
 # Version overrides via env vars:
-#   PKL_VERSION=0.29.1  sh scripts/install-tools.sh
+#   PKL_VERSION=0.29.1  sh scripts/setup-tools.sh
 set -e
 
 PKL_VERSION="${PKL_VERSION:-0.29.1}"
@@ -67,7 +67,11 @@ install_jadx() {
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-TOOLS="pkl uv patch-package jadx"
+TOOLS="pkl uv patch-package"
+# Local-only tools: skipped in CI
+if [ -z "$CI" ]; then
+  TOOLS="$TOOLS jadx"
+fi
 failed=""
 
 for tool in $TOOLS; do
