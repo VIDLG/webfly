@@ -308,7 +308,9 @@ just gen-android-keystore
 just upload-secrets
 ```
 
-This uploads `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, and `KEY_PASSWORD` to GitHub Actions secrets. CI decodes the keystore from `KEYSTORE_BASE64` — it does not generate one.
+This uploads `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, and `KEY_PASSWORD` to GitHub Actions secrets.
+
+> **Why `KEYSTORE_BASE64`?** Keystore generation involves randomness — even with the same passwords, each `keytool` invocation produces a different keystore file. APK signed with a different keystore cannot be installed over the previous version. So CI must use the exact same keystore as local development, not generate a new one.
 
 ### Permissions & AndroidManifest
 
