@@ -313,11 +313,9 @@ This uploads `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, and `KEY_PASSWORD` to GitHu
 The app checks for updates via the GitHub Releases API. Without authentication, the rate limit is **60 requests/hour** (shared per IP). To raise it to **5,000 req/h**, add a GitHub fine-grained personal access token:
 
 1. Create a [fine-grained PAT](https://github.com/settings/personal-access-tokens/new) with **Public Repositories (read-only)** access and an expiration ≤ 366 days.
-2. Add it to `.env`:
-   ```
-   GITHUB_TOKEN=github_pat_...
-   ```
-3. The justfile automatically injects it via `--dart-define` when running `just android`, `just windows`, or `just build-apk`.
+2. Configure the token using **one** of these methods:
+   - **Runtime (recommended)**: Open **Settings → Network → GitHub Token** in the app and paste the token. It is persisted locally and never baked into the APK.
+   - **Compile-time (dev only)**: Add `GITHUB_TOKEN=github_pat_...` to `.env`. The justfile injects it via `--dart-define` during local builds (skipped in CI to avoid embedding tokens in release APKs).
 
 > **Why `KEYSTORE_BASE64`?** Keystore generation involves randomness — even with the same passwords, each `keytool` invocation produces a different keystore file. APK signed with a different keystore cannot be installed over the previous version. So CI must use the exact same keystore as local development, not generate a new one.
 

@@ -12,9 +12,10 @@ import 'flutter_tools/common.just'
 _tool_prefix := "pixi run"
 _py := "pixi run python"
 
-# Compile-time defines injected into all flutter run / build commands.
-# GITHUB_TOKEN is loaded from .env via dotenv-load.
-_dart_defines := if env('GITHUB_TOKEN', '') != '' { '--dart-define=GITHUB_TOKEN=' + env('GITHUB_TOKEN', '') } else { '' }
+# Compile-time defines injected into local flutter run / build commands.
+# GITHUB_TOKEN is loaded from .env via dotenv-load. NOT for CI — tokens
+# baked into release APKs can be extracted and are a security risk.
+_dart_defines := if env('CI', '') == '' { if env('GITHUB_TOKEN', '') != '' { '--dart-define=GITHUB_TOKEN=' + env('GITHUB_TOKEN', '') } else { '' } } else { '' }
 
 # List all available commands
 default:

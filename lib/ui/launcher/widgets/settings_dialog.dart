@@ -18,6 +18,8 @@ class SettingsScreen extends HookWidget {
     final showLogsFab = useSignalValue(showLogsFabSignal);
     final connectTimeout = useSignalValue(connectTimeoutSignal);
     final receiveTimeout = useSignalValue(receiveTimeoutSignal);
+    final githubToken = useSignalValue(githubTokenSignal);
+    final showToken = useState(false);
     final themeSignal = useStreamSignal<ThemeState>(
       () => themeStream,
       initialValue: getTheme(),
@@ -141,6 +143,34 @@ class SettingsScreen extends HookWidget {
                     }
                   },
                 ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: TextFormField(
+                initialValue: githubToken,
+                obscureText: !showToken.value,
+                style: smallSubtitle,
+                decoration: InputDecoration(
+                  labelText: 'GitHub Token',
+                  hintText: 'github_pat_...',
+                  helperText: 'Raises API rate limit from 60 to 5,000 req/h',
+                  helperMaxLines: 2,
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      showToken.value ? Icons.visibility_off : Icons.visibility,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      showToken.value = !showToken.value;
+                    },
+                  ),
+                ),
+                onChanged: (value) {
+                  githubTokenSignal.value = value.trim();
+                },
               ),
             ),
             const Divider(),

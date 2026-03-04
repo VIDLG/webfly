@@ -10,6 +10,7 @@ class AppSettings {
   static const _receiveTimeoutKey = 'receive_timeout_seconds';
   static const _useExternalBrowserKey = 'use_external_browser';
   static const _showLogsFabKey = 'show_logs_fab';
+  static const _githubTokenKey = 'github_token';
 
   final SharedPreferences _prefs;
 
@@ -20,6 +21,7 @@ class AppSettings {
   final receiveTimeoutSeconds = signal<int>(30);
   final useExternalBrowser = signal<bool>(false);
   final showLogsFab = signal<bool>(true);
+  final githubToken = signal<String>('');
 
   AppSettings._(this._prefs);
 
@@ -39,6 +41,7 @@ class AppSettings {
       store.useExternalBrowser.value =
           prefs.getBool(_useExternalBrowserKey) ?? false;
       store.showLogsFab.value = prefs.getBool(_showLogsFabKey) ?? true;
+      store.githubToken.value = prefs.getString(_githubTokenKey) ?? '';
     });
 
     effect(() {
@@ -76,12 +79,20 @@ class AppSettings {
           .setBool(_showLogsFabKey, store.showLogsFab.value)
           .catchError((_) => false);
     });
+    effect(() {
+      store._prefs
+          .setString(_githubTokenKey, store.githubToken.value)
+          .catchError((_) => false);
+    });
 
     return store;
   }
 
   NetworkConfig get networkConfig {
-    const token = String.fromEnvironment('GITHUB_TOKEN');
+    const compileTimeToken = String.fromEnvironment('GITHUB_TOKEN');
+    final token = githubToken.value.isNotEmpty
+        ? githubToken.value
+        : compileTimeToken;
     return NetworkConfig(
       connectTimeout: Duration(seconds: connectTimeoutSeconds.value),
       receiveTimeout: Duration(seconds: receiveTimeoutSeconds.value),
@@ -103,6 +114,7 @@ Signal<int> get connectTimeoutSignal => _store!.connectTimeoutSeconds;
 Signal<int> get receiveTimeoutSignal => _store!.receiveTimeoutSeconds;
 Signal<bool> get useExternalBrowserSignal => _store!.useExternalBrowser;
 Signal<bool> get showLogsFabSignal => _store!.showLogsFab;
+Signal<String> get githubTokenSignal => _store!.githubToken;
 NetworkConfig get networkConfig => _store!.networkConfig;
 
 /// Initialize app settings (load from disk, setup auto-save).

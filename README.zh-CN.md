@@ -313,11 +313,9 @@ just upload-secrets
 应用通过 GitHub Releases API 检查更新。未认证时速率限制为 **60 次/小时**（同一 IP 共享）。添加 GitHub 细粒度个人访问令牌可提升至 **5,000 次/小时**：
 
 1. 创建 [细粒度 PAT](https://github.com/settings/personal-access-tokens/new)，权限选择 **Public Repositories (read-only)**，有效期 ≤ 366 天。
-2. 添加到 `.env`：
-   ```
-   GITHUB_TOKEN=github_pat_...
-   ```
-3. justfile 在执行 `just android`、`just windows`、`just build-apk` 时自动通过 `--dart-define` 注入该变量。
+2. 通过以下**任一**方式配置 token：
+   - **运行时（推荐）**：打开应用 **设置 → Network → GitHub Token**，粘贴 token。token 仅存储在本地，不会烘入 APK。
+   - **编译时（仅开发用）**：在 `.env` 中添加 `GITHUB_TOKEN=github_pat_...`。justfile 在本地构建时通过 `--dart-define` 注入（CI 中跳过，避免将 token 嵌入 release APK）。
 
 > **为什么需要 `KEYSTORE_BASE64`？** Keystore 生成过程包含随机性——即使密码相同，每次 `keytool` 调用也会产生不同的 keystore 文件。使用不同 keystore 签名的 APK 无法覆盖安装前一个版本。因此 CI 必须使用与本地开发完全相同的 keystore，而不是重新生成。
 
