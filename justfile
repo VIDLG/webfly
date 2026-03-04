@@ -8,6 +8,10 @@ set dotenv-load
 
 import 'flutter_tools/common.just'
 
+# Override tool prefixes: all external tools go through pixi
+_tool_prefix := "pixi run"
+_py := "pixi run python"
+
 # Compile-time defines injected into all flutter run / build commands.
 # GITHUB_TOKEN is loaded from .env via dotenv-load.
 _dart_defines := if env('GITHUB_TOKEN', '') != '' { '--dart-define=GITHUB_TOKEN=' + env('GITHUB_TOKEN', '') } else { '' }
@@ -22,15 +26,15 @@ default:
 
 # Run on Android device
 android MODE='debug' *FLAGS:
-    DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found. Run: just devices" 1>&2; exit 1; fi; VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; rust-script flutter_tools/cmd_run.rs --log=logs/flutter-android-{{MODE}}.log flutter run -d "$DEVICE_ID" --{{MODE}} $VERBOSE {{_dart_defines}} {{FLAGS}}
+    DEVICE_ID=$({{_tool_prefix}} rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found. Run: just devices" 1>&2; exit 1; fi; VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; {{_tool_prefix}} rust-script flutter_tools/cmd_run.rs --log=logs/flutter-android-{{MODE}}.log flutter run -d "$DEVICE_ID" --{{MODE}} $VERBOSE {{_dart_defines}} {{FLAGS}}
 
 # Run on Windows
 windows MODE='debug' *FLAGS:
-    VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; rust-script flutter_tools/cmd_run.rs --log=logs/flutter-windows-{{MODE}}.log flutter run -d windows --{{MODE}} $VERBOSE {{_dart_defines}} {{FLAGS}}
+    VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; {{_tool_prefix}} rust-script flutter_tools/cmd_run.rs --log=logs/flutter-windows-{{MODE}}.log flutter run -d windows --{{MODE}} $VERBOSE {{_dart_defines}} {{FLAGS}}
 
 # Build APK (release with obfuscation)
 build-apk *FLAGS:
-    rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{_dart_defines}} {{FLAGS}}
+    {{_tool_prefix}} rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{_dart_defines}} {{FLAGS}}
 
 # =============================================
 # Setup & Dependencies (project-specific)
@@ -46,10 +50,10 @@ setup:
     just gen-assets
     just generate
     just use-cases-refresh
-    if [ -z "$CI" ]; then command -v lefthook >/dev/null 2>&1 && lefthook install || true; fi
+    if [ -z "$CI" ]; then {{_tool_prefix}} lefthook install || true; fi
     if [ -z "$CI" ] && [ -n "$KEYSTORE_PASSWORD" ]; then just gen-android-keystore; fi
 
-# Install small dev tools (pkl, uv, patch-package; +jadx locally)
+# Install pixi, pkl, and run pixi install (+jadx locally)
 setup-tools:
     sh scripts/setup-tools.sh
 
@@ -71,8 +75,8 @@ generate *ARGS:
 
 # Build web project and copy assets to Flutter
 use-cases-refresh:
-    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/gen/use_cases/react
-    rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/gen/use_cases/vue -o dist
+    {{_tool_prefix}} rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/use_cases" --dst assets/gen/use_cases/react
+    {{_tool_prefix}} rust-script flutter_tools/web_build.rs refresh --src "contrib/webf_usecases/vue_usecases" --dst assets/gen/use_cases/vue -o dist
     sh -c 'mkdir -p assets/gen/use_cases && cp assets/use_cases/index.html assets/gen/use_cases/index.html'
 
 # =============================================
@@ -88,7 +92,7 @@ lint:
 # Run the unified WebF CSS checks
 webf-check *ARGS:
     cd frontend && pnpm -s build
-    cd frontend && set -- {{ARGS}}; if [ "$1" = "--" ]; then shift; fi; rust-script scripts/check-webf-constraints.rs "$@"
+    cd frontend && set -- {{ARGS}}; if [ "$1" = "--" ]; then shift; fi; {{_tool_prefix}} rust-script scripts/check-webf-constraints.rs "$@"
 
 # =============================================
 # Testing (project-specific extensions)

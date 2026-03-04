@@ -1,0 +1,18 @@
+[workspace]
+name = "webfly"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[dependencies]
+python = "3.9.*"
+nodejs = ">=20"
+pnpm = "*"
+just = "*"
+rust = "*"
+rust-script = "*"
+gh = "*"
+lefthook = "*"
+pillow = "*"
+pyyaml = "*"
+rembg = "*"
+onnxruntime = "*"

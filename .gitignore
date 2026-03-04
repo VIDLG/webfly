@@ -72,11 +72,13 @@ assets/gen/
 # Claude Code
 .claude/
 
-# Python / uv
+# Python
 .venv/
 __pycache__/
 *.egg-info/
-uv.lock
+
+# Pixi
+.pixi/
 
 secrets.txt
 nul

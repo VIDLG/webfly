@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Install small dev tools (pkl, uv, patch-package) for the webfly project.
+# Install pixi + pkl for the webfly project, then run pixi install.
 # Supports Linux, macOS, and Windows (Git Bash / MSYS2).
 #
 # Version overrides via env vars:
@@ -11,7 +11,23 @@ OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 # ---------------------------------------------------------------------------
-# pkl — Apple configuration language CLI
+# pixi — cross-platform package manager (prefix.dev)
+# ---------------------------------------------------------------------------
+install_pixi() {
+  case "$OS" in
+    MINGW*|MSYS*)
+      if command -v scoop >/dev/null 2>&1; then scoop install pixi; return $?; fi
+      echo "ERROR: Install scoop (https://scoop.sh) or pixi manually: https://pixi.sh" >&2; return 1 ;;
+    Darwin*)
+      if command -v brew >/dev/null 2>&1; then brew install pixi; return $?; fi
+      curl -fsSL https://pixi.sh/install.sh | sh ;;
+    *)
+      curl -fsSL https://pixi.sh/install.sh | sh ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# pkl — Apple configuration language CLI (not on conda-forge)
 # ---------------------------------------------------------------------------
 install_pkl() {
   case "$OS-$ARCH" in
@@ -31,24 +47,7 @@ install_pkl() {
 }
 
 # ---------------------------------------------------------------------------
-# uv — fast Python package runner (astral.sh)
-# ---------------------------------------------------------------------------
-install_uv() {
-  case "$OS" in
-    MINGW*|MSYS*) powershell -c "irm https://astral.sh/uv/install.ps1 | iex" ;;
-    *)            curl -LsSf https://astral.sh/uv/install.sh | sh ;;
-  esac
-}
-
-# ---------------------------------------------------------------------------
-# patch-package — npm tool for patching node_modules
-# ---------------------------------------------------------------------------
-install_patch_package() {
-  npm install -g patch-package
-}
-
-# ---------------------------------------------------------------------------
-# jadx — Android APK/DEX decompiler (for debugging plugin registration)
+# jadx — Android APK/DEX decompiler (local-only, not for CI)
 # ---------------------------------------------------------------------------
 install_jadx() {
   case "$OS" in
@@ -67,7 +66,7 @@ install_jadx() {
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-TOOLS="pkl uv patch-package"
+TOOLS="pixi pkl"
 # Local-only tools: skipped in CI
 if [ -z "$CI" ]; then
   TOOLS="$TOOLS jadx"
@@ -76,16 +75,14 @@ failed=""
 
 for tool in $TOOLS; do
   cmd="$tool"
-  # patch-package binary is named patch-package
   if command -v "$cmd" >/dev/null 2>&1; then
     printf "OK  %-16s %s\n" "$cmd" "$(command -v "$cmd")"
   else
     printf "=>  Installing %s ...\n" "$cmd"
     case "$cmd" in
-      pkl)           install_pkl           || failed="$failed $cmd" ;;
-      uv)            install_uv            || failed="$failed $cmd" ;;
-      patch-package) install_patch_package || failed="$failed $cmd" ;;
-      jadx)          install_jadx          || failed="$failed $cmd" ;;
+      pixi) install_pixi || failed="$failed $cmd" ;;
+      pkl)  install_pkl  || failed="$failed $cmd" ;;
+      jadx) install_jadx || failed="$failed $cmd" ;;
     esac
   fi
 done
@@ -96,4 +93,9 @@ if [ -n "$failed" ]; then
   echo "Install them manually and retry." >&2
   exit 1
 fi
+
+# Install all pixi-managed tools and packages
+echo "=> Running pixi install..."
+pixi install
+echo ""
 echo "All tools OK."

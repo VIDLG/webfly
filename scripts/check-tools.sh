@@ -1,10 +1,11 @@
 #!/usr/bin/env sh
 # Check that all required dev tools for the webfly project are available.
-# Tools in LOCAL_ONLY are skipped when $CI is set.
+# Pixi-managed tools are verified via `pixi run`; only system tools and
+# pixi itself are checked directly. LOCAL_ONLY tools are skipped when $CI is set.
 set -e
 
-TOOLS="flutter dart rustup cargo rust-script just pkl node pnpm uv patch-package"
-LOCAL_ONLY="gh lefthook jadx"
+TOOLS="flutter dart pixi pkl"
+LOCAL_ONLY="jadx"
 
 ok=0; fail=0
 

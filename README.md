@@ -94,10 +94,7 @@ WebFly isn't just a web viewer - it's a fully-featured native runtime with integ
 
 - [Flutter SDK](https://flutter.dev) 3.41.x (stable)
 - Android SDK (API 36)
-- [just](https://github.com/casey/just) — task runner
-- [Rust](https://rustup.rs/) + `rust-script` — build tools
-- [pnpm](https://pnpm.io/) — frontend package manager
-- [Node.js](https://nodejs.org/) 20.x
+- [pixi](https://pixi.sh/) — cross-platform package manager (manages Rust, just, Node.js, pnpm, Python, and more)
 
 ### Quick Start
 
@@ -118,7 +115,7 @@ just android
 ```
 
 `just setup` does the following automatically:
-1. Installs small dev tools (pkl, uv, patch-package)
+1. Installs pixi-managed tools + pkl via `pixi install`
 2. Runs `flutter pub get`
 3. Generates platform directories from `app.pkl`
 4. Generates logo/branding assets
@@ -220,6 +217,7 @@ webfly/
 ├── docs/                   # Documentation & screenshots
 ├── app.pkl                 # Project configuration (app ID, versions, signing)
 ├── justfile                # Task runner recipes (imports flutter_tools/common.just)
+├── pixi.toml               # Pixi tool dependencies (rust, node, pnpm, python, etc.)
 ├── .env.example            # Environment variable template
 └── pubspec.yaml            # Flutter dependencies
 ```
