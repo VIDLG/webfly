@@ -7,9 +7,9 @@ English | [简体中文](README.zh-CN.md)
 <img src="assets/logo/webfly_logo.png" alt="WebFly Logo" width="120" height="120" />
 
 [![Releases](https://img.shields.io/badge/Releases-Latest-blue?logo=github)](https://github.com/anomalyco/webfly/releases)
-[![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart)](https://dart.dev)
-[![WebF](https://img.shields.io/badge/WebF-0.24.11-FF6B6B)](https://github.com/openwebf/webf)
+[![Flutter](https://img.shields.io/badge/Flutter-3.41.x-02569B?logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.11.x-0175C2?logo=dart)](https://dart.dev)
+[![WebF](https://img.shields.io/badge/WebF-0.24.14-FF6B6B)](https://github.com/openwebf/webf)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **⭐ If you find WebFly useful, please consider giving it a star! ⭐**
@@ -92,39 +92,48 @@ WebFly isn't just a web viewer - it's a fully-featured native runtime with integ
 
 ### Prerequisites
 
-- Flutter SDK (Dart ^3.10.7)
-- Android SDK (for Android builds)
-- pnpm (for frontend; optional if only running Flutter)
+- [Flutter SDK](https://flutter.dev) 3.41.x (stable)
+- Android SDK (API 36)
+- [just](https://github.com/casey/just) — task runner
+- [Rust](https://rustup.rs/) + `rust-script` — build tools
+- [pnpm](https://pnpm.io/) — frontend package manager
+- [Node.js](https://nodejs.org/) 20.x
 
-### Installation
+### Quick Start
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/webfly.git
-   cd webfly
-   ```
+```bash
+# 1. Clone with submodules
+git clone --recursive https://github.com/anomalyco/webfly.git
+cd webfly
 
-2. **Initialize submodules**
-  ```bash
-  git submodule update --init --recursive
-  ```
+# 2. Configure signing (optional for debug builds)
+cp .env.example .env
+# Edit .env — fill in KEYSTORE_PASSWORD and KEY_PASSWORD
 
-3. **Install Flutter dependencies**
-   ```bash
-   flutter pub get
-   ```
+# 3. One-command setup (installs tools, generates platforms/assets/code)
+just setup
 
-4. **Install web dependencies** (for use cases)
-   ```bash
-  cd frontend
-  pnpm install
-   ```
+# 4. Run on Android
+just android
+```
 
-5. **Run the app**
-   ```bash
-  # From repo root
-  flutter run
-   ```
+`just setup` does the following automatically:
+1. Installs small dev tools (pkl, uv, patch-package)
+2. Runs `flutter pub get`
+3. Generates platform directories from `app.pkl`
+4. Generates logo/branding assets
+5. Runs Dart code generation (`build_runner`)
+6. Builds bundled use-case web apps
+7. Installs git hooks (lefthook) if available
+8. Generates Android keystore if env vars are set
+
+### Frontend Development
+
+```bash
+cd frontend
+pnpm install
+pnpm dev        # Vite dev server (auto-port 5173+)
+```
 
 ## 📱 Usage
 
@@ -197,16 +206,22 @@ webfly/
 │   ├── services/           # Asset HTTP server
 │   ├── store/              # App settings, URL history
 │   └── webf/               # WebF modules (AppSettings) & protocol
-├── packages/               # Shared & feature packages
-│   ├── webfly_bridge/      # Shared WebF bridge (Dart + TS): wire format, createModuleInvoker, WebfModuleEventBus
-│   ├── webfly_ble/         # BLE WebF module (Dart + TS), flutter_blue_plus
-│   └── webfly_permission/  # Permission WebF module (Dart + TS), permission_handler
+├── webfly_packages/        # Feature packages (Dart + TypeScript)
+│   ├── webfly_bridge/      # Shared WebF bridge: wire format, createModuleInvoker, WebfModuleEventBus
+│   ├── webfly_ble/         # BLE module (flutter_blue_plus)
+│   ├── webfly_permission/  # Permission module (permission_handler)
+│   └── webfly_theme/       # Theme module
 ├── frontend/               # Web Application (React + Vite)
 │   └── src/                # Pages (BLE Demo, Permission Demo, etc.), hooks, config
+├── contrib/webf_usecases/  # Example use-case apps (React and Vue)
+├── flutter_tools/          # Rust-based build/release tools (submodule, invoked via just)
 ├── assets/                 # Static assets & bundled use_cases
-├── platforms/              # Platform templates (android, etc.)
+├── platforms/              # Platform templates (android signing, manifest)
 ├── docs/                   # Documentation & screenshots
-└── pubspec.yaml            # Flutter dependencies (webfly_bridge, webfly_ble, webfly_permission)
+├── app.pkl                 # Project configuration (app ID, versions, signing)
+├── justfile                # Task runner recipes (imports flutter_tools/common.just)
+├── .env.example            # Environment variable template
+└── pubspec.yaml            # Flutter dependencies
 ```
 
 ### Architecture Overview
@@ -217,64 +232,51 @@ WebFly adopts a **Hybrid Architecture**:
 3.  **Local Asset Server**: A built-in HTTP server (`shelf`) that serves the compiled web app from local assets, ensuring offline availability and fast load times.
 4.  **React Frontend**: The UI logic for the business application is built with standard web technologies (React, Vite) and UI components (`@openwebf/react-cupertino-ui`).
 
-### Development Tools
-
-WebFly includes custom Rust-based tools (invoked via `just`) to keep platform directories reproducible and to streamline dev workflows.
-
-### Flutter Tasks (Just)
-
-Run these from the repository root:
+### Common Commands
 
 ```bash
-# Generate platform directories (copies templates from platforms/)
-just gen-platforms
+just --list              # List all available commands
 
-# Generate logos only (without applying to launcher icons)
-just logo
+# Development
+just android             # Run on Android device (debug)
+just android release     # Run on Android device (release)
+just windows             # Run on Windows (debug)
 
-# Generate logos + apply (launcher icons + native splash)
-just gen-logo
+# Code quality
+just format              # Format Dart code
+just format-check        # CI format gate
+just analyze             # Static analysis (alias: just lint)
 
-# Run on Android (auto-select device)
-just android
+# Testing
+just test                # Flutter tests
+just test-frontend       # Frontend vitest
+just test-all            # All tests
 
-# Build a release APK
-just build-apk
+# Code generation
+just generate            # Dart build_runner (root + webfly_ble)
+just gen-platforms       # Regenerate android/ from app.pkl + platforms/
+just gen-assets          # Generate logo/branding images
+just use-cases-refresh   # Build bundled use-case web apps
+
+# Build & Release
+just build-apk           # Release APK (obfuscated)
+just release             # bump version, commit, tag, push (triggers CI)
+just release minor       # minor version bump
+just ci                  # Full CI pipeline (setup + checks + build)
 ```
 
-**Web Development**
+**Frontend (in `frontend/`)**
 ```bash
-# Start Vite dev server
-cd frontend
-pnpm dev
-
-# Build web app
-pnpm build
-
-# Build use cases
-pnpm build:use-cases
-```
-
-### Building from Source
-
-**Android APK**
-```bash
-# Via just (recommended):
-just build-apk
-
-# Or manually:
-flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
-```
-
-**Android App Bundle**
-```bash
-flutter build appbundle --release
+pnpm dev                 # Vite dev server
+pnpm build               # Production build
+pnpm lint                # ESLint
+pnpm test                # Vitest
 ```
 
 ### Customization
 
 **Add Custom Native Plugins:**
-1. Create a package under `packages/` (or add dependency to `pubspec.yaml`).
+1. Create a package under `webfly_packages/` (or add dependency to `pubspec.yaml`).
 2. Use `webfly_bridge` (Dart: `webfOk`/`webfErr`/`toJson`; TS: `createModuleInvoker`, `WebfModuleEventBus`) for wire format and event bus.
 3. Register the module in `lib/main.dart` with `WebF.defineModule(...)` and expose API to the frontend (e.g. `@webfly/ble`-style wrapper).
 
@@ -283,6 +285,30 @@ flutter build appbundle --release
 - Customize launcher widgets in `lib/ui/launcher/widgets/`.
 
 ## ⚙️ Configuration
+
+### Android Signing
+
+Signing passwords are read from environment variables, not checked-in files:
+
+| Variable | Description |
+|----------|-------------|
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_PASSWORD` | Key password |
+| `KEYSTORE_BASE64` | Base64-encoded keystore (CI only) |
+
+**Local development**: Copy `.env.example` to `.env` and fill in the values. The justfile loads `.env` automatically via `set dotenv-load`.
+
+**Generate a keystore** (first time only):
+```bash
+just gen-android-keystore
+```
+
+**Upload secrets to GitHub Actions**:
+```bash
+just upload-secrets
+```
+
+This uploads `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, and `KEY_PASSWORD` to GitHub Actions secrets. CI decodes the keystore from `KEYSTORE_BASE64` — it does not generate one.
 
 ### Permissions & AndroidManifest
 
@@ -308,23 +334,23 @@ For development, the built-in HTTP server serves assets from:
 ## 📦 Dependencies
 
 ### Core
-- `webf: ^0.24.11` - Web rendering engine
-- `signals_flutter: ^6.3.0` - State management
-- `go_router: ^17.0.1` - Navigation
+- `webf: ^0.24.14` - Web rendering engine
+- `signals_flutter: ^6.0.0` - State management
+- `go_router: ^17.0.0` - Navigation
 
-### Packages (monorepo)
+### Packages (monorepo in `webfly_packages/`)
 - `webfly_bridge` - Shared bridge: wire format (Dart), `createModuleInvoker` / `WebfModuleEventBus` (TS)
-- `webfly_ble` - BLE WebF module (Dart + TS), uses `flutter_blue_plus`
-- `webfly_permission` - Permission WebF module (Dart + TS), uses `permission_handler`
+- `webfly_ble` - BLE module (Dart + TS), uses `flutter_blue_plus`
+- `webfly_permission` - Permission module (Dart + TS), uses `permission_handler`
+- `webfly_theme` - Theme module
 
 ### Native & Web
-- `webf_sqflite: ^1.0.1` - SQLite database
-- `webf_share: ^1.1.0` - Native sharing
-- `mobile_scanner: ^7.1.4` - QR code scanning
+- `webf_sqflite: ^1.0.0` - SQLite database
+- `mobile_scanner: ^7.1.0` - QR code scanning
 
 ### Utilities
-- `shared_preferences: ^2.5.4` - Local storage
-- `shelf: ^1.4.2` - HTTP server
+- `shared_preferences: ^2.5.0` - Local storage
+- `shelf: ^1.4.0` - HTTP server
 
 ## 🤝 Contributing
 
@@ -332,7 +358,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-[Add your license here]
+MIT
 
 ## 🙏 Acknowledgments
 

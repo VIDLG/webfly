@@ -109,10 +109,15 @@ jobs:
         run: cd frontend && pnpm install
 
       - name: Setup signing
-        if: env.KEYSTORE_BASE64 != ''
-        run: echo "$KEYSTORE_BASE64" | base64 -d > platforms/android/keystore.jks
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "::error::KEYSTORE_BASE64 secret is not set"; exit 1; fi
+          if [ -z "$KEYSTORE_PASSWORD" ]; then echo "::error::KEYSTORE_PASSWORD secret is not set"; exit 1; fi
+          if [ -z "$KEY_PASSWORD" ]; then echo "::error::KEY_PASSWORD secret is not set"; exit 1; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > platforms/android/keystore.jks
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Run CI Pipeline
         run: just ci
