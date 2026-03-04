@@ -32,7 +32,8 @@ WebFly 是基于 Flutter 的混合运行时，通过 [WebF](https://github.com/o
 ```sh
 just update              # 安装工具 + flutter pub get + hooks
 just codegen             # Dart build_runner（root + webfly_ble）
-just android             # 在 Android 设备上运行（debug）
+just android             # 在 Android 设备上运行（debug），长驻进程，日志输出到 logs/
+just android release     # Release 模式运行，长驻进程，日志输出到 logs/
 just build-apk           # Release APK（含混淆）
 just test                # Flutter 测试
 just test-frontend       # 前端 vitest

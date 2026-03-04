@@ -2,7 +2,7 @@
 # Check that all required dev tools for the webfly project are available.
 set -e
 
-TOOLS="flutter dart rustup cargo rust-script just pkl node pnpm uv gh lefthook patch-package"
+TOOLS="flutter dart rustup cargo rust-script just pkl node pnpm uv gh lefthook patch-package jadx"
 
 ok=0; fail=0
 

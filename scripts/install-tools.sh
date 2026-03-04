@@ -48,9 +48,26 @@ install_patch_package() {
 }
 
 # ---------------------------------------------------------------------------
+# jadx — Android APK/DEX decompiler (for debugging plugin registration)
+# ---------------------------------------------------------------------------
+install_jadx() {
+  case "$OS" in
+    MINGW*|MSYS*)
+      if command -v scoop >/dev/null 2>&1; then scoop install jadx; return $?; fi
+      echo "ERROR: Install scoop (https://scoop.sh) or jadx manually." >&2; return 1 ;;
+    Darwin*)
+      if command -v brew >/dev/null 2>&1; then brew install jadx; return $?; fi
+      echo "ERROR: Install Homebrew or jadx manually." >&2; return 1 ;;
+    Linux*)
+      if command -v snap >/dev/null 2>&1; then sudo snap install jadx; return $?; fi
+      echo "ERROR: Install jadx manually: https://github.com/skylot/jadx" >&2; return 1 ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-TOOLS="pkl uv patch-package"
+TOOLS="pkl uv patch-package jadx"
 failed=""
 
 for tool in $TOOLS; do
@@ -64,6 +81,7 @@ for tool in $TOOLS; do
       pkl)           install_pkl           || failed="$failed $cmd" ;;
       uv)            install_uv            || failed="$failed $cmd" ;;
       patch-package) install_patch_package || failed="$failed $cmd" ;;
+      jadx)          install_jadx          || failed="$failed $cmd" ;;
     esac
   fi
 done

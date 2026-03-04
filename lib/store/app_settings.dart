@@ -80,10 +80,14 @@ class AppSettings {
     return store;
   }
 
-  NetworkConfig get networkConfig => NetworkConfig(
-    connectTimeout: Duration(seconds: connectTimeoutSeconds.value),
-    receiveTimeout: Duration(seconds: receiveTimeoutSeconds.value),
-  );
+  NetworkConfig get networkConfig {
+    const token = String.fromEnvironment('GITHUB_TOKEN');
+    return NetworkConfig(
+      connectTimeout: Duration(seconds: connectTimeoutSeconds.value),
+      receiveTimeout: Duration(seconds: receiveTimeoutSeconds.value),
+      headers: {if (token.isNotEmpty) 'Authorization': 'Bearer $token'},
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

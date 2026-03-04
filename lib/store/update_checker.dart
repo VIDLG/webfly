@@ -25,6 +25,7 @@ class AppUpdateChecker {
   String? _currentVersion;
   bool _checked = false;
   StreamSubscription<UpdateState>? _downloadSub;
+  CancelToken? _cancelToken;
 
   AppUpdateChecker._() {
     // Sync hasUpdate whenever its dependencies change.
@@ -101,29 +102,37 @@ class AppUpdateChecker {
     talker.updateInfo('Download URL: ${release.downloadUrl}');
 
     _downloadSub?.cancel();
+    _cancelToken?.cancel();
     _lastLoggedPercent = -1;
+    _cancelToken = CancelToken();
 
-    _downloadSub = downloadAndInstall(release.downloadUrl).listen(
-      (state) {
-        updateState.value = state;
-        if (state case UpdateDownloading(:final progress)) {
-          final percent = (progress * 100).round();
-          if (percent > 0 && percent >= _lastLoggedPercent + 10) {
-            _lastLoggedPercent = (percent ~/ 10) * 10;
-            talker.updateInfo('Downloading: $_lastLoggedPercent%');
-          }
-        } else {
-          talker.updateInfo('State: $state');
-        }
-      },
-      onError: (e, s) {
-        talker.updateError('Download error: $e');
-        updateState.value = UpdateFailed(DownloadError(e.toString()));
-      },
-    );
+    _downloadSub =
+        downloadAndInstall(
+          release.downloadUrl,
+          cancelToken: _cancelToken,
+        ).listen(
+          (state) {
+            updateState.value = state;
+            if (state case UpdateDownloading(:final progress)) {
+              final percent = (progress * 100).round();
+              if (percent > 0 && percent >= _lastLoggedPercent + 10) {
+                _lastLoggedPercent = (percent ~/ 10) * 10;
+                talker.updateInfo('Downloading: $_lastLoggedPercent%');
+              }
+            } else {
+              talker.updateInfo('State: $state');
+            }
+          },
+          onError: (e, s) {
+            talker.updateError('Download error: $e');
+            updateState.value = UpdateFailed(DownloadError(e.toString()));
+          },
+        );
   }
 
   void reset() {
+    _cancelToken?.cancel();
+    _cancelToken = null;
     _downloadSub?.cancel();
     updateState.value = const UpdateIdle();
   }
@@ -137,6 +146,7 @@ class AppUpdateChecker {
   }
 
   void dispose() {
+    _cancelToken?.cancel();
     _downloadSub?.cancel();
   }
 }

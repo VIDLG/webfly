@@ -8,9 +8,29 @@ set dotenv-load
 
 import 'flutter_tools/common.just'
 
+# Compile-time defines injected into all flutter run / build commands.
+# GITHUB_TOKEN is loaded from .env via dotenv-load.
+_dart_defines := if env('GITHUB_TOKEN', '') != '' { '--dart-define=GITHUB_TOKEN=' + env('GITHUB_TOKEN', '') } else { '' }
+
 # List all available commands
 default:
     @just --list
+
+# =============================================
+# Development (override common.just to inject dart-defines)
+# =============================================
+
+# Run on Android device
+android MODE='debug' *FLAGS:
+    DEVICE_ID=$(rust-script flutter_tools/flutter_select_device.rs --platform android); if [ -z "$DEVICE_ID" ]; then echo "No Android device found. Run: just devices" 1>&2; exit 1; fi; VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; rust-script flutter_tools/cmd_run.rs --log=logs/flutter-android-{{MODE}}.log flutter run -d "$DEVICE_ID" --{{MODE}} $VERBOSE {{_dart_defines}} {{FLAGS}}
+
+# Run on Windows
+windows MODE='debug' *FLAGS:
+    VERBOSE=""; if [ "{{MODE}}" = "debug" ]; then VERBOSE="--verbose"; fi; rust-script flutter_tools/cmd_run.rs --log=logs/flutter-windows-{{MODE}}.log flutter run -d windows --{{MODE}} $VERBOSE {{_dart_defines}} {{FLAGS}}
+
+# Build APK (release with obfuscation)
+build-apk *FLAGS:
+    rust-script flutter_tools/cmd_run.rs --log=logs/flutter-build.log flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols {{_dart_defines}} {{FLAGS}}
 
 # =============================================
 # Setup & Dependencies (project-specific)

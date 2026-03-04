@@ -1,98 +1,32 @@
 package org.vidlg.webfly
 
-import android.content.pm.PackageManager
-import android.content.pm.Signature
-import android.os.Build
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugins.GeneratedPluginRegistrant
 
 class MainActivity : FlutterActivity() {
-    private val SIGNATURE_CHANNEL = "org.vidlg.webfly/signature"
-
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SIGNATURE_CHANNEL)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "getInstalledSignature" -> {
-                        try {
-                            val signature = getInstalledSignature()
-                            result.success(signature)
-                        } catch (e: Exception) {
-                            result.error("ERROR", e.message, null)
-                        }
-                    }
-                    "getApkSignature" -> {
-                        val apkPath = call.argument<String>("path")
-                        if (apkPath == null) {
-                            result.error("ERROR", "path is required", null)
-                            return@setMethodCallHandler
-                        }
-                        try {
-                            val signature = getApkSignature(apkPath)
-                            result.success(signature)
-                        } catch (e: Exception) {
-                            result.error("ERROR", e.message, null)
-                        }
-                    }
-                    else -> result.notImplemented()
-                }
-            }
-    }
-
-    private fun getInstalledSignature(): String {
-        val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+        // Call registerWith directly, catching Throwable (not just Exception).
+        // WebF's System.loadLibrary("quickjs") throws UnsatisfiedLinkError
+        // (an Error, not Exception) which escapes GeneratedPluginRegistrant's
+        // catch(Exception) blocks and kills the entire registration chain.
+        // WebF itself still works via FFI despite this failure.
+        try {
+            GeneratedPluginRegistrant.registerWith(flutterEngine)
+        } catch (e: Throwable) {
+            io.flutter.Log.w(
+                "MainActivity",
+                "GeneratedPluginRegistrant partially failed: ${e.cause?.message}"
+            )
         }
-
-        val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.signingInfo?.apkContentsSigners
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.signatures
+        // Re-register plugins that may have been skipped due to the above failure.
+        // FlutterEngine.plugins.add() is a no-op if the plugin is already registered.
+        // TODO: Remove this workaround once WebF fixes the libquickjs.so issue.
+        //       See: https://github.com/openwebf/webf/issues/876
+        try {
+            flutterEngine.plugins.add(org.vidlg.webfly_updater.WebflyUpdaterPlugin())
+        } catch (e: Throwable) {
+            io.flutter.Log.e("MainActivity", "Failed to register WebflyUpdaterPlugin", e)
         }
-
-        if (signatures.isNullOrEmpty()) {
-            return "unknown"
-        }
-
-        return signatures.map { it.toHex() }.joinToString(",")
-    }
-
-    private fun getApkSignature(apkPath: String): String {
-        val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageManager.getPackageArchiveInfo(apkPath, PackageManager.GET_SIGNING_CERTIFICATES)
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.getPackageArchiveInfo(apkPath, PackageManager.GET_SIGNATURES)
-        }
-
-        if (packageInfo == null) {
-            return "unknown"
-        }
-
-        val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.signingInfo?.apkContentsSigners
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.signatures
-        }
-
-        if (signatures.isNullOrEmpty()) {
-            return "unknown"
-        }
-
-        return signatures.map { it.toHex() }.joinToString(",")
-    }
-
-    private fun Signature.toHex(): String {
-        val md = java.security.MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(toByteArray())
-        return digest.joinToString("") { "%02x".format(it) }
     }
 }
