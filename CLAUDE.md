@@ -117,8 +117,9 @@ WebF 仅支持 CSS 子集，项目在构建时强制检查：
 
 1. 检查 submodule（`flutter_tools`、`contrib/webf_usecases`、`webfly_packages`）是否有未提交改动，有则先在各 submodule 中 commit & push
 2. 更新主仓库对 submodule 的引用（`git add <submodule_path>`）
-3. 主仓库如有其他变更，先 commit
-4. 执行 `just release`、`just release minor` 或 `just release major`
+3. 检查自上次 release 以来的所有变更（`git log <last-tag>..HEAD`），判断 README（EN + CN）是否需要同步更新（新功能、命令变更、配置变更等），需要则更新并 commit
+4. 主仓库如有其他变更，先 commit
+5. 执行 `just release`、`just release minor` 或 `just release major`
 
 ## LED 特效系统
 
