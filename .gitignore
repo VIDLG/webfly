@@ -56,8 +56,6 @@ platforms/android/.gradle/
 # Android signing
 *.keystore
 *.jks
-key.properties
-!key.properties.example
 
 # Local environment files
 .env
