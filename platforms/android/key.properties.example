@@ -1,0 +1,5 @@
+# Android release signing passwords
+# Copy this file to key.properties and fill in your passwords.
+# Run `just gen-android-keystore` to generate a new keystore.jks.
+storePassword=
+keyPassword=
