@@ -5,10 +5,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-val keyPassword = System.getenv("KEY_PASSWORD") ?: ""
-val keyAlias = System.getenv("KEY_ALIAS") ?: "{{key_alias}}"
-val storeFilePath = System.getenv("KEYSTORE_FILE") ?: "{{store_file}}"
+val envStorePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+val envKeyPassword = System.getenv("KEY_PASSWORD") ?: ""
+val envKeyAlias = System.getenv("KEY_ALIAS") ?: "{{key_alias}}"
+val envStoreFile = System.getenv("KEYSTORE_FILE") ?: "{{store_file}}"
 
 android {
     namespace = "{{namespace}}"
@@ -43,12 +43,12 @@ android {
     }
 
     signingConfigs {
-        if (storePassword.isNotEmpty()) {
+        if (envStorePassword.isNotEmpty()) {
             create("release") {
-                this.storeFile = file(storeFilePath)
-                this.storePassword = storePassword
-                this.keyAlias = keyAlias
-                this.keyPassword = keyPassword
+                storeFile = file(envStoreFile)
+                storePassword = envStorePassword
+                keyAlias = envKeyAlias
+                keyPassword = envKeyPassword
             }
         }
     }
