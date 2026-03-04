@@ -21,7 +21,7 @@ permissions:
 
 env:
   JAVA_VERSION: '17'
-  FLUTTER_VERSION: '3.38.x'
+  FLUTTER_VERSION: '3.41.x'
   ANDROID_API_LEVEL: '36'  # Android 16 beta
   ANDROID_NDK_VERSION: '27.3.13750724'  # NDK r27d
   NODE_VERSION: '20.x'
@@ -109,14 +109,15 @@ jobs:
         run: cd frontend && pnpm install
 
       - name: Setup signing
-        if: env.KEYSTORE_BASE64 != ''
+        if: env.KEYSTORE_PASSWORD != ''
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > platforms/android/keystore.jks
           printf 'storePassword=%s\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" \
             > platforms/android/key.properties
+          if [ ! -f platforms/android/keystore.jks ]; then
+            just gen-android-keystore
+          fi
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
