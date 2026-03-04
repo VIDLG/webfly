@@ -48,8 +48,18 @@ final talker = Talker(
 // ---------------------------------------------------------------------------
 
 extension AppTalkerX on Talker {
-  void _tagged(String key, String msg, LogLevel level) =>
-      logCustom(TalkerLog(msg, key: key, logLevel: level));
+  void _tagged(String key, String msg, LogLevel level) {
+    // error/warning use talker's built-in methods for red/yellow coloring,
+    // because TalkerSettings.colors overrides per-log pen.
+    switch (level) {
+      case LogLevel.error:
+        error('[$key] $msg');
+      case LogLevel.warning:
+        warning('[$key] $msg');
+      default:
+        logCustom(TalkerLog(msg, key: key, logLevel: level));
+    }
+  }
 
   // UpdateChecker
   void updateInfo(String msg) =>

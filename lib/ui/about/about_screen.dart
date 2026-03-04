@@ -20,11 +20,8 @@ class AboutScreen extends HookWidget {
     final packageInfo = useFuture(
       useMemoized(() => PackageInfo.fromPlatform()),
     );
-    // Derive hasUpdate from version comparison
-    final currentVer = currentVersionSignal.watch(context);
+    final hasUpdate = hasUpdateSignal.watch(context);
     final latestVer = latestVersionSignal.watch(context);
-    final hasUpdate =
-        currentVer != null && latestVer != null && currentVer != latestVer;
     final release = releaseInfoSignal.watch(context);
     final releaseNotes = releaseNotesSignal.watch(context);
     // Derive hasManuallyChecked from lastCheckedAt
@@ -39,15 +36,7 @@ class AboutScreen extends HookWidget {
     final buildNumber = info?.buildNumber ?? '';
 
     Future<void> checkForUpdates() async {
-      try {
-        await updateChecker.check(force: true);
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Check failed, please try again')),
-          );
-        }
-      }
+      await updateChecker.check(force: true);
     }
 
     void startDownloadAndInstall() {
@@ -62,9 +51,8 @@ class AboutScreen extends HookWidget {
     final double? downloadProgress = state is UpdateDownloading
         ? state.progress
         : null;
-    final String? errorMessage = state is UpdateFailed
-        ? _errorMessage(state.error)
-        : null;
+    final ({String text, String? subtitle, String? url})? errorInfo =
+        state is UpdateFailed ? _errorInfo(state.error) : null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('About')),
@@ -293,14 +281,84 @@ class AboutScreen extends HookWidget {
                 ),
               ),
             ],
-            if (errorMessage != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                errorMessage,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.error,
+            if (errorInfo != null) ...[
+              const SizedBox(height: 12),
+              Card(
+                elevation: 0,
+                color: colorScheme.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 18,
+                        color: colorScheme.onErrorContainer,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              errorInfo.text,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onErrorContainer,
+                              ),
+                            ),
+                            if (errorInfo.subtitle != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                errorInfo.subtitle!,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onErrorContainer
+                                      .withValues(alpha: 0.7),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                            if (errorInfo.url != null) ...[
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () async {
+                                  final url = errorInfo.url!;
+                                  if (useExternalBrowserSignal.value) {
+                                    final uri = Uri.parse(url);
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(
+                                        uri,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    }
+                                  } else if (context.mounted) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => WebViewScreen(
+                                          url: url,
+                                          title: 'Details',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  'Learn more',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onErrorContainer,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor:
+                                        colorScheme.onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
             if (hasUpdate &&
@@ -337,6 +395,37 @@ class AboutScreen extends HookWidget {
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                           height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          if (useExternalBrowserSignal.value) {
+                            final uri = Uri.parse(_releasesUrl);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          } else if (context.mounted) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const WebViewScreen(
+                                  url: _releasesUrl,
+                                  title: 'Releases',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: Text(
+                          'View all releases',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                            decorationColor: colorScheme.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -384,39 +473,6 @@ class AboutScreen extends HookWidget {
                   ),
                   const Divider(height: 1, indent: 56),
                   _InfoTile(
-                    icon: Icons.download_outlined,
-                    title: 'Releases',
-                    subtitle: _releasesUrl,
-                    trailing: Icon(
-                      Icons.open_in_new,
-                      size: 16,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    onTap: () async {
-                      if (useExternalBrowserSignal.value) {
-                        final uri = Uri.parse(_releasesUrl);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      } else {
-                        if (context.mounted) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const WebViewScreen(
-                                url: _releasesUrl,
-                                title: 'Releases',
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  _InfoTile(
                     icon: Icons.policy_outlined,
                     title: 'License',
                     subtitle: 'MIT',
@@ -440,14 +496,78 @@ class AboutScreen extends HookWidget {
   }
 }
 
-String _errorMessage(UpdateError error) {
+({String text, String? subtitle, String? url}) _errorInfo(UpdateError error) {
   return switch (error) {
-    NetworkError(:final message) => 'Network error: $message',
-    HashVerificationError() => 'File corrupted, please retry',
-    SignatureMismatchError() => 'APK signature mismatch, may be unsafe',
-    DownloadError(:final message) => 'Download failed: $message',
-    InstallError(:final message) => 'Install failed: $message',
+    NetworkError() => _parseNetworkError(error),
+    HashVerificationError() => (
+      text: 'File corrupted — please retry',
+      subtitle: null,
+      url: null,
+    ),
+    SignatureMismatchError() => (
+      text: 'APK signature mismatch',
+      subtitle: null,
+      url: null,
+    ),
+    DownloadError(:final message) => (
+      text: 'Download failed: $message',
+      subtitle: null,
+      url: null,
+    ),
+    InstallError(:final message) => (
+      text: 'Install failed: $message',
+      subtitle: null,
+      url: null,
+    ),
   };
+}
+
+({String text, String? subtitle, String? url}) _parseNetworkError(
+  NetworkError error,
+) {
+  final message = error.message;
+  final detail = error.detail;
+  final documentationUrl = error.documentationUrl;
+
+  // Extract HTTP status code from "HTTP 403" style message.
+  final codeMatch = RegExp(r'HTTP (\d+)').firstMatch(message);
+  final code = codeMatch?.group(1);
+
+  // Prefer GitHub's documentation_url; fall back to MDN for HTTP errors.
+  final url =
+      documentationUrl ??
+      (code != null
+          ? 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/$code'
+          : null);
+
+  // Show GitHub's detail message if present, otherwise a concise fallback.
+  final text = detail != null
+      ? (code != null ? 'HTTP $code: $detail' : detail)
+      : (code != null ? 'HTTP $code' : 'Network error');
+
+  // Build subtitle from rate limit info when available.
+  String? subtitle;
+  final rlLimit = error.rateLimitLimit;
+  final rlRemaining = error.rateLimitRemaining;
+  final rlReset = error.rateLimitReset;
+  if (rlLimit != null && rlRemaining != null) {
+    final used = rlLimit - rlRemaining;
+    final parts = <String>['$used / $rlLimit used'];
+    if (rlReset != null) {
+      final diff = rlReset.difference(DateTime.now());
+      if (diff.isNegative) {
+        parts.add('resets now');
+      } else {
+        final mins = diff.inMinutes;
+        parts.add(
+          mins > 0 ? 'resets in ${mins}m' : 'resets in ${diff.inSeconds}s',
+        );
+      }
+    }
+    subtitle = parts.join(' · ');
+  }
+
+  return (text: text, subtitle: subtitle, url: url);
 }
 
 class _InfoTile extends StatelessWidget {

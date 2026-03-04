@@ -18,13 +18,7 @@ class AppUpdateChecker {
   final updateState = signal<UpdateState>(const UpdateIdle());
   final lastCheckedAt = signal<DateTime?>(null);
 
-  bool get hasUpdate {
-    final current = currentVersion.value;
-    final latest = latestVersion.value;
-    if (current == null || latest == null) return false;
-    // Strip 'v' prefix for comparison
-    return current.replaceFirst('v', '') != latest.replaceFirst('v', '');
-  }
+  final hasUpdate = signal<bool>(false);
 
   bool get isChecking => updateState.value is UpdateChecking;
 
@@ -32,14 +26,26 @@ class AppUpdateChecker {
   bool _checked = false;
   StreamSubscription<UpdateState>? _downloadSub;
 
-  AppUpdateChecker._();
+  AppUpdateChecker._() {
+    // Sync hasUpdate whenever its dependencies change.
+    effect(() {
+      final current = currentVersion.value;
+      final latest = latestVersion.value;
+      final testMode = updateTestModeSignal.value;
+      hasUpdate.value =
+          (current != null &&
+              latest != null &&
+              current.replaceFirst('v', '') != latest.replaceFirst('v', '')) ||
+          (testMode && releaseInfo.value != null);
+    });
+  }
 
   Future<void> check({bool force = false}) async {
     if (_checked && !force) return;
     _checked = true;
-    lastCheckedAt.value = DateTime.now();
 
     try {
+      updateState.value = const UpdateChecking();
       _currentVersion ??= 'v${(await PackageInfo.fromPlatform()).version}';
       currentVersion.value = _currentVersion;
       talker.updateInfo('Checking for updates...');
@@ -71,10 +77,14 @@ class AppUpdateChecker {
         talker.updateInfo('Already up to date');
         latestVersion.value = _currentVersion;
       }
+      lastCheckedAt.value = DateTime.now();
+      updateState.value = const UpdateIdle();
     } catch (e) {
       talker.updateError('Check failed: $e');
       _checked = false;
-      if (force) rethrow;
+      updateState.value = UpdateFailed(
+        e is UpdateError ? e : NetworkError(e.toString()),
+      );
     }
   }
 
@@ -148,6 +158,7 @@ Signal<ReleaseInfo?> get releaseInfoSignal => updateChecker.releaseInfo;
 Signal<String?> get releaseNotesSignal => updateChecker.releaseNotes;
 Signal<UpdateState> get updateStateSignal => updateChecker.updateState;
 Signal<DateTime?> get lastCheckedAtSignal => updateChecker.lastCheckedAt;
+Signal<bool> get hasUpdateSignal => updateChecker.hasUpdate;
 
 /// Fire-and-forget: kick off the first update check in the background.
 void initializeUpdateChecker() {

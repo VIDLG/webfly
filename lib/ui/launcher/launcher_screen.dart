@@ -37,11 +37,7 @@ class LauncherScreen extends HookWidget {
     final errorMessage = useState<String?>(null);
     final cacheControllers = cacheControllersSignal.watch(context);
     final urls = urlHistorySignal.watch(context);
-    // Derive hasUpdate from version comparison
-    final currentVer = currentVersionSignal.watch(context);
-    final latestVer = latestVersionSignal.watch(context);
-    final hasUpdate =
-        currentVer != null && latestVer != null && currentVer != latestVer;
+    final hasUpdate = hasUpdateSignal.watch(context);
     final isUrlHighlighted = useBoolean(false);
     final historyListEditMode = useSignal(false);
     final requestExitEditModeRef = useRef<void Function()?>(null);
