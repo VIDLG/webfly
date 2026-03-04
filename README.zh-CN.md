@@ -310,6 +310,17 @@ just upload-secrets
 
 该命令将 `KEYSTORE_BASE64`、`KEYSTORE_PASSWORD` 和 `KEY_PASSWORD` 上传到 GitHub Actions secrets。
 
+### GitHub API Token（可选）
+
+应用通过 GitHub Releases API 检查更新。未认证时速率限制为 **60 次/小时**（同一 IP 共享）。添加 GitHub 细粒度个人访问令牌可提升至 **5,000 次/小时**：
+
+1. 创建 [细粒度 PAT](https://github.com/settings/personal-access-tokens/new)，权限选择 **Public Repositories (read-only)**，有效期 ≤ 366 天。
+2. 添加到 `.env`：
+   ```
+   GITHUB_TOKEN=github_pat_...
+   ```
+3. justfile 在执行 `just android`、`just windows`、`just build-apk` 时自动通过 `--dart-define` 注入该变量。
+
 > **为什么需要 `KEYSTORE_BASE64`？** Keystore 生成过程包含随机性——即使密码相同，每次 `keytool` 调用也会产生不同的 keystore 文件。使用不同 keystore 签名的 APK 无法覆盖安装前一个版本。因此 CI 必须使用与本地开发完全相同的 keystore，而不是重新生成。
 
 ### 权限与 AndroidManifest
