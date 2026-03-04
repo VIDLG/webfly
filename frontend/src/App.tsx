@@ -24,6 +24,8 @@ const LEDEffectPreviewPage = lazy(() => import('./pages/LEDEffectPreviewPage'))
 const BleDemoPage = lazy(() => import('./pages/BleDemoPage'))
 const PermissionDemoPage = lazy(() => import('./pages/PermissionDemoPage'))
 const StateDemoPage = lazy(() => import('./pages/StateDemoPage'))
+const BaseUIDemoPage = lazy(() => import('./pages/BaseUIDemoPage'))
+const CompatDemoPage = lazy(() => import('./pages/CompatDemoPage'))
 
 const withSuspense = (element: React.ReactNode) => (
   <Suspense fallback={<div className="p-4">Loading…</div>}>
@@ -116,6 +118,8 @@ function App() {
     { path: '/ble', title: 'BLE Demo', element: <BleDemoPage /> },
     { path: '/permission', title: 'Permission Demo', element: <PermissionDemoPage /> },
     { path: '/state', title: 'State Demo', element: <StateDemoPage /> },
+    { path: '/base-ui', title: 'Base UI Demo', element: <BaseUIDemoPage /> },
+    { path: '/compat', title: 'API Compatibility', element: <CompatDemoPage /> },
   ]
 
   return (

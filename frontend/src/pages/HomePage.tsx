@@ -72,6 +72,36 @@ function HomePage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🧩 UI Components</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Headless component libraries compatibility testing.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-sm font-semibold text-white transition hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/70"
+              onClick={() => navigate('/base-ui')}
+            >
+              Base UI Demo
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🔬 API Compatibility</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Runtime detection of Web API support vs standard browsers.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              className="rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-5 py-2 text-sm font-semibold text-white transition hover:from-rose-400 hover:to-pink-400 active:scale-[0.98] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/70"
+              onClick={() => navigate('/compat')}
+            >
+              Compatibility Check
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🧭 Navigation</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Each route opens as an independent native page (WebF router stack).
