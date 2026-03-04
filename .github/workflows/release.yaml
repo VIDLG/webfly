@@ -111,9 +111,6 @@ jobs:
       - name: Setup signing
         if: env.KEYSTORE_PASSWORD != ''
         run: |
-          printf 'storePassword=%s\nkeyPassword=%s\n' \
-            "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" \
-            > platforms/android/key.properties
           if [ ! -f platforms/android/keystore.jks ]; then
             just gen-android-keystore
           fi
@@ -124,7 +121,8 @@ jobs:
       - name: Run CI Pipeline
         run: just ci
         env:
-          # Skip problematic postinstall scripts
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           DISABLE_OPENCOLLECTIVE: true
           ADBLOCK: true
 

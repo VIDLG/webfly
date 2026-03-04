@@ -1,6 +1,3 @@
-import java.util.Properties
-import java.io.FileInputStream
-
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -8,11 +5,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
+val storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+val keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+val keyAlias = System.getenv("KEY_ALIAS") ?: "{{key_alias}}"
+val storeFilePath = System.getenv("KEYSTORE_FILE") ?: "{{store_file}}"
 
 android {
     namespace = "{{namespace}}"
@@ -47,12 +43,12 @@ android {
     }
 
     signingConfigs {
-        if (keystoreProperties.containsKey("storePassword")) {
+        if (storePassword.isNotEmpty()) {
             create("release") {
-                storeFile = file("{{store_file}}")
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = "{{key_alias}}"
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                this.storeFile = file(storeFilePath)
+                this.storePassword = storePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
             }
         }
     }
