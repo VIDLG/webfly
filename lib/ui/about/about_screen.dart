@@ -7,7 +7,7 @@ import 'package:webfly_updater/webfly_updater.dart';
 
 import '../../store/app_settings.dart';
 import '../../store/update_checker.dart';
-import 'webview_screen.dart';
+import '../widgets/webview_screen.dart';
 
 const _repoUrl = 'https://github.com/vidlg/webfly';
 const _releasesUrl = 'https://github.com/vidlg/webfly/releases';

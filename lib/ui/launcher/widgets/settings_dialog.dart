@@ -1,10 +1,13 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:signals_hooks/signals_hooks.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webfly_theme/webfly_theme.dart';
 
 import '../../../store/app_settings.dart';
 import '../../../store/update_checker.dart';
+import '../../widgets/webview_screen.dart';
 
 class SettingsScreen extends HookWidget {
   const SettingsScreen({super.key});
@@ -20,6 +23,8 @@ class SettingsScreen extends HookWidget {
     final receiveTimeout = useSignalValue(receiveTimeoutSignal);
     final githubToken = useSignalValue(githubTokenSignal);
     final showToken = useState(false);
+    final learnMoreTap = useMemoized(() => TapGestureRecognizer());
+    useEffect(() => learnMoreTap.dispose, const []);
     final themeSignal = useStreamSignal<ThemeState>(
       () => themeStream,
       initialValue: getTheme(),
@@ -154,8 +159,40 @@ class SettingsScreen extends HookWidget {
                 decoration: InputDecoration(
                   labelText: 'GitHub Token',
                   hintText: 'github_pat_...',
-                  helperText: 'Raises API rate limit from 60 to 5,000 req/h',
-                  helperMaxLines: 2,
+                  helper: Text.rich(
+                    TextSpan(
+                      text:
+                          'Fine-grained PAT (read-only). '
+                          'Raises rate limit to 5,000 req/h. ',
+                      children: [
+                        TextSpan(
+                          text: 'Learn more',
+                          style: TextStyle(color: colorScheme.primary),
+                          recognizer: learnMoreTap
+                            ..onTap = () async {
+                              const url =
+                                  'https://github.com/settings/personal-access-tokens/new';
+                              if (useExternalBrowserSignal.value) {
+                                await launchUrl(
+                                  Uri.parse(url),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              } else if (context.mounted) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const WebViewScreen(
+                                      url: url,
+                                      title: 'GitHub Token',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                        ),
+                      ],
+                    ),
+                    style: smallSubtitle,
+                  ),
                   border: const OutlineInputBorder(),
                   isDense: true,
                   suffixIcon: IconButton(
