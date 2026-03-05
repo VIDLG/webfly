@@ -69,8 +69,10 @@ key.properties
 assets/gen/
 *.g.dart
 
-# Claude Code
-.claude/
+# Claude Code (local-only files)
+.claude/settings.local.json
+.claude/worktrees/
+.claude/plans/
 
 # Python
 .venv/
