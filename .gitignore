@@ -68,6 +68,7 @@ key.properties
 # Generated assets
 assets/gen/
 *.g.dart
+frontend/public/effects/*/effect.js
 
 # Claude Code (local-only files)
 .claude/settings.local.json

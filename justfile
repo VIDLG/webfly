@@ -108,6 +108,10 @@ test-all *ARGS:
     flutter test {{ARGS}}
     cd frontend && pnpm test {{ARGS}}
 
+# Compile LED effects to self-contained plain JS (for mquickjs on MCU)
+compile-effects *ARGS:
+    cd frontend && node scripts/compile-effects.mjs {{ARGS}}
+
 # Benchmark the TwoSlash type-check API latency
 bench-tsc *ARGS:
     node frontend/scripts/bench-typecheck-api.mjs {{ARGS}}

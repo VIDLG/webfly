@@ -256,6 +256,9 @@ just gen-platforms       # 从 app.pkl + platforms/ 重新生成 android/
 just gen-assets          # 生成 Logo / 品牌图片
 just use-cases-refresh   # 构建打包的示例 Web 应用
 
+# LED 灯效
+just compile-effects     # 编译灯效为独立 JS（用于 mquickjs 单片机）
+
 # 构建与发布
 just build-apk           # Release APK（含混淆）
 just release             # 递增版本号、commit、tag、push（触发 CI）

@@ -256,6 +256,9 @@ just gen-platforms       # Regenerate android/ from app.pkl + platforms/
 just gen-assets          # Generate logo/branding images
 just use-cases-refresh   # Build bundled use-case web apps
 
+# LED effects
+just compile-effects     # Compile effects to plain JS (for mquickjs MCU)
+
 # Build & Release
 just build-apk           # Release APK (obfuscated)
 just release             # bump version, commit, tag, push (triggers CI)
