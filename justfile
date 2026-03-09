@@ -109,8 +109,10 @@ test-all *ARGS:
     cd frontend && pnpm test {{ARGS}}
 
 # Compile LED effects to self-contained plain JS (for mquickjs on MCU)
-compile-effects *ARGS:
-    cd frontend && node scripts/compile-effects.mjs {{ARGS}}
+# Usage: just compile-effects [target] [--outdir <dir>]
+#   target: es6 (default), es5, es2020, etc.
+compile-effects TARGET='es6' *ARGS:
+    cd frontend && node scripts/compile-effects.mjs --target {{TARGET}} {{ARGS}}
 
 # Benchmark the TwoSlash type-check API latency
 bench-tsc *ARGS:
